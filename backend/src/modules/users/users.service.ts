@@ -30,4 +30,12 @@ export class UsersService {
   async findById(id: string): Promise<UserDocument | null> {
     return this.userModel.findById(id).exec();
   }
+
+  async updatePassword(id: string, hashedPassword: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(id, { password: hashedPassword }).exec();
+  }
+
+  async updateProfile(id: string, updateData: any): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  }
 }

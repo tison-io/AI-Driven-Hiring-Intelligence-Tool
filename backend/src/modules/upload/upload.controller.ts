@@ -22,7 +22,7 @@ import { FileValidationPipe } from '../../common/pipes/file-validation.pipe';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Upload')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('api/candidates')
 export class UploadController {

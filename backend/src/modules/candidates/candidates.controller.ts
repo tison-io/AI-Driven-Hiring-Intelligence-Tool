@@ -5,7 +5,7 @@ import { CandidateFilterDto } from './dto/candidate-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Candidates')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('api/candidates')
 export class CandidatesController {

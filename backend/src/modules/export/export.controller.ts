@@ -13,7 +13,7 @@ import { CandidateFilterDto } from '../candidates/dto/candidate-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Export')
-@ApiBearerAuth()
+@ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
 @Controller('api/export')
 export class ExportController {
