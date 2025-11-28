@@ -1,0 +1,78 @@
+import { Controller, Get, UseGuards } from '@nestjs/common';
+import { 
+  ApiTags, 
+  ApiOperation, 
+  ApiResponse, 
+  ApiBearerAuth 
+} from '@nestjs/swagger';
+import { DashboardService } from './dashboard.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../../common/enums/user-role.enum';
+
+@ApiTags('Dashboard')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('api/dashboard')
+export class DashboardController {
+  constructor(private dashboardService: DashboardService) {}
+
+  @Get()
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Get dashboard metrics and analytics' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Dashboard metrics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        totalCandidates: { type: 'number', example: 150 },
+        averageRoleFitScore: { type: 'number', example: 75.5 },
+        shortlistCount: { type: 'number', example: 25 },
+        processingCount: { type: 'number', example: 5 },
+        recentCandidates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: { type: 'string' },
+              jobRole: { type: 'string' },
+              roleFitScore: { type: 'number' },
+              status: { type: 'string' },
+              createdAt: { type: 'string' }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  async getDashboardMetrics() {
+    return this.dashboardService.getDashboardMetrics();
+  }
+
+  @Get('score-distribution')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get role fit score distribution (Admin only)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Score distribution retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        '0-20': { type: 'number', example: 5 },
+        '21-40': { type: 'number', example: 15 },
+        '41-60': { type: 'number', example: 30 },
+        '61-80': { type: 'number', example: 45 },
+        '81-100': { type: 'number', example: 25 }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getScoreDistribution() {
+    return this.dashboardService.getScoreDistribution();
+  }
+}
