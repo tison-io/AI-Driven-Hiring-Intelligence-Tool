@@ -1,12 +1,13 @@
-import { Module } from '@nestjs/common';
-import { UploadController } from './upload.controller';
-import { UploadService } from './upload.service';
-import { CandidatesModule } from '../candidates/candidates.module';
-import { QueueModule } from '../queue/queue.module';
+import { Module } from "@nestjs/common";
+import { UploadController } from "./upload.controller";
+import { UploadService } from "./upload.service";
+import { CandidatesModule } from "../candidates/candidates.module";
+import { QueueModule } from "../queue/queue.module";
+import { ApifyModule } from "../linkedin-scraper/linkedinScraper.module";
 
 @Module({
-  imports: [CandidatesModule, QueueModule],
-  controllers: [UploadController],
-  providers: [UploadService],
+	imports: [CandidatesModule, QueueModule, ApifyModule],
+	controllers: [UploadController],
+	providers: [UploadService],
 })
 export class UploadModule {}
