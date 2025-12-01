@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from parsing import parse_pdf, parse_docx
+from extraction import extract_resume_data
 
 load_dotenv()
 
@@ -22,25 +23,28 @@ async def parse_resume(file: UploadFile = File(...)):
 
     file_content = await file.read()
 
-    extracted_text = ""
-
+    raw_text = ""
     if filename.endswith(".pdf"):
-        extracted_text = parse_pdf(file_content)
+        raw_text = parse_pdf(file_content)
     elif filename.endswith(".docx"):
-        extracted_text = parse_docx(file_content)
+        raw_text = parse_docx(file_content)
     else:
         raise HTTPException(
             status_code=400,
             detail=" Unsupported file format. Please upload a PDF or DOCX.",
         )
 
-    if not extracted_text:
+    if not raw_text:
         raise HTTPException(status_code=400, detail="Failed to extract text from file.")
 
+
+    structures_data=extract_resume_data(raw_text)
     return {
         "filename": file.filename,
-        "content_length": len(extracted_text),
-        "extracted_text": extracted_text,
+        "processed": True,
+        "content_length": len(raw_text),
+        "extracted_text": raw_text,
+        "data": structures_data
     }
 
 if __name__ == "__main__":
