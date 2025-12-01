@@ -3,6 +3,7 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { ApifyService } from './apify.service';
 import { ApifyConfig } from '../../config/apify.config';
+import { LinkedInMapper } from './mappers/linkedin-mapper';
 
 @Module({
   imports: [
@@ -12,7 +13,8 @@ import { ApifyConfig } from '../../config/apify.config';
   providers: [
     ApifyService,
     ApifyConfig,
+    LinkedInMapper,
   ],
-  exports: [ApifyService],
+  exports: [ApifyService, LinkedInMapper],
 })
 export class ApifyModule {}
