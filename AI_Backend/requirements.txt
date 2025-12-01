@@ -8,3 +8,4 @@ langchain-openai
 tiktoken
 pypdf
 mammoth
+python-multipart
