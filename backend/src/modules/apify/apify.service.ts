@@ -23,24 +23,18 @@ export class ApifyService {
       throw new HttpException('Profile URLs are required', HttpStatus.BAD_REQUEST);
     }
 
-    const requestPayload: ApifyLinkedInRequest = {
-      profileUrls,
-      proxyConfiguration: {
-        useApifyProxy: true,
-      },
-    };
+    const results: LinkedInProfileData[] = [];
 
     try {
       this.logger.log(`Scraping ${profileUrls.length} LinkedIn profiles`);
       
-      const response = await this.makeApifyRequest(requestPayload);
-      
-      if (!response.data || !Array.isArray(response.data)) {
-        throw new HttpException('Invalid response from Apify', HttpStatus.INTERNAL_SERVER_ERROR);
+      for (const url of profileUrls) {
+        const profileData = await this.makeRapidApiRequest(url);
+        results.push(profileData);
       }
 
-      this.logger.log(`Successfully scraped ${response.data.length} profiles`);
-      return response.data;
+      this.logger.log(`Successfully scraped ${results.length} profiles`);
+      return results;
 
     } catch (error) {
       this.logger.error('Failed to scrape LinkedIn profiles', error.stack);
@@ -56,22 +50,27 @@ export class ApifyService {
     }
   }
 
-  private async makeApifyRequest(payload: ApifyLinkedInRequest): Promise<ApifyLinkedInResponse> {
+  private async makeRapidApiRequest(profileUrl: string): Promise<LinkedInProfileData> {
     const headers = {
-      'Authorization': `Bearer ${this.apifyConfig.token}`,
-      'Content-Type': 'application/json',
+      'x-rapidapi-key': this.apifyConfig.rapidApiKey,
+      'x-rapidapi-host': 'linkdapi-best-unofficial-linkedin-api.p.rapidapi.com',
     };
 
     let lastError: any;
     
     for (let attempt = 1; attempt <= this.apifyConfig.maxRetries; attempt++) {
       try {
-        this.logger.debug(`Attempt ${attempt} to call Apify API`);
+        this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+        
+        // Extract username from LinkedIn URL
+        const username = profileUrl.split('/in/')[1]?.replace('/', '') || '';
+        if (!username) {
+          throw new Error('Invalid LinkedIn URL format');
+        }
         
         const response: AxiosResponse = await firstValueFrom(
-          this.httpService.post(
-            this.apifyConfig.linkedinScraperEndpoint,
-            payload,
+          this.httpService.get(
+            `${this.apifyConfig.linkedinScraperEndpoint}?username=${username}`,
             {
               headers,
               timeout: this.apifyConfig.requestTimeout,
@@ -79,20 +78,41 @@ export class ApifyService {
           )
         );
 
-        // Log the actual response structure for debugging
-        this.logger.debug('Raw Apify response:', JSON.stringify(response.data, null, 2));
-
-        return {
-          data: response.data,
-          success: true,
+        this.logger.debug('Raw RapidAPI response:', JSON.stringify(response.data, null, 2));
+        
+        // Transform RapidAPI response to match your existing interface
+        const data = response.data.data;
+        const firstName = data.firstName || '';
+        const lastName = data.lastName || '';
+        const fullName = `${firstName} ${lastName}`.trim();
+        
+        const transformedData: LinkedInProfileData = {
+          url: profileUrl,
+          fullName,
+          firstName,
+          lastName,
+          headline: data.headline || '',
+          location: data.geo?.full || '',
+          photoUrl: data.profilePicture || '',
+          description: data.summary || '',
+          followerCount: 0,
+          connectionCount: 0,
+          mutualConnectionsCount: 0,
+          experiences: data.position || data.fullPositions || [],
+          educations: data.educations || [],
+          skills: data.skills || [],
+          languages: data.languages || [],
+          certifications: data.certifications || []
         };
+
+        return transformedData;
 
       } catch (error) {
         lastError = error;
         this.logger.warn(`Attempt ${attempt} failed:`, error.message);
         
         if (attempt < this.apifyConfig.maxRetries) {
-          const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
+          const delay = Math.pow(2, attempt) * 1000;
           this.logger.debug(`Retrying in ${delay}ms...`);
           await this.sleep(delay);
         }

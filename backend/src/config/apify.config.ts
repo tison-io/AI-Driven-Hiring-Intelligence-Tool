@@ -5,24 +5,20 @@ import { ConfigService } from '@nestjs/config';
 export class ApifyConfig {
   constructor(private configService: ConfigService) {}
 
-  get token(): string {
-    return this.configService.get<string>('APIFY_TOKEN');
+  get rapidApiKey(): string {
+    return this.configService.get<string>('RAPIDAPI_KEY');
   }
 
   get baseUrl(): string {
-    return 'https://api.apify.com/v2';
-  }
-
-  get linkedinScraperActorId(): string {
-    return 'apimaestro~linkedin-profile-batch-scraper-no-cookies-required';
+    return 'https://linkdapi-best-unofficial-linkedin-api.p.rapidapi.com';
   }
 
   get linkedinScraperEndpoint(): string {
-    return `${this.baseUrl}/acts/${this.linkedinScraperActorId}/run-sync-get-dataset-items`;
+    return `${this.baseUrl}/api/v1/profile/full`;
   }
 
   get requestTimeout(): number {
-    return 30000; // 30 seconds
+    return 30000;
   }
 
   get maxRetries(): number {
