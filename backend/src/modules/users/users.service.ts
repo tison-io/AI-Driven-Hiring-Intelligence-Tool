@@ -38,4 +38,8 @@ export class UsersService {
   async updateProfile(id: string, updateData: any): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
+
+  async delete(id: string): Promise<void> {
+    await this.userModel.findByIdAndDelete(id).exec();
+  }
 }
