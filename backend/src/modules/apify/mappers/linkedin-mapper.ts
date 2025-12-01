@@ -8,20 +8,21 @@ import { LinkedInPublicDataDto, PublicExperienceDto, PublicEducationDto, PublicS
 export class LinkedInMapper {
   private readonly logger = new Logger(LinkedInMapper.name);
 
-  async transformToPublicData(profileData: LinkedInProfileData): Promise<LinkedInPublicDataDto | null> {
+  async transformToPublicData(profileData: any): Promise<LinkedInPublicDataDto | null> {
     try {
-      if (!profileData.fullName) {
+      const fullName = profileData.basic_info?.fullname || profileData.fullName;
+      if (!fullName) {
         this.logger.warn('Profile missing required fullName field');
         return null;
       }
 
       const publicData = {
-        fullName: profileData.fullName,
-        headline: profileData.headline || '',
-        location: profileData.location || '',
-        experiences: this.mapExperiences(profileData.experiences || []),
-        educations: this.mapEducations(profileData.educations || []),
-        skills: this.mapSkills(profileData.skills || [])
+        fullName,
+        headline: profileData.basic_info?.headline || profileData.headline || '',
+        location: profileData.basic_info?.location?.full || profileData.location || '',
+        experiences: this.mapExperiences(profileData.experience || profileData.experiences || []),
+        educations: this.mapEducations(profileData.education || profileData.educations || []),
+        skills: this.mapSkills(profileData.basic_info?.top_skills || profileData.skills || [])
       };
 
       const dto = plainToClass(LinkedInPublicDataDto, publicData);
@@ -39,7 +40,7 @@ export class LinkedInMapper {
     }
   }
 
-  async transformMultipleProfiles(profiles: LinkedInProfileData[]): Promise<LinkedInPublicDataDto[]> {
+  async transformMultipleProfiles(profiles: any[]): Promise<LinkedInPublicDataDto[]> {
     const results = await Promise.all(
       profiles.map(profile => this.transformToPublicData(profile))
     );
@@ -54,29 +55,30 @@ export class LinkedInMapper {
         title: exp.title,
         company: exp.company,
         location: exp.location || undefined,
-        startDate: exp.startDate || undefined,
-        endDate: exp.endDate || undefined,
+        startDate: exp.start_date ? `${exp.start_date.month} ${exp.start_date.year}` : exp.startDate || undefined,
+        endDate: exp.end_date ? `${exp.end_date.month} ${exp.end_date.year}` : (exp.is_current ? 'Present' : exp.endDate || undefined),
         description: exp.description || undefined
       }));
   }
 
   private mapEducations(educations: any[]): PublicEducationDto[] {
     return educations
-      .filter(edu => edu.schoolName)
+      .filter(edu => edu.school || edu.schoolName)
       .map(edu => ({
-        schoolName: edu.schoolName,
-        degree: edu.degree || undefined,
-        fieldOfStudy: edu.fieldOfStudy || undefined,
-        startDate: edu.startDate || undefined,
-        endDate: edu.endDate || undefined
+        schoolName: edu.school || edu.schoolName,
+        degree: edu.degree_name || edu.degree || undefined,
+        fieldOfStudy: edu.field_of_study || edu.fieldOfStudy || undefined,
+        startDate: edu.start_date?.year ? edu.start_date.year.toString() : edu.startDate || undefined,
+        endDate: edu.end_date?.year ? edu.end_date.year.toString() : edu.endDate || undefined
       }));
   }
 
   private mapSkills(skills: any[]): PublicSkillDto[] {
+    if (!Array.isArray(skills)) return [];
     return skills
-      .filter(skill => skill.name)
+      .filter(skill => typeof skill === 'string' || skill.name)
       .map(skill => ({
-        name: skill.name
+        name: typeof skill === 'string' ? skill : skill.name
       }));
   }
 }
