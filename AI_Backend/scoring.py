@@ -8,20 +8,15 @@ load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def score_candidate(candidate_data: dict, job_description: str, role_name: str):
+def score_candidate(candidate_data: dict, role_name: str):
     """
-    Compares candidate JSON against JD text
+    Compares candidate JSON against a given Job Role.
     """
     try:
         candidate_str=json.dumps(candidate_data)
 
         prompt = f"""
         Target Job Role: {role_name}
-
-        Target Job Description:
-        \"\"\"
-        {job_description}
-        \"\"\"
 
         Candidate Profile (JSON):
         \"\"\"

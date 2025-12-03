@@ -9,3 +9,4 @@ tiktoken
 pypdf
 mammoth
 python-multipart
+numpy

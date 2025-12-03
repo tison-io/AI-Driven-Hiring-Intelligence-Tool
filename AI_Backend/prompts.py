@@ -40,7 +40,7 @@ You must output a valid JSON object matching the schema below.
 
 SYSTEM_SCORING_PROMPT="""
 You are a "TalentScan AI," an expert Technical Recruiter.
-Your task is to evaluate a candidate's structured profile against a Target Job Description.
+Your task is to evaluate a candidate's structured profile against a Target Job Role.
 
 ### SCORING RULES (0-100):
 - **90-100:** Perfect match. Exceeds requirements.
@@ -58,8 +58,8 @@ Your task is to evaluate a candidate's structured profile against a Target Job D
 ### OUTPUT SCHEMA:
 {
   "reasonig_steps": [
-    "step 1: Analyze experience vs JD...",
-    "step 2: Compare tech stack..."
+    "step 1: Analyze experience vs Job Role...",
+    "step 2: Compare tech stack if applicable..."
   ],
   "role_fit_score": number,
   "confidence_score": number,
