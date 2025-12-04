@@ -9,7 +9,7 @@ import {
   ApiParam 
 } from '@nestjs/swagger';
 import { ExportService } from './export.service';
-import { CandidateFilterDto } from '../candidates/dto/candidate-filter.dto';
+import { ExportCandidatesDto } from './dto/export-candidates.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Export')
@@ -31,10 +31,10 @@ export class ExportController {
   @ApiResponse({ status: 400, description: 'Invalid export format' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async exportCandidates(
-    @Query('format') format: 'csv' | 'xlsx',
-    @Query() filters: CandidateFilterDto,
+    @Query() exportDto: ExportCandidatesDto,
     @Res() res: Response,
   ) {
+    const { format, ...filters } = exportDto;
     let buffer: Buffer;
     let filename: string;
     let contentType: string;
