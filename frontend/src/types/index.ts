@@ -1,6 +1,6 @@
 // User Types
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   role: 'admin' | 'recruiter';
   createdAt: string;
@@ -79,3 +79,14 @@ export interface AuthResponse {
   user: User;
   access_token: string;
 }
+
+// JWT Payload (what we get from decoded token)
+export interface JwtPayload {
+  id: string;  // Note: JWT uses 'id' but User uses '_id'
+  email: string;
+  role: 'admin' | 'recruiter';
+  sub: string;
+  iat?: number;
+  exp?: number;
+}
+
