@@ -50,7 +50,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { access_token } = await response.json();
       tokenStorage.set(access_token);
       const userData = tokenStorage.parseUser(access_token);
-      if (userData) setUser(userData);
+      if (userData) {
+        setUser(userData);
+        // Navigation will be handled by the component calling login
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginFormData {
@@ -10,6 +11,7 @@ interface LoginFormData {
 
 export default function LoginForm() {
   const { login, loading, error } = useAuth();
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -18,6 +20,7 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     await login(data.email, data.password);
+    router.push('/dashboard');
   };
 
   const isLoading = loading || isSubmitting;
