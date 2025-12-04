@@ -158,7 +158,7 @@ export class ApifyService {
 
 	// Validate LinkedIn URL format
 	private validateLinkedInUrl(url: string): void {
-		const linkedinRegex = /^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-]+\/?$/;
+		const linkedinRegex = /^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-]+\/?(?:\?.*)?$/;
 		if (!linkedinRegex.test(url)) {
 			throw new InvalidLinkedInUrlException(url);
 		}
@@ -166,7 +166,8 @@ export class ApifyService {
 
 	// Extract username from LinkedIn URL
 	private extractUsername(url: string): string {
-		const username = url.split("/in/")[1]?.replace("/", "") || "";
+		const match = url.match(/\/in\/([a-zA-Z0-9\-]+)/);
+		const username = match?.[1] || "";
 		if (!username) {
 			throw new InvalidLinkedInUrlException(url);
 		}
