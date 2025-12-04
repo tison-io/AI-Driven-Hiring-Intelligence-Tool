@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RegisterFormData {
@@ -24,19 +25,19 @@ export default function RegisterForm() {
   });
 
   const onSubmit = async (data: RegisterFormData) => {
-    await registerUser(data.email, data.password, data.role);
-    router.push('/dashboard');
+    try {
+      await registerUser(data.email, data.password, data.role);
+      toast.success('Account created successfully!');
+      router.push('/dashboard');
+    } catch (error) {
+      toast.error('Registration failed. Please try again.');
+    }
   };
 
   const isLoading = loading || isSubmitting;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       <div>
         <input

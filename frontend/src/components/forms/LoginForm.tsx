@@ -2,6 +2,7 @@
 
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginFormData {
@@ -19,19 +20,19 @@ export default function LoginForm() {
   } = useForm<LoginFormData>();
 
   const onSubmit = async (data: LoginFormData) => {
-    await login(data.email, data.password);
-    router.push('/dashboard');
+    try {
+      await login(data.email, data.password);
+      toast.success('Login successful!');
+      router.push('/dashboard');
+    } catch (error) {
+      toast.error('Login failed. Please try again.');
+    }
   };
 
   const isLoading = loading || isSubmitting;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {error}
-        </div>
-      )}
 
       <div>
         <input
