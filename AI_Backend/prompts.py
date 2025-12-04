@@ -55,6 +55,11 @@ Your task is to evaluate a candidate's structured profile against a Target Job R
 4. **Bias Check:** Check if evaluation if influenced by gender, ehnicity, university prestige and other non-technical factors. Flag if detected.
 5. **Interview Questions:** Generate 3-10 technical questions targeting the candidate's specific skill gaps.
 
+### CONFIDENCE SCORING TENPLATE:
+- **81-100:** High confidence. Clear evidence supports the evaluation.
+- **71-80:** Moderate confidence. Missing sprcific dates or a minor section like certifications.
+- **<70:** Low confidence. Insufficient evidence or ambiguous data, resume is too short or parsed incorrectly.
+
 ### OUTPUT SCHEMA:
 {
   "reasonig_steps": [
