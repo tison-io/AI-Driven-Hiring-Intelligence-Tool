@@ -1,7 +1,7 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RegisterFormData {
   email: string;

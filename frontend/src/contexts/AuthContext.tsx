@@ -1,20 +1,15 @@
 'use client';
 
-import { createContext, ReactNode, useState, useEffect } from 'react';
+import { createContext, ReactNode, useState, useEffect, useContext } from 'react';
 import { tokenStorage } from '../lib/auth';
-
-interface User {
-  _id: string;
-  email: string;
-  role: 'hr' | 'recruiter';
-}
+import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: 'hr' | 'recruiter') => Promise<void>;
+  register: (email: string, password: string, role: 'admin' | 'recruiter') => Promise<void>;
   logout: () => void;
 }
 
@@ -63,7 +58,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (email: string, password: string, role: 'hr' | 'recruiter') => {
+  const register = async (email: string, password: string, role: 'admin' | 'recruiter') => {
     try {
       setLoading(true);
       setError(null);
@@ -94,4 +89,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Custom hook to use auth context
+export function useAuth() {
+  const context = useContext(AuthContext);
+  
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  
+  return context;
 }
