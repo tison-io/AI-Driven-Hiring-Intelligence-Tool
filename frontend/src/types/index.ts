@@ -82,10 +82,9 @@ export interface AuthResponse {
 
 // JWT Payload (what we get from decoded token)
 export interface JwtPayload {
-  id: string;  // Note: JWT uses 'id' but User uses '_id'
   email: string;
+  sub: string;  // Contains the user._id
   role: 'admin' | 'recruiter';
-  sub: string;
   iat?: number;
   exp?: number;
 }
