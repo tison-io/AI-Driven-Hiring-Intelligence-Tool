@@ -17,6 +17,7 @@ import { ExportModule } from './modules/export/export.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AiModule } from './modules/ai/ai.module';
+import { PrivacyModule } from './modules/privacy/privacy.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AiModule } from './modules/ai/ai.module';
     DashboardModule,
     QueueModule,
     AiModule,
+    PrivacyModule,
   ],
 })
 export class AppModule {}

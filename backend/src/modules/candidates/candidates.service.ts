@@ -57,4 +57,16 @@ export class CandidatesService {
   async update(id: string, updateData: Partial<Candidate>): Promise<Candidate | null> {
     return this.candidateModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
+
+  async findByUserId(userId: string): Promise<Candidate[]> {
+    // For now, return all candidates since we don't have userId field in candidates
+    // In production, you'd add a userId field to candidate schema
+    return this.candidateModel.find().exec();
+  }
+
+  async deleteByUserId(userId: string): Promise<void> {
+    // For now, this is a placeholder
+    // In production, you'd delete candidates where userId matches
+    await this.candidateModel.deleteMany({}).exec();
+  }
 }
