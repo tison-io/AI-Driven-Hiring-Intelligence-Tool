@@ -16,22 +16,22 @@ You must output a valid JSON object matching the schema below.
 2. **PII Readaction:** You must identify if the input text contains explicit PII like phone, email, and address. If found DO NOT output the values. Set 'contact_info_redacted' to true.
 3. **Experience:** If specific dates are missing, estimate duration based on context or leave null.
 4. **Skills:** Extract skills listed in a "Skills" section, BUT ALSO infer technical skills mentioned in the work experience descriptions.
-5. **Validation:** If the resume text is too short or gibberish, return 'is_valid_resume: false'.
+5. **Validation:** Always try to extract data. Only return 'is_valid_resume: false' if the text is completely empty or clearly not a resume (like random characters).
 
 ### OUTPUT SCHEMA:
 {
-  "is_valide_resume": boolean,
+  "is_valid_resume": boolean,
   "candidate_name": "string (or 'Anonymous')",
   "contact_info_redacted": boolean,
-  "summary: "string",
+  "summary": "string",
   "total_years_experience": number,
   "skills": ["string", "string"],
-  "work _experience": [
+  "work_experience": [
     {
     "company": "string",
     "job_title": "string",
     "start_date": "YYYY-MM",
-    "end_date": YYYY-MM",
+    "end_date": "YYYY-MM",
     "description": "string (summarized bullet points)",
     "technologies_used": ["string"]
     }
