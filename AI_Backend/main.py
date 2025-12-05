@@ -21,6 +21,9 @@ def health_check():
     return {"status": "AI Backend is running"}
 
 
+class TextRequest(BaseModel):
+    text: str
+
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
     """
@@ -53,6 +56,21 @@ async def parse_resume(file: UploadFile = File(...)):
         "data": structures_data,
     }
 
+@app.post("/parse-text")
+def parse_text(request: TextRequest):
+    """
+    Accepts raw text and returns structured data.
+    """
+    if not request.text:
+        raise HTTPException(status_code=400, detail="No text provided.")
+
+    structures_data = extract_resume_data(request.text)
+    
+    return {
+        "processed": True,
+        "content_length": len(request.text),
+        "data": structures_data
+    }
 
 @app.post("/score")
 def calculate_score(request: ScoreRequest):

@@ -8,6 +8,12 @@ import {
 } from "./interfaces/linkedin-response.interface";
 import { firstValueFrom } from "rxjs";
 import { AxiosResponse } from "axios";
+import {
+	RapidApiException,
+	RateLimitExceededException,
+	InvalidLinkedInUrlException,
+	ProfileNotFoundException,
+} from "./exceptions/linkedin-scraper.exceptions";
 
 @Injectable()
 export class ApifyService {
@@ -74,14 +80,14 @@ export class ApifyService {
 			attempt++
 		) {
 			try {
-				this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+					this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+				this.logger.debug(`Using API key: ${this.apifyConfig.rapidApiKey?.substring(0, 10)}...`);
+				this.logger.debug(`Endpoint: ${this.apifyConfig.linkedinScraperEndpoint}`);
 
-				// Extract username from LinkedIn URL
-				const username =
-					profileUrl.split("/in/")[1]?.replace("/", "") || "";
-				if (!username) {
-					throw new Error("Invalid LinkedIn URL format");
-				}
+				// Validate and extract username from LinkedIn URL
+				this.validateLinkedInUrl(profileUrl);
+				const username = this.extractUsername(profileUrl);
+				this.logger.debug(`Extracted username: ${username}`);
 
 				const response: AxiosResponse = await firstValueFrom(
 					this.httpService.get(
@@ -98,7 +104,10 @@ export class ApifyService {
 					JSON.stringify(response.data, null, 2)
 				);
 
-				// Transform RapidAPI response to match your existing interface
+				// Handle API response errors
+				this.handleApiResponse(response.data, profileUrl);
+
+				// Transform RapidAPI response to match existing interface
 				const data = response.data.data;
 				const firstName = data.firstName || "";
 				const lastName = data.lastName || "";
@@ -128,9 +137,20 @@ export class ApifyService {
 				lastError = error;
 				this.logger.warn(`Attempt ${attempt} failed:`, error.message);
 
+				// Don't retry for certain error types
+				if (error.response?.status === 403) {
+					throw new HttpException('LinkedIn API access forbidden', HttpStatus.FORBIDDEN);
+				}
+				if (error.response?.status === 429) {
+					throw new RateLimitExceededException();
+				}
+
 				if (attempt < this.apifyConfig.maxRetries) {
-					const delay = Math.pow(2, attempt) * 1000;
-					this.logger.debug(`Retrying in ${delay}ms...`);
+					// Exponential backoff with jitter
+					const baseDelay = Math.pow(2, attempt) * 1000;
+					const jitter = Math.random() * 1000;
+					const delay = baseDelay + jitter;
+					this.logger.debug(`Retrying in ${Math.round(delay)}ms...`);
 					await this.sleep(delay);
 				}
 			}
@@ -142,7 +162,45 @@ export class ApifyService {
 		);
 	}
 
+	// Validate LinkedIn URL format
+	private validateLinkedInUrl(url: string): void {
+		const linkedinRegex = /^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9\-]+\/?(?:\?.*)?$/;
+		if (!linkedinRegex.test(url)) {
+			throw new InvalidLinkedInUrlException(url);
+		}
+	}
+
+	// Extract username from LinkedIn URL
+	private extractUsername(url: string): string {
+		const match = url.match(/\/in\/([a-zA-Z0-9\-]+)/);
+		const username = match?.[1] || "";
+		if (!username) {
+			throw new InvalidLinkedInUrlException(url);
+		}
+		return username;
+	}
+
+	// Handle API response and check for errors
+	private handleApiResponse(responseData: any, profileUrl: string): void {
+		if (responseData.success === false) {
+			if (responseData.message?.includes('rate limit')) {
+				throw new RateLimitExceededException();
+			}
+			if (responseData.message?.includes('not found')) {
+				throw new ProfileNotFoundException(profileUrl);
+			}
+			throw new RapidApiException(responseData.message || 'API request failed');
+		}
+
+		// Check if profile data exists
+		if (!responseData.data) {
+			throw new ProfileNotFoundException(profileUrl);
+		}
+	}
+
 	private sleep(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
+
+
 }
