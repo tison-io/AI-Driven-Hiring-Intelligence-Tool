@@ -80,11 +80,14 @@ export class ApifyService {
 			attempt++
 		) {
 			try {
-				this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+					this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+				this.logger.debug(`Using API key: ${this.apifyConfig.rapidApiKey?.substring(0, 10)}...`);
+				this.logger.debug(`Endpoint: ${this.apifyConfig.linkedinScraperEndpoint}`);
 
 				// Validate and extract username from LinkedIn URL
 				this.validateLinkedInUrl(profileUrl);
 				const username = this.extractUsername(profileUrl);
+				this.logger.debug(`Extracted username: ${username}`);
 
 				const response: AxiosResponse = await firstValueFrom(
 					this.httpService.get(
