@@ -58,7 +58,7 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       await registerUser(formData.email, formData.password);
-      router.push('/dashboard');
+      router.push('/complete-profile');
     } catch (error) {
       console.error('Registration failed:', error);
     } finally {
