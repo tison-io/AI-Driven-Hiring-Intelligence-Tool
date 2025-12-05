@@ -134,11 +134,12 @@ export class ApifyService {
 				lastError = error;
 				this.logger.warn(`Attempt ${attempt} failed:`, error.message);
 
-				// Check for 403 Forbidden or 429 Rate Limit - use mock data
-				if (error.response?.status === 403 || error.response?.status === 429) {
-					const errorType = error.response?.status === 403 ? 'API access forbidden' : 'Rate limit exceeded';
-					this.logger.warn(`${errorType}, falling back to mock data`);
-					return this.generateMockLinkedInData(profileUrl);
+				// Don't retry for certain error types
+				if (error.response?.status === 403) {
+					throw new HttpException('LinkedIn API access forbidden', HttpStatus.FORBIDDEN);
+				}
+				if (error.response?.status === 429) {
+					throw new RateLimitExceededException();
 				}
 
 				if (attempt < this.apifyConfig.maxRetries) {
@@ -150,13 +151,6 @@ export class ApifyService {
 					await this.sleep(delay);
 				}
 			}
-		}
-
-		// Final fallback for 403/429 errors
-		if (lastError?.response?.status === 403 || lastError?.response?.status === 429) {
-			const errorType = lastError?.response?.status === 403 ? 'API access forbidden' : 'rate limiting';
-			this.logger.warn(`All attempts failed due to ${errorType}, using mock data`);
-			return this.generateMockLinkedInData(profileUrl);
 		}
 
 		throw new HttpException(
@@ -205,39 +199,5 @@ export class ApifyService {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
-	private generateMockLinkedInData(profileUrl: string): LinkedInProfileData {
-		const username = profileUrl.split('/in/')[1]?.replace('/', '') || 'unknown';
-		
-		return {
-			url: profileUrl,
-			fullName: `Mock User (${username})`,
-			firstName: 'Mock',
-			lastName: 'User',
-			headline: 'Software Engineer | Full Stack Developer',
-			location: 'San Francisco, CA',
-			photoUrl: '',
-			description: `Mock LinkedIn profile data for ${username}. API access forbidden - using placeholder data.`,
-			followerCount: Math.floor(Math.random() * 1000) + 500,
-			connectionCount: Math.floor(Math.random() * 500) + 100,
-			mutualConnectionsCount: Math.floor(Math.random() * 50),
-			experiences: [
-				{
-					title: 'Senior Software Engineer',
-					company: 'Tech Company',
-					duration: '2+ years',
-					description: 'Full stack development with React and Node.js'
-				}
-			],
-			educations: [
-				{
-					school: 'University of Technology',
-					degree: 'Bachelor of Computer Science',
-					year: '2020'
-				}
-			],
-			skills: ['JavaScript', 'React', 'Node.js', 'Python', 'SQL'],
-			languages: ['English'],
-			certifications: []
-		};
-	}
+
 }
