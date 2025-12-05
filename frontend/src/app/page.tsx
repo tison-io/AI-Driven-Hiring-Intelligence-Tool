@@ -1,4 +1,4 @@
-import Sidebar from "@/components/layout/Sidebar";
+'use client'
 
 export default function HomePage() {
   return (
@@ -25,7 +25,7 @@ export default function HomePage() {
           </a>
         </div>
       </div>
-      {/* <Sidebar/> */}
+      
     </div>
   )
 }
