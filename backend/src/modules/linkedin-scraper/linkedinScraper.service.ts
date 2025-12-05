@@ -80,11 +80,14 @@ export class ApifyService {
 			attempt++
 		) {
 			try {
-				this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+					this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+				this.logger.debug(`Using API key: ${this.apifyConfig.rapidApiKey?.substring(0, 10)}...`);
+				this.logger.debug(`Endpoint: ${this.apifyConfig.linkedinScraperEndpoint}`);
 
 				// Validate and extract username from LinkedIn URL
 				this.validateLinkedInUrl(profileUrl);
 				const username = this.extractUsername(profileUrl);
+				this.logger.debug(`Extracted username: ${username}`);
 
 				const response: AxiosResponse = await firstValueFrom(
 					this.httpService.get(
@@ -135,8 +138,11 @@ export class ApifyService {
 				this.logger.warn(`Attempt ${attempt} failed:`, error.message);
 
 				// Don't retry for certain error types
-				if (this.shouldNotRetry(error)) {
-					throw error;
+				if (error.response?.status === 403) {
+					throw new HttpException('LinkedIn API access forbidden', HttpStatus.FORBIDDEN);
+				}
+				if (error.response?.status === 429) {
+					throw new RateLimitExceededException();
 				}
 
 				if (attempt < this.apifyConfig.maxRetries) {
@@ -192,16 +198,9 @@ export class ApifyService {
 		}
 	}
 
-	// Determine if error should not be retried
-	private shouldNotRetry(error: any): boolean {
-		return (
-			error instanceof InvalidLinkedInUrlException ||
-			error instanceof ProfileNotFoundException ||
-			(error instanceof RapidApiException && error.getStatus() === HttpStatus.BAD_REQUEST)
-		);
-	}
-
 	private sleep(ms: number): Promise<void> {
 		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
+
+
 }

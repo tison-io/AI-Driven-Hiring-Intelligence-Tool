@@ -1,55 +1,143 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import * as FormData from 'form-data';
 
 @Injectable()
 export class AiService {
-  constructor(private configService: ConfigService) {}
+  private readonly logger = new Logger(AiService.name);
+  private readonly aiServiceUrl: string;
+
+  constructor(private configService: ConfigService) {
+    this.aiServiceUrl = this.configService.get('AI_SERVICE_URL', 'http://localhost:8000');
+  }
 
   async evaluateCandidate(rawText: string, jobRole: string) {
-    // Placeholder for AI service integration
-    // This will be replaced with actual AI service calls
+    try {
+      this.logger.log('Starting AI evaluation for candidate');
+      
+      // Step 1: Extract structured data from raw text
+      const extractedData = await this.extractCandidateData(rawText);
+      
+      if (extractedData.is_valid_resume === false) {
+        this.logger.warn('AI marked resume as invalid, falling back to mock data');
+        return this.getMockResponse();
+      }
+
+      // Step 2: Score candidate against job role
+      const scoringResult = await this.scoreCandidateData(extractedData, jobRole);
+
+      // Step 3: Transform to backend format
+      return this.transformAiResponse(extractedData, scoringResult);
+      
+    } catch (error) {
+      this.logger.error('AI evaluation failed', error.stack);
+      
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      // Fallback to mock data if AI service fails
+      this.logger.warn('Falling back to mock AI response');
+      return this.getMockResponse();
+    }
+  }
+
+  private async extractCandidateData(rawText: string) {
+    const response = await axios.post(`${this.aiServiceUrl}/parse-text`, {
+      text: rawText
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+
+    return response.data.data;
+  }
+
+  private async scoreCandidateData(candidateData: any, jobRole: string) {
+    const jobDescription = this.getJobDescription(jobRole);
     
-    const mockAiResponse = {
-      name: 'John Doe', // Extracted from text
-      roleFitScore: Math.floor(Math.random() * 40) + 60, // 60-100
-      keyStrengths: [
-        'Strong technical background',
-        'Good communication skills',
-        'Relevant experience'
-      ],
-      potentialWeaknesses: [
-        'Limited leadership experience',
-        'Could improve in specific technology'
-      ],
-      missingSkills: [
-        'Docker',
-        'Kubernetes'
-      ],
-      interviewQuestions: [
-        'Tell me about your experience with microservices',
-        'How do you handle code reviews?',
-        'Describe a challenging project you worked on'
-      ],
-      confidenceScore: Math.floor(Math.random() * 20) + 80, // 80-100
-      biasCheck: 'No significant bias detected in evaluation',
-      skills: ['JavaScript', 'Node.js', 'React', 'MongoDB'],
-      experienceYears: Math.floor(Math.random() * 10) + 2, // 2-12 years
+    const response = await axios.post(`${this.aiServiceUrl}/score`, {
+      candidate_data: candidateData,
+      job_description: jobDescription,
+      role_name: jobRole
+    }, {
+      timeout: 30000
+    });
+
+    return response.data;
+  }
+
+  private transformAiResponse(extractedData: any, scoringResult: any) {
+    return {
+      name: extractedData.candidate_name || 'Anonymous',
+      roleFitScore: scoringResult.role_fit_score || 0,
+      keyStrengths: scoringResult.key_strengths?.map((s: any) => 
+        typeof s === 'string' ? s : s.strength
+      ) || [],
+      potentialWeaknesses: scoringResult.potential_weaknesses?.map((w: any) => 
+        typeof w === 'string' ? w : w.weakness
+      ) || [],
+      missingSkills: scoringResult.missing_skills || [],
+      interviewQuestions: scoringResult.recommended_interview_questions || [],
+      confidenceScore: scoringResult.confidence_score || 0,
+      biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
+      skills: extractedData.skills || [],
+      experienceYears: extractedData.total_years_experience || 0,
+      education: extractedData.education || [],
+      certifications: extractedData.certifications || []
     };
+  }
 
-    // Simulate AI processing delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+  private formatBiasCheck(biasFlag: any): string {
+    if (!biasFlag) return 'No bias analysis available';
+    
+    if (biasFlag.detected) {
+      return `Potential bias detected: ${biasFlag.flags?.join(', ') || 'Unknown bias factors'}`;
+    }
+    
+    return 'No significant bias detected in evaluation';
+  }
 
-    return mockAiResponse;
+  private getJobDescription(jobRole: string): string {
+    // Basic job descriptions - in production, fetch from database
+    const jobDescriptions = {
+      'Backend Engineer': 'Develop server-side applications using Node.js, Python, or Java. Experience with databases, APIs, and cloud services required.',
+      'Frontend Developer': 'Build user interfaces using React, Vue, or Angular. Strong HTML, CSS, JavaScript skills required.',
+      'Full Stack Developer': 'Work on both frontend and backend development. Experience with modern web frameworks and databases.',
+      'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
+      'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.'
+    };
+    
+    return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
+  }
+
+  private getMockResponse() {
+    return {
+      name: 'John Doe',
+      roleFitScore: Math.floor(Math.random() * 40) + 60,
+      keyStrengths: ['Strong technical background', 'Good communication skills'],
+      potentialWeaknesses: ['Limited leadership experience'],
+      missingSkills: ['Docker', 'Kubernetes'],
+      interviewQuestions: ['Tell me about your experience with microservices'],
+      confidenceScore: Math.floor(Math.random() * 20) + 80,
+      biasCheck: 'AI service unavailable - mock evaluation used',
+      skills: ['JavaScript', 'Node.js', 'React'],
+      experienceYears: Math.floor(Math.random() * 10) + 2,
+      education: [],
+      certifications: []
+    };
   }
 
   async extractSkills(rawText: string): Promise<string[]> {
-    // Placeholder for skill extraction
-    const commonSkills = [
-      'JavaScript', 'Python', 'Java', 'React', 'Node.js', 
-      'MongoDB', 'PostgreSQL', 'Docker', 'AWS', 'Git'
-    ];
-    
-    return commonSkills.filter(() => Math.random() > 0.7);
+    try {
+      const extractedData = await this.extractCandidateData(rawText);
+      return extractedData.skills || [];
+    } catch (error) {
+      this.logger.error('Skill extraction failed', error.stack);
+      return ['JavaScript', 'Python', 'React'].filter(() => Math.random() > 0.7);
+    }
   }
 }
