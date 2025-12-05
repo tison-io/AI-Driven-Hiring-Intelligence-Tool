@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, role: 'admin' | 'recruiter') => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -61,14 +61,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const register = async (email: string, password: string, role: 'admin' | 'recruiter') => {
+  const register = async (email: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, role })
+        body: JSON.stringify({ email, password })
       });
       
       if (!response.ok) throw new Error('Registration failed');

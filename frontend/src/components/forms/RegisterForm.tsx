@@ -1,117 +1,151 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
+import Link from 'next/link';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface RegisterFormData {
   email: string;
   password: string;
-  role: 'admin' | 'recruiter';
+  agreeToTerms: boolean;
 }
 
 export default function RegisterForm() {
-  const { register: registerUser, loading, error } = useAuth();
-  const router = useRouter();
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting }
-  } = useForm<RegisterFormData>({
-    defaultValues: {
-      role: 'recruiter'
-    }
+  const [formData, setFormData] = useState<RegisterFormData>({
+    email: '',
+    password: '',
+    agreeToTerms: false
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { register: registerUser } = useAuth();
+  const router = useRouter();
 
-  const onSubmit = async (data: RegisterFormData) => {
+  const validateForm = () => {
+    const newErrors: Partial<RegisterFormData> = {};
+    
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(formData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
+      newErrors.password = 'Password must contain uppercase, lowercase, number and special character';
+    }
+    
+    if (!formData.agreeToTerms) {
+      newErrors.agreeToTerms = 'You must agree to the terms';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
     try {
-      await registerUser(data.email, data.password, data.role);
-      toast.success('Account created successfully!');
+      await registerUser(formData.email, formData.password);
       router.push('/dashboard');
     } catch (error) {
-      toast.error('Registration failed. Please try again.');
+      console.error('Registration failed:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const isLoading = loading || isSubmitting;
-
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900 mb-8">Create Your Account</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Work Email</label>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled={isLoading}
+          />
+          {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+        </div>
 
-      <div>
-        <input
-          {...register('email', {
-            required: 'Email is required',
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: 'Invalid email address'
-            }
-          })}
-          type="email"
-          placeholder="Email"
-          disabled={isLoading}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
-        />
-        {errors.email && (
-          <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-        )}
-      </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? (
+                <EyeSlashIcon className="h-5 w-5" />
+              ) : (
+                <EyeIcon className="h-5 w-5" />
+              )}
+            </button>
+          </div>
+          {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
+        </div>
 
-      <div>
-        <input
-          {...register('password', {
-            required: 'Password is required',
-            minLength: {
-              value: 8,
-              message: 'Password must be at least 8 characters long'
-            },
-            pattern: {
-              value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-              message: 'Password must contain uppercase, lowercase, number and special character'
-            }
-          })}
-          type="password"
-          placeholder="Password"
-          disabled={isLoading}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
-        />
-        {errors.password && (
-          <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
-        )}
-      </div>
+        <div>
+          <label className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              checked={formData.agreeToTerms}
+              onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })}
+              className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              disabled={isLoading}
+            />
+            <span className="text-sm text-gray-700">
+              I agree to the{' '}
+              <Link href="/terms" className="text-[#6366F1] hover:underline">
+                Terms of Service
+              </Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="text-[#6366F1] hover:underline">
+                Privacy Policy
+              </Link>
+            </span>
+          </label>
+          {errors.agreeToTerms && <p className="text-red-500 text-sm mt-1">{errors.agreeToTerms}</p>}
+        </div>
 
-      <div>
-        <select
-          {...register('role', { required: 'Role is required' })}
+        <button
+          type="submit"
           disabled={isLoading}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
+          className="w-full py-3 px-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
-          <option value="recruiter">Recruiter</option>
-          <option value="admin">Admin</option>
-        </select>
-        {errors.role && (
-          <p className="text-red-500 text-sm mt-1">{errors.role.message}</p>
-        )}
-      </div>
+          {isLoading ? 'Creating Account...' : 'Sign Up'}
+        </button>
+      </form>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full bg-green-600 text-white p-3 rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
-      >
-        {isLoading ? (
-          <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Creating account...
-          </>
-        ) : (
-          'Register'
-        )}
-      </button>
-    </form>
+      <p className="text-center text-sm text-gray-600">
+        Already have an account?{' '}
+        <Link href="/auth/login" className="text-[#6366F1] hover:underline font-medium">
+          Sign In
+        </Link>
+      </p>
+    </div>
   );
 }
