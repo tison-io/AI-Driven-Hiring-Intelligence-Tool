@@ -76,4 +76,20 @@ export class AuthService {
     const { password, ...result } = user;
     return result;
   }
+
+  async completeProfile(userId: string, profileData: any, userPhoto?: string, companyLogo?: string) {
+    const updateData = {
+      ...profileData,
+      ...(userPhoto && { userPhoto }),
+      ...(companyLogo && { companyLogo })
+    };
+
+    const user = await this.usersService.completeProfile(userId, updateData);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const { password, ...result } = user;
+    return result;
+  }
 }

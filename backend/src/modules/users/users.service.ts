@@ -53,6 +53,14 @@ export class UsersService {
     return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
 
+  async completeProfile(id: string, profileData: any): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      id, 
+      { ...profileData, profileCompleted: true }, 
+      { new: true }
+    ).exec();
+  }
+
   async delete(id: string): Promise<void> {
     await this.userModel.findByIdAndDelete(id).exec();
   }
