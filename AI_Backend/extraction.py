@@ -2,6 +2,7 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from prompts import SYSTEM_EXTRACTION_PROMPT
 
 load_dotenv()
 
@@ -65,7 +66,18 @@ def extract_resume_data(raw_text: str):
             temperature=0.0
         )
 
-        return json.loads(response.choices[0].message.content)
+        data = json.loads(response.choices[0].message.content)
+
+        all_skills = []
+        if "extracted skills" in data:
+            for category in data["extracted skills"].values():
+                if isinstance(category, list):
+                    all_skills.extend(category)
+
+        data["flat_skills_list"] = list(set(all_skills))
+
+        return data
+            
 
     except Exception as e:
         print(f"LLM Extraction Error: {e}")
