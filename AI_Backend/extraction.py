@@ -2,6 +2,7 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from prompts import SYSTEM_EXTRACTION_PROMPT
 
 load_dotenv()
 
@@ -16,22 +17,22 @@ You must output a valid JSON object matching the schema below.
 2. **PII Readaction:** You must identify if the input text contains explicit PII like phone, email, and address. If found DO NOT output the values. Set 'contact_info_redacted' to true.
 3. **Experience:** If specific dates are missing, estimate duration based on context or leave null.
 4. **Skills:** Extract skills listed in a "Skills" section, BUT ALSO infer technical skills mentioned in the work experience descriptions.
-5. **Validation:** If the resume text is too short or gibberish, return 'is_valid_resume: false'.
+5. **Validation:** Always try to extract data. Only return 'is_valid_resume: false' if the text is completely empty or clearly not a resume (like random characters).
 
 ### OUTPUT SCHEMA:
 {
-  "is_valide_resume": boolean,
+  "is_valid_resume": boolean,
   "candidate_name": "string (or 'Anonymous')",
   "contact_info_redacted": boolean,
-  "summary: "string",
+  "summary": "string",
   "total_years_experience": number,
   "skills": ["string", "string"],
-  "work _experience": [
+  "work_experience": [
     {
     "company": "string",
     "job_title": "string",
     "start_date": "YYYY-MM",
-    "end_date": YYYY-MM",
+    "end_date": "YYYY-MM",
     "description": "string (summarized bullet points)",
     "technologies_used": ["string"]
     }
@@ -65,7 +66,18 @@ def extract_resume_data(raw_text: str):
             temperature=0.0
         )
 
-        return json.loads(response.choices[0].message.content)
+        data = json.loads(response.choices[0].message.content)
+
+        all_skills = []
+        if "extracted skills" in data:
+            for category in data["extracted skills"].values():
+                if isinstance(category, list):
+                    all_skills.extend(category)
+
+        data["flat_skills_list"] = list(set(all_skills))
+
+        return data
+            
 
     except Exception as e:
         print(f"LLM Extraction Error: {e}")
