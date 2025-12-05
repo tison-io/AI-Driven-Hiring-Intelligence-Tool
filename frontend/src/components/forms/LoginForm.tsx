@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import Link from 'next/link';
 
 interface LoginFormData {
   email: string;
@@ -32,9 +33,11 @@ export default function LoginForm() {
   const isLoading = loading || isSubmitting;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Work Email
+        </label>
         <input
           {...register('email', {
             required: 'Email is required',
@@ -44,9 +47,8 @@ export default function LoginForm() {
             }
           })}
           type="email"
-          placeholder="Email"
           disabled={isLoading}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
         />
         {errors.email && (
           <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
@@ -54,6 +56,9 @@ export default function LoginForm() {
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Password
+        </label>
         <input
           {...register('password', {
             required: 'Password is required',
@@ -63,19 +68,24 @@ export default function LoginForm() {
             }
           })}
           type="password"
-          placeholder="Password"
           disabled={isLoading}
-          className="w-full p-3 border rounded-lg disabled:opacity-50"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
         />
         {errors.password && (
           <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
         )}
       </div>
 
+      <div className="flex justify-end">
+        <Link href="/auth/forgot-password" className="text-sm text-[#4F46E5] hover:underline">
+          Forgot password?
+        </Link>
+      </div>
+
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center"
+        className="w-full bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center font-medium"
       >
         {isLoading ? (
           <>
@@ -89,6 +99,15 @@ export default function LoginForm() {
           'Login'
         )}
       </button>
+
+      <div className="text-center">
+        <p className="text-sm text-gray-600">
+          Don't have an account?{' '}
+          <Link href="/auth/register" className="text-[#4F46E5] hover:underline">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </form>
   );
 }
