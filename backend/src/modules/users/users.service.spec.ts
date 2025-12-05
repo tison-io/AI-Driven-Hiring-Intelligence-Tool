@@ -65,7 +65,6 @@ describe('UsersService', () => {
     const registerDto: RegisterDto = {
       email: 'test@example.com',
       password: 'SecurePass123!',
-      role: UserRole.RECRUITER,
     };
 
     it('should successfully create a new user', async () => {
@@ -80,7 +79,7 @@ describe('UsersService', () => {
       expect(mockUserModel).toHaveBeenCalledWith({
         email: registerDto.email,
         password: '$2b$10$hashedPassword',
-        role: registerDto.role,
+        role: UserRole.RECRUITER,
       });
       expect(result).toBeDefined();
     });
@@ -100,7 +99,7 @@ describe('UsersService', () => {
       expect(mockUserModel).toHaveBeenCalledWith({
         email: registerDtoWithoutRole.email,
         password: '$2b$10$hashedPassword',
-        role: undefined,
+        role: UserRole.RECRUITER,
       });
     });
 

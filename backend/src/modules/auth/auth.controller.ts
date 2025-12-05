@@ -13,8 +13,8 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully registered' })
+  @ApiOperation({ summary: 'Register a new recruiter user' })
+  @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
