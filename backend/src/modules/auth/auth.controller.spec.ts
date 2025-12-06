@@ -52,7 +52,6 @@ describe('AuthController', () => {
     const registerDto: RegisterDto = {
       email: 'test@example.com',
       password: 'SecurePass123!',
-      role: UserRole.RECRUITER,
     };
 
     it('should successfully register a new user', async () => {

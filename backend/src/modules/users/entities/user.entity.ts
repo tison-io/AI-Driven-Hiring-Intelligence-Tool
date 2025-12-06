@@ -16,6 +16,24 @@ export class User {
 
   @Prop({ enum: UserRole, default: UserRole.RECRUITER })
   role: UserRole;
+
+  @Prop()
+  fullName?: string;
+
+  @Prop()
+  jobTitle?: string;
+
+  @Prop()
+  companyName?: string;
+
+  @Prop()
+  userPhoto?: string;
+
+  @Prop()
+  companyLogo?: string;
+
+  @Prop({ default: false })
+  profileCompleted?: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

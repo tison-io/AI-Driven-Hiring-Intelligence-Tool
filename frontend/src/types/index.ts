@@ -1,8 +1,9 @@
 // User Types
 export interface User {
-  id: string;
+  _id: string;
   email: string;
   role: 'admin' | 'recruiter';
+  profileCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -79,3 +80,14 @@ export interface AuthResponse {
   user: User;
   access_token: string;
 }
+
+// JWT Payload (what we get from decoded token)
+export interface JwtPayload {
+  email: string;
+  sub: string;  // Contains the user._id
+  role: 'admin' | 'recruiter';
+  profileCompleted?: boolean;
+  iat?: number;
+  exp?: number;
+}
+

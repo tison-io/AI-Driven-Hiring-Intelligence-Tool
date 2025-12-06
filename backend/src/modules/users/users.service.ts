@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { UserRole } from '../../common/enums/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -18,6 +19,20 @@ export class UsersService {
     const user = new this.userModel({
       ...registerDto,
       password: hashedPassword,
+      role: UserRole.RECRUITER,
+    });
+    
+    return user.save();
+  }
+
+  async createAdmin(email: string, password: string): Promise<User> {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = new this.userModel({
+      email,
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+      profileCompleted: true,
     });
     
     return user.save();
@@ -37,6 +52,14 @@ export class UsersService {
 
   async updateProfile(id: string, updateData: any): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  }
+
+  async completeProfile(id: string, profileData: any): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      id, 
+      { ...profileData, profileCompleted: true }, 
+      { new: true }
+    ).exec();
   }
 
   async delete(id: string): Promise<void> {

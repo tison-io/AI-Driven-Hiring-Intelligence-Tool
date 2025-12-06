@@ -1,47 +1,35 @@
+import RegisterForm from '@/components/forms/RegisterForm';
+import PublicRoute from '@/components/auth/PublicRoute';
+import Image from 'next/image';
+
 export default function RegisterPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
+    <PublicRoute>
+      <div className="min-h-screen flex">
+        {/* Left Side */}
+        <div className="flex-1 bg-gradient-to-b from-[#0A1628] to-[#1A2B42] flex flex-col items-center justify-center px-12">
+          <Image
+            src="/images/logo.png"
+            alt="Hiring Intelligence"
+            width={200}
+            height={200}
+            className="rounded-[75px] mb-8"
+          />
+          <h1 className="text-white text-4xl font-medium text-center mb-4">
+            The Future of Unbiased Hiring
+          </h1>
+          <p className="text-white text-center text-lg opacity-90 max-w-md">
+            Get started in seconds and revolutionize your recruitment process with AI-powered candidate evaluation.
+          </p>
         </div>
-        <form className="mt-8 space-y-6">
-          <div>
-            <input
-              name="email"
-              type="email"
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Email address"
-            />
+
+        {/* Right Side */}
+        <div className="flex-1 bg-white flex items-center justify-center px-12">
+          <div className="w-full max-w-md">
+            <RegisterForm />
           </div>
-          <div>
-            <input
-              name="password"
-              type="password"
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Password"
-            />
-          </div>
-          <div>
-            <select className="relative block w-full px-3 py-2 border border-gray-300 rounded-md">
-              <option value="recruiter">Recruiter</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Register
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </PublicRoute>
   )
 }

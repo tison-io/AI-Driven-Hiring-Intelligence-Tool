@@ -1,49 +1,41 @@
+import LoginForm from '@/components/forms/LoginForm';
+import PublicRoute from '@/components/auth/PublicRoute';
+import Image from 'next/image';
+
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
+    <PublicRoute>
+      <div className="min-h-screen flex">
+        {/* Left Side */}
+        <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] items-center justify-center p-12">
+          <div className="text-center text-white max-w-md">
+            <div className="mb-8">
+              <Image
+                src="/images/logo.png"
+                alt="Hiring Intelligence"
+                width={200}
+                height={200}
+                className="mx-auto rounded-[75px]"
+              />
+            </div>
+            <h1 className="text-3xl mb-4">Welcome Back.</h1>
+            <h1 className="text-3xl mb-6">Let's Find Your Next Great Hire.</h1>
+            <p className="text-gray-300 leading-relaxed">
+              Access your candidate pipeline, review AI-driven insights, and continue building your dream team.
+            </p>
+          </div>
         </div>
-        <form className="mt-8 space-y-6">
-          <div>
-            <label htmlFor="email" className="sr-only">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Email address"
-            />
+
+        {/* Right Side */}
+        <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-8">
+          <div className="max-w-md w-full">
+            <h2 className="text-2xl font-medium text-gray-900 mb-8">
+              Log In to Your Account
+            </h2>
+            <LoginForm />
           </div>
-          <div>
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="Password"
-            />
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Sign in
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
+    </PublicRoute>
   )
 }

@@ -22,7 +22,7 @@ export class AuthService {
     const user = await this.usersService.create(registerDto);
     const { password, ...result } = user;
     
-    const payload = { email: user.email, sub: user._id, role: user.role };
+    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
     return {
       user: result,
@@ -38,7 +38,7 @@ export class AuthService {
     }
 
     const { password, ...result } = user;
-    const payload = { email: user.email, sub: user._id, role: user.role };
+    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
     return {
       user: result,
@@ -69,6 +69,22 @@ export class AuthService {
 
   async getProfile(userId: string) {
     const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const { password, ...result } = user;
+    return result;
+  }
+
+  async completeProfile(userId: string, profileData: any, userPhoto?: string, companyLogo?: string) {
+    const updateData = {
+      ...profileData,
+      ...(userPhoto && { userPhoto }),
+      ...(companyLogo && { companyLogo })
+    };
+
+    const user = await this.usersService.completeProfile(userId, updateData);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
