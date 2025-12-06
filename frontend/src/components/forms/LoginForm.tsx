@@ -24,7 +24,8 @@ export default function LoginForm() {
     try {
       const user = await login(data.email, data.password);
       toast.success('Login successful!');
-      
+     
+     if(user){
       if (user.role === 'admin') {
         router.push('/admin/dashboard');
       } else if (!user?.profileCompleted) {
@@ -32,10 +33,12 @@ export default function LoginForm() {
       } else {
         router.push('/dashboard');
       }
+    }
     } catch (error) {
       toast.error('Login failed. Please try again.');
     }
   };
+  
 
   const isLoading = loading || isSubmitting;
 
