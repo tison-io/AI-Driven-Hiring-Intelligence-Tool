@@ -1,12 +1,13 @@
 'use client';
 
-import { createContext, ReactNode, useState, useEffect, useContext } from 'react';
+import { createContext, ReactNode, useState, useEffect, useContext, useRef } from 'react';
 import { tokenStorage } from '../lib/auth';
 import { User } from '../types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isInitialized: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<User | null>;
   register: (email: string, password: string) => Promise<void>;
@@ -23,8 +24,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
+    if (isInitialized.current) return;
+    
     const token = tokenStorage.get();
     if (token && tokenStorage.isValid(token)) {
       const userData = tokenStorage.parseUser(token);
@@ -33,6 +37,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
     }
     setLoading(false);
+    isInitialized.current = true;
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -90,7 +95,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, isInitialized: isInitialized.current, error, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
