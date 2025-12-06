@@ -25,10 +25,10 @@ export default function LoginForm() {
       const user = await login(data.email, data.password);
       toast.success('Login successful!');
       
-      if (!user?.profileCompleted) {
-        router.push('/complete-profile');
-      } else if (user.role === 'admin') {
+      if (user.role === 'admin') {
         router.push('/admin/dashboard');
+      } else if (!user?.profileCompleted) {
+        router.push('/complete-profile');
       } else {
         router.push('/dashboard');
       }

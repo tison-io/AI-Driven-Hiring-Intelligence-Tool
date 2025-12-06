@@ -32,6 +32,7 @@ export class UsersService {
       email,
       password: hashedPassword,
       role: UserRole.ADMIN,
+      profileCompleted: true,
     });
     
     return user.save();
