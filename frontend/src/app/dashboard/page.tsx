@@ -1,7 +1,12 @@
+'use client'
+
+import Layout from '@/components/layout/Layout'
+
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <Layout>
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -24,6 +29,7 @@ export default function DashboardPage() {
           <p className="text-gray-500">No candidates yet. Start by uploading resumes or LinkedIn profiles.</p>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   )
 }
