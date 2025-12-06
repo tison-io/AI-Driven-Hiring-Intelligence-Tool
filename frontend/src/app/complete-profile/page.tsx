@@ -60,7 +60,12 @@ export default function CompleteProfilePage() {
         throw new Error('Profile completion failed');
       }
 
+      const data = await response.json();
       setShowSuccessPopup(true);
+      
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 5000);
     } catch (error) {
       console.error('Profile completion failed:', error);
     } finally {

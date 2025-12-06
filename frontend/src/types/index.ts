@@ -3,6 +3,7 @@ export interface User {
   _id: string;
   email: string;
   role: 'admin' | 'recruiter';
+  profileCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -85,6 +86,7 @@ export interface JwtPayload {
   email: string;
   sub: string;  // Contains the user._id
   role: 'admin' | 'recruiter';
+  profileCompleted?: boolean;
   iat?: number;
   exp?: number;
 }

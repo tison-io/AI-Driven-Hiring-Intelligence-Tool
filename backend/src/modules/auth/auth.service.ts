@@ -22,7 +22,7 @@ export class AuthService {
     const user = await this.usersService.create(registerDto);
     const { password, ...result } = user;
     
-    const payload = { email: user.email, sub: user._id, role: user.role };
+    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
     return {
       user: result,
@@ -38,7 +38,7 @@ export class AuthService {
     }
 
     const { password, ...result } = user;
-    const payload = { email: user.email, sub: user._id, role: user.role };
+    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
     return {
       user: result,

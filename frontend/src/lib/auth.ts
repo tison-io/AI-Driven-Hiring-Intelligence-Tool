@@ -32,6 +32,7 @@ export const tokenStorage = {
 				_id: payload.sub,
 				email: payload.email,
 				role: payload.role,
+				profileCompleted: payload.profileCompleted,
 			};
 		} catch {
 			return null;

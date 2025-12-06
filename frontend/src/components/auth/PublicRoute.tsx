@@ -14,7 +14,11 @@ export default function PublicRoute({ children }: PublicRouteProps) {
 
   useEffect(() => {
     if (!loading && user) {
-      router.push('/dashboard');
+      if (!user.profileCompleted) {
+        router.push('/complete-profile');
+      } else {
+        router.push('/dashboard');
+      }
     }
   }, [user, loading, router]);
 
