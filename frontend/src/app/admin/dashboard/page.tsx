@@ -1,5 +1,7 @@
 'use client';
 
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import Layout from '@/components/layout/Layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -13,6 +15,10 @@ export default function AdminDashboard() {
   };
 
   return (
+    <ProtectedRoute>
+      <Layout>
+
+      
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -46,5 +52,8 @@ export default function AdminDashboard() {
         </div>
       </div>
     </div>
+
+    </Layout>
+    </ProtectedRoute>
   );
 }

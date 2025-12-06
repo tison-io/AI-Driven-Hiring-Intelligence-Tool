@@ -22,7 +22,10 @@ export function useCandidates(filters?: CandidatesFilters) {
         setIsLoading(true)
         setError(null)
         const data = await candidatesApi.getAll(filters)
-        setCandidates(data)
+        const sortedData = data.sort((a: any, b: any) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+        setCandidates(sortedData.slice(0, 6))
       } catch (err: any) {
         setError(err.message || 'Failed to fetch candidates')
         setCandidates([])
@@ -39,7 +42,10 @@ export function useCandidates(filters?: CandidatesFilters) {
       setIsLoading(true)
       setError(null)
       const data = await candidatesApi.getAll(filters)
-      setCandidates(data)
+      const sortedData = data.sort((a: any, b: any) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      setCandidates(sortedData.slice(0, 6))
     } catch (err: any) {
       setError(err.message || 'Failed to fetch candidates')
       setCandidates([])

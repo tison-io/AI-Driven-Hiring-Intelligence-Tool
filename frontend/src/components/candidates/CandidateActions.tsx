@@ -20,17 +20,18 @@ export default function CandidateActions({ onShortlist, onDownloadReport, onExpo
       <div className="flex gap-3">
         <button 
           onClick={onDownloadReport}
-          className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 font-semibold"
+          className="px-6 py-3 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 font-semibold"
         >
           <Download className="w-5 h-5" />
           <span>Download Hiring Report</span>
         </button>
-        <button 
+        
+        {/* <button 
           onClick={onExportCSV}
           className="px-6 py-3 bg-white border border-gray-300 rounded-lg text-black font-semibold hover:bg-gray-200 transition-colors"
         >
           Export CSV
-        </button>
+        </button> */}
       </div>
     </div>
   )

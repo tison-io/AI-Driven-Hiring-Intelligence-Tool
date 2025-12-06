@@ -1,25 +1,33 @@
 'use client'
 
-import { useState } from 'react'
-import { LayoutDashboard, Users, Upload, Download, Menu, X, Settings, FileText, ChevronLeft } from 'lucide-react'
+import { LayoutDashboard, Users, Upload, Download, Menu, X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import Logo from '../../../public/images/talentScanLogo.svg'
 
 export default function Sidebar() {
-  const [activeItem, setActiveItem] = useState('new-evaluations')
   const router = useRouter()
+  const pathname = usePathname()
+  const { user } = useAuth()
 
-  const navItems = [
-    { id: 'new-evaluations', label: 'New Evaluations', icon: FileText, href: '/evaluations/new', featured: true },
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
-    { id: 'candidate-pipeline', label: 'Candidate Pipeline', icon: Users, href: '/candidates', featured: true },
-    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
-
+  const adminNavItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
+    { id: 'error-logs', label: 'Error Logs', icon: AlertCircle, href: '/admin/error-logs' },
+    { id: 'audit-logs', label: 'Audit Logs', icon: FileSearch, href: '/admin/audit-logs' },
   ]
-  const handleNavClick = (id: string, href: string) => {
-    setActiveItem(id);
+
+  const recruiterNavItems = [
+    { id: 'new-evaluations', label: 'New Evaluations', icon: FileText, href: '/evaluations/new' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { id: 'candidate-pipeline', label: 'Candidate Pipeline', icon: Users, href: '/candidates' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+  ]
+
+  const navItems = user?.role === 'admin' ? adminNavItems : recruiterNavItems
+
+  const handleNavClick = (href: string) => {
     router.push(href)
-  
   }
 
   return (
@@ -27,9 +35,11 @@ export default function Sidebar() {
       {/* Header */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-white" />
-          </div>
+          <img 
+            src={Logo.src}
+            alt="TalentScan AI" 
+            className="w-8 h-8 object-cover"
+          />
           <h1 className="text-white text-lg font-semibold">TalentScan AI</h1>
         </div>
       </div>
@@ -37,24 +47,23 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-2">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-gray-400 text-xs uppercase tracking-wider">NavBar</span>
+          <span className="text-gray-400 text-xs uppercase tracking-wider"></span>
           <ChevronLeft className="w-4 h-4 text-gray-400" />
         </div>
 
         {/* Main Nav Items */}
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = activeItem === item.id;
+          const isActive = pathname === item.href;
+          const isNewEvaluation = item.id === 'new-evaluations' && user?.role !== 'admin';
           
           return (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.id, item.href)}
+              onClick={() => handleNavClick(item.href)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                item.featured
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-600 hover:to-blue-700'
-                  : isActive
-                  ? 'bg-gray-800 text-white'
+                isNewEvaluation || isActive
+                  ? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white hover:opacity-90'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               }`}
             >
@@ -65,15 +74,15 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* User Profile --Placeholder before auth logic for the frontend is completed */}
+      {/* User Profile */}
       <div className="p-4 border-t border-gray-800">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50">
           <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-            SJ
+            {user?.email?.substring(0, 2).toUpperCase() || 'U'}
           </div>
           <div className="flex-1">
-            <p className="text-white text-sm font-medium">Sarah Johnson</p>
-            <p className="text-gray-400 text-xs">Recruiter</p>
+            <p className="text-white text-sm font-medium">{user?.email || 'User'}</p>
+            <p className="text-gray-400 text-xs capitalize">{user?.role || 'Guest'}</p>
           </div>
         </div>
       </div>
