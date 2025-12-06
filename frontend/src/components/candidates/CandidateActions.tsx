@@ -11,7 +11,7 @@ export default function CandidateActions({ onShortlist, onDownloadReport, onExpo
     <div className="flex items-center justify-between gap-4">
       <button 
         onClick={onShortlist}
-        className="flex items-center gap-2 px-6 py-3 bg-[#0f1629] border border-gray-700 rounded-lg text-white hover:bg-gray-800 transition-colors"
+        className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg text-black font-semibold hover:bg-gray-200 transition-colors"
       >
         <Plus className="w-5 h-5" />
         <span>Add to Shortlist</span>
@@ -27,7 +27,7 @@ export default function CandidateActions({ onShortlist, onDownloadReport, onExpo
         </button>
         <button 
           onClick={onExportCSV}
-          className="px-6 py-3 bg-[#0f1629] border border-gray-700 rounded-lg text-white hover:bg-gray-800 transition-colors"
+          className="px-6 py-3 bg-white border border-gray-300 rounded-lg text-black font-semibold hover:bg-gray-200 transition-colors"
         >
           Export CSV
         </button>
