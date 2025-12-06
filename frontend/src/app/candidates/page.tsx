@@ -11,10 +11,14 @@ import {
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import { useCandidates } from "@/hooks/useCandidates";
+import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkeleton";
+import EmptyState from "@/components/candidates/EmptyState";
 
 const CandidatesPage = () => {
 	const [experienceRange, setExperienceRange] = useState([0, 10]);
 	const [minRole, setMinRole] = useState(0);
+	const { candidates, isLoading, error } = useCandidates();
 	const getStatusBadge = (status: string) => {
 		const styles: Record<string, string> = {
 			Shortlisted: "bg-blue-500/20 text-blue-600 border-blue-500/30",
@@ -29,75 +33,6 @@ const CandidatesPage = () => {
 			? "bg-green-100 text-green-700 border border-green-300"
 			: "bg-orange-100 text-orange-700 border border-orange-300";
 	};
-
-	const candidates = [
-		{
-			id: 1,
-			name: "Alex Martinez",
-			title: "Software Engineer at TechCorp",
-			targetRole: "Senior Backend Engineer",
-			experience: "7 yrs",
-			topSkills: ["Python", "Postgres", "API"],
-			rolefit: 85,
-			confidence: 92,
-			status: "Shortlisted",
-		},
-		{
-			id: 2,
-			name: "Emily Chen",
-			title: "Product Manager at InnovateCo",
-			targetRole: "Product Manager",
-			experience: "5 yrs",
-			topSkills: ["Product Strategy", "Agile", "User Research"],
-			rolefit: 78,
-			confidence: 68,
-			status: "New",
-		},
-		{
-			id: 3,
-			name: "Marcus Johnson",
-			title: "Frontend Developer at WebStudio",
-			targetRole: "Frontend Developer",
-			experience: "4 yrs",
-			topSkills: ["React", "TypeScript", "CSS"],
-			rolefit: 85,
-			confidence: 75,
-			status: "New",
-		},
-		{
-			id: 4,
-			name: "Sofia Rodriguez",
-			title: "Senior Data Scientist at DataOps",
-			targetRole: "Data Scientist",
-			experience: "8 yrs",
-			topSkills: ["Machine Learning", "Python", "SQL"],
-			rolefit: 90,
-			confidence: 88,
-			status: "Shortlisted",
-		},
-		{
-			id: 5,
-			name: "David Kim",
-			title: "Senior DevOps Engineer at CloudTech",
-			targetRole: "DevOps Engineer",
-			experience: "8 yrs",
-			topSkills: ["AWS", "Kubernetes", "Automation"],
-			rolefit: 92,
-			confidence: 95,
-			status: "Shortlisted",
-		},
-		{
-			id: 6,
-			name: "Rachel Adams",
-			title: "UX Designer at DesignHub",
-			targetRole: "UX Designer",
-			experience: "3 yrs",
-			topSkills: ["Figma", "User Research", "Prototyping"],
-			rolefit: 72,
-			confidence: 58,
-			status: "Rejected",
-		},
-	];
 
 	return (
 		<ProtectedRoute>
@@ -182,6 +117,16 @@ const CandidatesPage = () => {
 						</div>
 
 						{/* Candidates Table */}
+						{isLoading ? (
+							<CandidatesTableSkeleton />
+						) : error ? (
+							<div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+								<h3 className="text-lg font-semibold text-red-600 mb-2">Error Loading Candidates</h3>
+								<p className="text-gray-500">{error}</p>
+							</div>
+						) : candidates.length === 0 ? (
+							<EmptyState />
+						) : (
 						<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
 							<div className="overflow-x-auto">
 								<table className="w-full">
@@ -216,7 +161,7 @@ const CandidatesPage = () => {
 									<tbody className="divide-y divide-gray-200">
 										{candidates.map((candidate) => (
 											<tr
-												key={candidate.id}
+												key={candidate._id || candidate.id}
 												className="hover:bg-gray-50 transition-colors"
 											>
 												<td className="py-4 px-6">
@@ -225,24 +170,24 @@ const CandidatesPage = () => {
 															{candidate.name}
 														</p>
 														<p className="text-sm text-gray-500">
-															{candidate.title}
+															{candidate.jobRole || 'N/A'}
 														</p>
 													</div>
 												</td>
 												<td className="py-4 px-6">
 													<p className="text-gray-700">
-														{candidate.targetRole}
+														{candidate.jobRole || 'N/A'}
 													</p>
 												</td>
 												<td className="py-4 px-6">
 													<p className="text-gray-700">
-														{candidate.experience}
+														{candidate.experienceYears || 0} yrs
 													</p>
 												</td>
 												<td className="py-4 px-6">
 													<div className="flex flex-wrap gap-1">
-														{candidate.topSkills.map(
-															(skill, idx) => (
+														{(candidate.skills || []).slice(0, 3).map(
+															(skill: string, idx:string) => (
 																<span
 																	key={idx}
 																	className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
@@ -255,28 +200,28 @@ const CandidatesPage = () => {
 												</td>
 												<td className="py-4 px-6">
 													<span
-														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.rolefit)}`}
+														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
 													>
-														{candidate.rolefit}
+														{candidate.roleFitScore || 0}
 													</span>
 												</td>
 												<td className="py-4 px-6">
 													<span className="text-gray-700">
-														{candidate.confidence}%
+														{candidate.confidenceScore || 0}%
 													</span>
 												</td>
 												<td className="py-4 px-6">
 													<span
-														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status)}`}
+														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || 'New')}`}
 													>
-														{candidate.status}
+														{candidate.status || 'New'}
 													</span>
 												</td>
 												<td className="py-4 px-6">
 													<div className="flex items-center gap-2">
 														<button
 															onClick={() =>
-																(window.location.href = `/candidates/${candidate.id}`)
+																(window.location.href = `/candidates/${candidate._id || candidate.id}`)
 															}
 															className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
 														>
@@ -293,6 +238,7 @@ const CandidatesPage = () => {
 								</table>
 							</div>
 						</div>
+						)}
 					</div>
 				</div>
 			</Layout>
