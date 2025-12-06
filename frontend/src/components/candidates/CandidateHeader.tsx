@@ -17,7 +17,7 @@ export default function CandidateHeader({ name, title, linkedinUrl, onDelete }: 
     <div className="mb-8">
       <button 
         onClick={() => router.push('/candidates')}
-        className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
+        className="flex items-center gap-2 text-gray-400 hover:text-gray-600 mb-4 transition-colors"
       >
         <ArrowLeft className="w-5 h-5" />
         <span>Back to Pipeline</span>

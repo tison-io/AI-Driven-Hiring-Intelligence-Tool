@@ -16,7 +16,7 @@ export default function CircularProgress({ value, color, label }: CircularProgre
           cx="80"
           cy="80"
           r={radius}
-          stroke="#1f2937"
+          stroke="f6f6f6"
           strokeWidth="12"
           fill="none"
         />
