@@ -6,7 +6,7 @@ async function seedAdmin() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const usersService = app.get(UsersService);
 
-  const adminEmail = 'admin@gmail.com';
+  const adminEmail = 'admin1@gmail.com';
   const adminPassword = 'Admin@123';
 
   try {

@@ -33,4 +33,25 @@ api.interceptors.response.use(
   }
 );
 
+// Candidate API functions
+export const candidatesApi = {
+  // Get all candidates with optional filters
+  getAll: async (filters?: any) => {
+    const response = await api.get('/candidates', { params: filters });
+    return response.data;
+  },
+
+  // Get single candidate by ID
+  getById: async (id: string) => {
+    const response = await api.get(`/candidates/${id}`);
+    return response.data;
+  },
+
+  // Delete candidate
+  delete: async (id: string) => {
+    const response = await api.delete(`/candidates/${id}`);
+    return response.data;
+  },
+};
+
 export default api;
