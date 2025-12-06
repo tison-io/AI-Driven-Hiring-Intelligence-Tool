@@ -231,3 +231,5 @@ GET /api/candidates/:id
 ```
 
 Returns complete evaluation with all AI-generated insights.
+
+---
