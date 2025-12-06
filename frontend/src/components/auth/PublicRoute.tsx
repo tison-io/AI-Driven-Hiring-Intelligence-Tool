@@ -16,6 +16,8 @@ export default function PublicRoute({ children }: PublicRouteProps) {
     if (!loading && user) {
       if (!user.profileCompleted) {
         router.push('/complete-profile');
+      } else if (user.role === 'admin') {
+        router.push('/admin/dashboard');
       } else {
         router.push('/dashboard');
       }

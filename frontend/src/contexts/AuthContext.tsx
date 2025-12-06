@@ -8,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User | null>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -52,10 +52,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const userData = tokenStorage.parseUser(access_token);
       if (userData) {
         setUser(userData);
-        // Navigation will be handled by the component calling login
+        return userData;
       }
+      return null;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
+      throw err;
     } finally {
       setLoading(false);
     }

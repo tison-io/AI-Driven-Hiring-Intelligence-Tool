@@ -22,9 +22,16 @@ export default function LoginForm() {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password);
+      const user = await login(data.email, data.password);
       toast.success('Login successful!');
-      router.push('/dashboard');
+      
+      if (!user?.profileCompleted) {
+        router.push('/complete-profile');
+      } else if (user.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error) {
       toast.error('Login failed. Please try again.');
     }
