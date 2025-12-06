@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { CandidatesService } from '../candidates/candidates.service';
 import * as XLSX from 'xlsx';
 import { createObjectCsvWriter } from 'csv-writer';
-import { marked } from 'marked';
+let marked: any;
+try {
+  marked = require('marked').marked;
+} catch {
+  marked = (text: string) => text;
+}
 
 @Injectable()
 export class ExportService {
