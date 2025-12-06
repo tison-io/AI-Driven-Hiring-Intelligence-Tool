@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface LoginFormData {
   email: string;
@@ -12,6 +14,7 @@ interface LoginFormData {
 }
 
 export default function LoginForm() {
+  const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
   const router = useRouter();
   const {
@@ -69,18 +72,27 @@ export default function LoginForm() {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Password
         </label>
-        <input
-          {...register('password', {
-            required: 'Password is required',
-            minLength: {
-              value: 6,
-              message: 'Password must be at least 6 characters'
-            }
-          })}
-          type="password"
-          disabled={isLoading}
-          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
-        />
+        <div className="relative">
+          <input
+            {...register('password', {
+              required: 'Password is required',
+              minLength: {
+                value: 6,
+                message: 'Password must be at least 6 characters'
+              }
+            })}
+            type={showPassword ? 'text' : 'password'}
+            disabled={isLoading}
+            className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+          </button>
+        </div>
         {errors.password && (
           <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
         )}
