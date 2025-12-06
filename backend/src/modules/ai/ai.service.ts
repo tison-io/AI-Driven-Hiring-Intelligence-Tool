@@ -19,13 +19,24 @@ export class AiService {
       // Step 1: Extract structured data from raw text
       const extractedData = await this.extractCandidateData(rawText);
       
+      this.logger.debug(`Extracted data: ${JSON.stringify(extractedData)}`);
+      
+      // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
-        this.logger.warn('AI marked resume as invalid, falling back to mock data');
+        this.logger.warn(`AI marked resume as invalid. Reason: ${extractedData.error || 'Unknown'}`);
+        return this.getMockResponse();
+      }
+      
+      // Validate we have minimum required data
+      if (!extractedData.candidate_name && !extractedData.skills?.length) {
+        this.logger.warn('Insufficient data extracted, falling back to mock data');
         return this.getMockResponse();
       }
 
       // Step 2: Score candidate against job role
       const scoringResult = await this.scoreCandidateData(extractedData, jobRole);
+      
+      this.logger.debug(`Scoring result: ${JSON.stringify(scoringResult)}`);
 
       // Step 3: Transform to backend format
       return this.transformAiResponse(extractedData, scoringResult);
@@ -71,15 +82,19 @@ export class AiService {
   }
 
   private transformAiResponse(extractedData: any, scoringResult: any) {
+    const keyStrengths = scoringResult.key_strengths?.map((s: any) => 
+      typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
+    ) || [];
+    
+    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w: any) => 
+      typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
+    ) || [];
+    
     return {
       name: extractedData.candidate_name || 'Anonymous',
       roleFitScore: scoringResult.role_fit_score || 0,
-      keyStrengths: scoringResult.key_strengths?.map((s: any) => 
-        typeof s === 'string' ? s : s.strength
-      ) || [],
-      potentialWeaknesses: scoringResult.potential_weaknesses?.map((w: any) => 
-        typeof w === 'string' ? w : w.weakness
-      ) || [],
+      keyStrengths,
+      potentialWeaknesses,
       missingSkills: scoringResult.missing_skills || [],
       interviewQuestions: scoringResult.recommended_interview_questions || [],
       confidenceScore: scoringResult.confidence_score || 0,
