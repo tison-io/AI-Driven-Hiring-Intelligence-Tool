@@ -1,8 +1,8 @@
 'use client'
 
-import {useState } from 'react'
-import {Search, Download ,Filter, Eye, Trash2, ChevronDown } from 'lucide-react'
-
+import { useState } from 'react'
+import { Search, Download, Filter, Eye, Trash2, ChevronDown } from 'lucide-react'
+import Layout from '@/components/layout/Layout'
 
 const CandidatePipeline = () => {
     const [experienceRange, setExperienceRange] = useState([0, 10])
@@ -92,8 +92,9 @@ const CandidatePipeline = () => {
       ];
 
 return(
-    <div className="min-h-screen bg-[#ffffff] p-8">
-      <div className="max-w-7xl mx-auto">
+    <Layout>
+      <div className="p-8">
+        <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-black mb-2">Candidate Pipeline</h1>
@@ -232,7 +233,10 @@ return(
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors group">
+                        <button 
+                          onClick={() => window.location.href = `/candidates/${candidate.id}`}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+                        >
                           <Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
                         </button>
                         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors group">
@@ -247,9 +251,9 @@ return(
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 };
-
 
 export default CandidatePipeline;
