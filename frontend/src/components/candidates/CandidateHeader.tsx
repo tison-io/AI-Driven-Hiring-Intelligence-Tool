@@ -14,19 +14,19 @@ export default function CandidateHeader({ name, title, linkedinUrl, onDelete }: 
   const router = useRouter()
 
   return (
-    <div className="mb-8">
+    <div className="mb-6 md:mb-8">
       <button 
         onClick={() => router.push('/candidates')}
-        className="flex items-center gap-2 text-gray-400 hover:text-gray-600 mb-4 transition-colors"
+        className="flex items-center gap-2 text-gray-400 hover:text-gray-600 mb-4 transition-colors text-sm md:text-base"
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
         <span>Back to Pipeline</span>
       </button>
       
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-black mb-2">{name}</h1>
-          <p className="text-black mb-3">{title}</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-black mb-2">{name}</h1>
+          <p className="text-black mb-3 text-sm md:text-base">{title}</p>
           {linkedinUrl && (
             <a 
               href={linkedinUrl}
@@ -42,7 +42,7 @@ export default function CandidateHeader({ name, title, linkedinUrl, onDelete }: 
         {onDelete && (
           <button 
             onClick={onDelete}
-            className="px-4 py-2 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors"
+            className="px-4 py-2 border border-red-500/50 text-red-400 rounded-lg hover:bg-red-500/10 transition-colors text-sm md:text-base w-full md:w-auto"
           >
             Hard Delete PII
           </button>

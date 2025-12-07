@@ -33,7 +33,7 @@ export default function CandidateDetail({ candidate }: CandidateDetailProps) {
   }
 
   return (
-    <div className="min-h-screen bg-f6f6f6 p-8">
+    <div className="min-h-screen bg-f6f6f6 p-4 md:p-6 lg:p-8">
       <div className="max-w-6xl mx-auto">
         <CandidateHeader
           name={candidate.name}
