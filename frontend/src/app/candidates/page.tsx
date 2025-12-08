@@ -23,6 +23,8 @@ const CandidatesPage = () => {
 	const [minRole, setMinRole] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
+	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+	const [isExporting, setIsExporting] = useState(false);
 	const { candidates, isLoading, error, refetch } = useCandidates();
 
 	const handleDeleteClick = (id: string, name: string) => {
@@ -39,6 +41,39 @@ const CandidatesPage = () => {
 		} catch (error: any) {
 			toast.error(error.response?.data?.message || 'Failed to delete candidate');
 			throw error;
+		}
+	};
+
+	const handleExport = async (format: 'csv' | 'xlsx') => {
+		try {
+			setIsExporting(true);
+			setIsExportMenuOpen(false);
+
+			const token = localStorage.getItem('token');
+			const params = new URLSearchParams({ format });
+			const url = `${process.env.NEXT_PUBLIC_API_URL}/api/export/candidates?${params}`;
+
+			const response = await fetch(url, {
+				headers: {
+					'Authorization': `Bearer ${token}`
+				}
+			});
+
+			if (!response.ok) throw new Error('Export failed');
+
+			const blob = await response.blob();
+			const downloadUrl = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = downloadUrl;
+			link.download = `candidates-${new Date().toISOString().split('T')[0]}.${format}`;
+			link.click();
+			window.URL.revokeObjectURL(downloadUrl);
+
+			toast.success(`Exported as ${format.toUpperCase()} successfully`);
+		} catch (error: any) {
+			toast.error('Export failed. Please try again.');
+		} finally {
+			setIsExporting(false);
 		}
 	};
 	const getStatusBadge = (status: string) => {
@@ -91,10 +126,33 @@ const CandidatesPage = () => {
 										Clear Filters
 									</span>
 								</button>
-								<button className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black-400 hover:bg-cyan-500/20 transition-colors">
-									<Download className="w-4 h-4" />
-									<span className="text-sm">Export CSV</span>
-								</button>
+								<div className="relative">
+									<button 
+										onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+										disabled={isExporting}
+										className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										<Download className="w-4 h-4" />
+										<span className="text-sm">{isExporting ? 'Exporting...' : 'Export Data'}</span>
+										<ChevronDown className="w-4 h-4" />
+									</button>
+									{isExportMenuOpen && (
+										<div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+											<button
+												onClick={() => handleExport('csv')}
+												className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+											>
+												Export as CSV
+											</button>
+											<button
+												onClick={() => handleExport('xlsx')}
+												className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+											>
+												Export as XLSX
+											</button>
+										</div>
+									)}
+								</div>
 							</div>
 
 							{/* Range Sliders */}
