@@ -9,16 +9,38 @@ import {
 	Trash2,
 	ChevronDown,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useCandidates } from "@/hooks/useCandidates";
 import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkeleton";
 import EmptyState from "@/components/candidates/EmptyState";
+import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
+import { candidatesApi } from "@/lib/api";
 
 const CandidatesPage = () => {
 	const [experienceRange, setExperienceRange] = useState([0, 10]);
 	const [minRole, setMinRole] = useState(0);
-	const { candidates, isLoading, error } = useCandidates();
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
+	const { candidates, isLoading, error, refetch } = useCandidates();
+
+	const handleDeleteClick = (id: string, name: string) => {
+		setSelectedCandidate({ id, name });
+		setIsModalOpen(true);
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!selectedCandidate) return;
+		try {
+			await candidatesApi.delete(selectedCandidate.id);
+			toast.success('Candidate deleted successfully');
+			refetch();
+		} catch (error: any) {
+			toast.error(error.response?.data?.message || 'Failed to delete candidate');
+			throw error;
+		}
+	};
 	const getStatusBadge = (status: string) => {
 		const styles: Record<string, string> = {
 			Shortlisted: "bg-blue-500/20 text-blue-600 border-blue-500/30",
@@ -181,7 +203,10 @@ const CandidatesPage = () => {
 												>
 													<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
 												</button>
-												<button className="p-2 hover:bg-gray-100 rounded-lg transition-colors group">
+												<button 
+													onClick={() => handleDeleteClick(candidate._id || candidate.id, candidate.name)}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
 													<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
 												</button>
 											</div>
@@ -291,7 +316,10 @@ const CandidatesPage = () => {
 														>
 															<Eye className="w-4 h-4 text-gray-400 group-hover:text-blue-600" />
 														</button>
-														<button className="p-2 hover:bg-gray-100 rounded-lg transition-colors group">
+														<button 
+															onClick={() => handleDeleteClick(candidate._id || candidate.id, candidate.name)}
+															className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+														>
 															<Trash2 className="w-4 h-4 text-gray-400 group-hover:text-red-600" />
 														</button>
 													</div>
@@ -304,6 +332,13 @@ const CandidatesPage = () => {
 							</div>
 						</>
 						)}
+
+						<DeleteCandidateModal
+							isOpen={isModalOpen}
+							onClose={() => setIsModalOpen(false)}
+							onConfirm={handleDeleteConfirm}
+							candidateName={selectedCandidate?.name || ''}
+						/>
 					</div>
 				</div>
 			</Layout>
