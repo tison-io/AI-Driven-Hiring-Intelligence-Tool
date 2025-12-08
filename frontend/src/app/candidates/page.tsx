@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import Slider from 'rc-slider';
+import 'rc-slider/assets/index.css';
 import {
 	Search,
 	Download,
@@ -20,12 +22,42 @@ import { candidatesApi } from "@/lib/api";
 
 const CandidatesPage = () => {
 	const [experienceRange, setExperienceRange] = useState([0, 10]);
+	const [debouncedExperienceRange, setDebouncedExperienceRange] = useState([0, 10]);
 	const [minRole, setMinRole] = useState(0);
+	const [debouncedMinRole, setDebouncedMinRole] = useState(0);
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
-	const { candidates, isLoading, error, refetch } = useCandidates();
+
+	// Debounce minRole changes
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedMinRole(minRole);
+		}, 500);
+
+		return () => clearTimeout(timer);
+	}, [minRole]);
+
+	// Debounce experienceRange changes
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedExperienceRange(experienceRange);
+		}, 500);
+
+		return () => clearTimeout(timer);
+	}, [experienceRange]);
+
+	// Build filters object with useMemo to prevent infinite re-renders
+	const filters = useMemo(() => {
+		const filterObj: any = {};
+		if (debouncedMinRole > 0) filterObj.score_min = debouncedMinRole;
+		if (debouncedExperienceRange[0] > 0) filterObj.experience_min = debouncedExperienceRange[0];
+		if (debouncedExperienceRange[1] < 10) filterObj.experience_max = debouncedExperienceRange[1];
+		return filterObj;
+	}, [debouncedMinRole, debouncedExperienceRange]);
+
+	const { candidates, isLoading, error, refetch } = useCandidates(filters);
 
 	const handleDeleteClick = (id: string, name: string) => {
 		setSelectedCandidate({ id, name });
@@ -94,8 +126,8 @@ const CandidatesPage = () => {
 	return (
 		<ProtectedRoute>
 			<Layout>
-				<div className="p-4 md:p-6 lg:p-8">
-					<div className="max-w-7xl mx-auto">
+				<div className="p-4 md:p-6 lg:p-8 w-full overflow-x-hidden">
+					<div className="max-w-7xl mx-auto w-full">
 						{/* Header */}
 						<div className="mb-6 md:mb-8">
 							<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
@@ -160,27 +192,24 @@ const CandidatesPage = () => {
 								{/* Experience Range */}
 								<div>
 									<label className="text-sm text-gray-400 mb-3 block">
-										Experience Range: 0 - 10 years
+										Experience Range: {experienceRange[0]} - {experienceRange[1]} years
 									</label>
-									<input
-										type="range"
-										min="0"
-										max="10"
-										value={experienceRange[0]}
-										onChange={(e) =>
-											setExperienceRange([
-												0,
-												parseInt(e.target.value),
-											])
-										}
-										className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-gray-500"
-									/>
+									<div className="pt-1">
+										<Slider
+											range
+											min={0}
+											max={10}
+											value={experienceRange}
+											onChange={(value) => setExperienceRange(value as number[])}
+											className="custom-slider"
+										/>
+									</div>
 								</div>
 
 								{/* Minimum Role Fit Score */}
 								<div>
 									<label className="text-sm text-gray-400 mb-3 block">
-										Minimum Role Fit Score: 0 %
+										Minimum Role Fit Score: <span className="inline-block w-12 text-left">{minRole}%</span>
 									</label>
 									<input
 										type="range"
