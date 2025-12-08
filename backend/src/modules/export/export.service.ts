@@ -13,8 +13,8 @@ try {
 export class ExportService {
   constructor(private candidatesService: CandidatesService) {}
 
-  async exportCandidatesCSV(filters: any): Promise<Buffer> {
-    const candidates = await this.candidatesService.findAll(filters);
+  async exportCandidatesCSV(filters: any, userId: string, userRole: string): Promise<Buffer> {
+    const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
     const csvData = candidates.map(candidate => ({
       name: candidate.name,
@@ -35,8 +35,8 @@ export class ExportService {
     return XLSX.write(workbook, { type: 'buffer', bookType: 'csv' });
   }
 
-  async exportCandidatesXLSX(filters: any): Promise<Buffer> {
-    const candidates = await this.candidatesService.findAll(filters);
+  async exportCandidatesXLSX(filters: any, userId: string, userRole: string): Promise<Buffer> {
+    const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
     const xlsxData = candidates.map(candidate => ({
       Name: candidate.name,

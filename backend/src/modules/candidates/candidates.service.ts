@@ -11,8 +11,8 @@ export class CandidatesService {
     private candidateModel: Model<CandidateDocument>,
   ) {}
 
-  async findAll(filters: CandidateFilterDto): Promise<Candidate[]> {
-    const query: any = {};
+  async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Candidate[]> {
+    const query: any = userRole === 'admin' ? {} : { createdBy: userId };
 
     if (filters.skill) {
       query.skills = { $regex: filters.skill, $options: 'i' };
@@ -68,5 +68,18 @@ export class CandidatesService {
     // For now, this is a placeholder
     // In production, you'd delete candidates where userId matches
     await this.candidateModel.deleteMany({}).exec();
+  }
+
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    const result = await this.candidateModel.findByIdAndDelete(id).exec();
+    
+    if (!result) {
+      throw new Error('Candidate not found');
+    }
+
+    return {
+      success: true,
+      message: 'Candidate and all PII data deleted successfully'
+    };
   }
 }

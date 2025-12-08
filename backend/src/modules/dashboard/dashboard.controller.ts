@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request } from '@nestjs/common';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -49,8 +49,8 @@ export class DashboardController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
-  async getDashboardMetrics() {
-    return this.dashboardService.getDashboardMetrics();
+  async getDashboardMetrics(@Request() req) {
+    return this.dashboardService.getDashboardMetrics(req.user.id, req.user.role);
   }
 
   @Get('score-distribution')

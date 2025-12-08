@@ -53,6 +53,9 @@ export class Candidate {
   @Prop({ required: true })
   jobRole: string;
 
+  @Prop({ type: String, required: true })
+  createdBy: string;
+
   @Prop({ enum: ProcessingStatus, default: ProcessingStatus.PENDING })
   status: ProcessingStatus;
 

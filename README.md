@@ -7,6 +7,7 @@ A comprehensive hiring platform that evaluates candidates from resumes and Linke
 ### ✅ **Fully Implemented Features**
 
 -   **Authentication & Authorization** (Enhanced with strong password validation)
+-   **User Ownership Tracking** (Recruiters see only their candidates, Admins see all)
 -   **Resume Processing** (PDF/DOCX text extraction)
 -   **LinkedIn Profile Processing** (URL validation & placeholder scraping)
 -   **Background Job Processing** (Bull + Redis queue system)
@@ -99,7 +100,18 @@ redis-server
 npm run start:dev
 ```
 
-### **4. Access the Application**
+### **4. Run Migration (If Upgrading from Old Version)**
+
+If you have existing candidates without user ownership:
+
+```bash
+cd backend
+node scripts/migrate-user-ownership.js
+```
+
+This assigns all existing candidates to the first admin user. See `MIGRATION_USER_OWNERSHIP.md` for details.
+
+### **5. Access the Application**
 
 -   **API**: http://localhost:3000
 -   **Swagger Documentation**: http://localhost:3000/api/docs

@@ -10,10 +10,13 @@ export class DashboardService {
     private candidateModel: Model<CandidateDocument>,
   ) {}
 
-  async getDashboardMetrics() {
-    const totalCandidates = await this.candidateModel.countDocuments();
+  async getDashboardMetrics(userId: string, userRole: string) {
+    const query = userRole === 'admin' ? {} : { createdBy: userId };
+    
+    const totalCandidates = await this.candidateModel.countDocuments(query);
     
     const completedCandidates = await this.candidateModel.find({ 
+      ...query,
       status: 'completed',
       roleFitScore: { $exists: true, $ne: null }
     });
@@ -23,15 +26,17 @@ export class DashboardService {
       : 0;
 
     const shortlistCount = await this.candidateModel.countDocuments({
+      ...query,
       roleFitScore: { $gte: 80 }
     });
 
     const processingCount = await this.candidateModel.countDocuments({
+      ...query,
       status: { $in: ['pending', 'processing'] }
     });
 
     const recentCandidates = await this.candidateModel
-      .find()
+      .find(query)
       .sort({ createdAt: -1 })
       .limit(5)
       .select('name jobRole roleFitScore status createdAt')
