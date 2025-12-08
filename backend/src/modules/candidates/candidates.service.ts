@@ -69,4 +69,17 @@ export class CandidatesService {
     // In production, you'd delete candidates where userId matches
     await this.candidateModel.deleteMany({}).exec();
   }
+
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    const result = await this.candidateModel.findByIdAndDelete(id).exec();
+    
+    if (!result) {
+      throw new Error('Candidate not found');
+    }
+
+    return {
+      success: true,
+      message: 'Candidate and all PII data deleted successfully'
+    };
+  }
 }

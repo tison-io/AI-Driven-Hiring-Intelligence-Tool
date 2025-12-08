@@ -62,7 +62,7 @@ export default function CandidateDetailPage() {
 	return (
 		<ProtectedRoute>
 			<Layout>
-				<CandidateDetail candidate={transformedCandidate} />
+				<CandidateDetail candidate={transformedCandidate} candidateId={id} />
 			</Layout>
 		</ProtectedRoute>
 	);

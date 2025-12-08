@@ -1,20 +1,35 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
+import { candidatesApi } from '@/lib/api'
 import CandidateHeader from './CandidateHeader'
 import ScoreCards from './ScoreCards'
 import ExperienceSection from './ExperienceSection'
 import AIAnalysisSection from './AIAnalysisSection'
 import InterviewQuestions from './InterviewQuestions'
 import CandidateActions from './CandidateActions'
+import DeleteCandidateModal from '../modals/DeleteCandidateModal'
 
 interface CandidateDetailProps {
   candidate: any // TODO: Replace with proper type from types/index.ts
+  candidateId: string
 }
 
-export default function CandidateDetail({ candidate }: CandidateDetailProps) {
-  const handleDelete = () => {
-    console.log('Delete PII')
-    // TODO: Implement delete functionality
+export default function CandidateDetail({ candidate, candidateId }: CandidateDetailProps) {
+  const router = useRouter()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await candidatesApi.delete(candidateId)
+      toast.success('Candidate deleted successfully')
+      router.push('/candidates')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete candidate')
+      throw error
+    }
   }
 
   const handleShortlist = () => {
@@ -39,7 +54,7 @@ export default function CandidateDetail({ candidate }: CandidateDetailProps) {
           name={candidate.name}
           title={candidate.title}
           linkedinUrl={candidate.linkedinUrl}
-          onDelete={handleDelete}
+          onDelete={() => setIsModalOpen(true)}
         />
 
         <ScoreCards
@@ -65,6 +80,13 @@ export default function CandidateDetail({ candidate }: CandidateDetailProps) {
           onShortlist={handleShortlist}
           onDownloadReport={handleDownloadReport}
           onExportCSV={handleExportCSV}
+        />
+
+        <DeleteCandidateModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          candidateName={candidate.name}
         />
       </div>
     </div>

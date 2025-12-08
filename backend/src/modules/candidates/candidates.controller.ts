@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CandidatesService } from './candidates.service';
 import { CandidateFilterDto } from './dto/candidate-filter.dto';
@@ -32,5 +32,14 @@ export class CandidatesController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findById(@Param('id') id: string) {
     return this.candidatesService.findById(id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete candidate and all PII data' })
+  @ApiResponse({ status: 200, description: 'Candidate deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Candidate not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async delete(@Param('id') id: string) {
+    return this.candidatesService.delete(id);
   }
 }
