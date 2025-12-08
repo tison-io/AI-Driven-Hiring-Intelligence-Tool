@@ -17,3 +17,31 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+
+/* Custom Range Slider Styles */
+.custom-slider .rc-slider-rail {
+  background-color: #374151;
+  height: 8px;
+  border-radius: 8px;
+}
+
+.custom-slider .rc-slider-track {
+  background-color: #6b7280;
+  height: 8px;
+}
+
+.custom-slider .rc-slider-handle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #6b7280;
+  background-color: #ffffff;
+  opacity: 1;
+  margin-top: -6px;
+}
+
+.custom-slider .rc-slider-handle:hover,
+.custom-slider .rc-slider-handle:active,
+.custom-slider .rc-slider-handle:focus {
+  border-color: #6b7280;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
+}

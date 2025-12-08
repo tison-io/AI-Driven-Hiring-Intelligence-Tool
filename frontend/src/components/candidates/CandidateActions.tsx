@@ -4,9 +4,10 @@ interface CandidateActionsProps {
   onShortlist?: () => void
   onDownloadReport?: () => void
   onExportCSV?: () => void
+  isDownloadingReport?: boolean
 }
 
-export default function CandidateActions({ onShortlist, onDownloadReport, onExportCSV }: CandidateActionsProps) {
+export default function CandidateActions({ onShortlist, onDownloadReport, onExportCSV, isDownloadingReport }: CandidateActionsProps) {
   return (
     <div className="flex items-center justify-between gap-4">
       <button 
@@ -20,10 +21,11 @@ export default function CandidateActions({ onShortlist, onDownloadReport, onExpo
       <div className="flex gap-3">
         <button 
           onClick={onDownloadReport}
-          className="px-6 py-3 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all flex items-center gap-2 font-semibold"
+          disabled={isDownloadingReport}
+          className="px-6 py-3 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white rounded-lg hover:opacity-90 transition-all flex items-center gap-2 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Download className="w-5 h-5" />
-          <span>Download Hiring Report</span>
+          <span>{isDownloadingReport ? 'Downloading...' : 'Download Hiring Report'}</span>
         </button>
         
         {/* <button 
