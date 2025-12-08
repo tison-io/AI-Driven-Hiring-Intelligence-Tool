@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Users, Upload, Download, Menu, X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch } from 'lucide-react'
+import { LayoutDashboard, Users, Upload, Download, Menu, X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -9,12 +9,14 @@ import Logo from '../../../public/images/talentScanLogo.svg'
 export default function Sidebar() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
 
   const adminNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/admin/dashboard' },
     { id: 'error-logs', label: 'Error Logs', icon: AlertCircle, href: '/admin/error-logs' },
     { id: 'audit-logs', label: 'Audit Logs', icon: FileSearch, href: '/admin/audit-logs' },
+    { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+    { id: 'logout', label: 'Logout', icon: LogOut, href: '#' },
   ]
 
   const recruiterNavItems = [
@@ -22,12 +24,18 @@ export default function Sidebar() {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
     { id: 'candidate-pipeline', label: 'Candidate Pipeline', icon: Users, href: '/candidates' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
+    { id: 'logout', label: 'Logout', icon: LogOut, href: '#' },
   ]
 
   const navItems = user?.role === 'admin' ? adminNavItems : recruiterNavItems
 
-  const handleNavClick = (href: string) => {
-    router.push(href)
+  const handleNavClick = (href: string, id: string) => {
+    if (id === 'logout') {
+      logout()
+      router.push('/login')
+    } else {
+      router.push(href)
+    }
   }
 
   return (
@@ -60,7 +68,7 @@ export default function Sidebar() {
           return (
             <button
               key={item.id}
-              onClick={() => handleNavClick(item.href)}
+              onClick={() => handleNavClick(item.href, item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
                 isNewEvaluation || isActive
                   ? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white hover:opacity-90'
