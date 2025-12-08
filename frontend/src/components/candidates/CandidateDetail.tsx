@@ -20,6 +20,7 @@ interface CandidateDetailProps {
 export default function CandidateDetail({ candidate, candidateId }: CandidateDetailProps) {
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false)
 
   const handleDeleteConfirm = async () => {
     try {
@@ -32,14 +33,38 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     }
   }
 
+  const handleDownloadReport = async () => {
+    try {
+      setIsDownloadingReport(true)
+      
+      const token = localStorage.getItem('token')
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/export/report/${candidateId}`
+      
+      const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      
+      if (!response.ok) throw new Error('Download failed')
+      
+      const blob = await response.blob()
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = downloadUrl
+      link.download = `hiring-report-${candidate.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.html`
+      link.click()
+      window.URL.revokeObjectURL(downloadUrl)
+      
+      toast.success('Report downloaded successfully')
+    } catch (error) {
+      toast.error('Failed to download report')
+    } finally {
+      setIsDownloadingReport(false)
+    }
+  }
+
   const handleShortlist = () => {
     console.log('Add to shortlist')
     // TODO: Implement shortlist functionality
-  }
-
-  const handleDownloadReport = () => {
-    console.log('Download report')
-    // TODO: Implement download report
   }
 
   const handleExportCSV = () => {
@@ -80,6 +105,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
           onShortlist={handleShortlist}
           onDownloadReport={handleDownloadReport}
           onExportCSV={handleExportCSV}
+          isDownloadingReport={isDownloadingReport}
         />
 
         <DeleteCandidateModal
