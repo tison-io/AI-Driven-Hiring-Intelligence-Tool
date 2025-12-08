@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<User | null>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -120,8 +121,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setError(null);
   };
 
+  const refreshUser = async () => {
+    const token = tokenStorage.get();
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data);
+      }
+    } catch (error) {
+      console.error('Failed to refresh user:', error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, isInitialized: isInitialized.current, error, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, isInitialized: isInitialized.current, error, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

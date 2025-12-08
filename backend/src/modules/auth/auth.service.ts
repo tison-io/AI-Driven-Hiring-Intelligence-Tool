@@ -22,8 +22,9 @@ export class AuthService {
       throw new UnauthorizedException('User with this email already exists');
     }
 
-    const user = await this.usersService.create(registerDto);
-    const { password, ...result } = user;
+    const user = await this.usersService.create(registerDto) as any;
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
     
     const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
@@ -40,7 +41,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const { password, ...result } = user;
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
     const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
     
     return {
@@ -76,7 +78,8 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const { password, ...result } = user;
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
     return result;
   }
 
@@ -92,7 +95,8 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    const { password, ...result } = user;
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
     return result;
   }
 
