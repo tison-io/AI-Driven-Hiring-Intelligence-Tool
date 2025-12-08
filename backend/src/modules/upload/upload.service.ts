@@ -17,7 +17,7 @@ export class UploadService {
 		private linkedInMapper: LinkedInMapper
 	) {}
 
-	async processResume(file: Express.Multer.File, jobRole: string) {
+	async processResume(file: Express.Multer.File, jobRole: string, userId: string) {
 		// Extract text from file
 		const rawText = await this.extractTextFromFile(file);
 
@@ -27,6 +27,7 @@ export class UploadService {
 			rawText,
 			jobRole,
 			status: "pending" as any,
+			createdBy: userId,
 		});
 
 		// Add to AI processing queue
@@ -42,7 +43,7 @@ export class UploadService {
 		};
 	}
 
-	async processLinkedinProfile(linkedinUrl: string, jobRole: string) {
+	async processLinkedinProfile(linkedinUrl: string, jobRole: string, userId: string) {
 		try {
 			this.logger.log(`Processing LinkedIn profile: ${linkedinUrl}`);
 
@@ -81,6 +82,7 @@ export class UploadService {
 				rawText,
 				jobRole,
 				status: "pending" as any,
+				createdBy: userId,
 			});
 
 			// Add to AI processing queue

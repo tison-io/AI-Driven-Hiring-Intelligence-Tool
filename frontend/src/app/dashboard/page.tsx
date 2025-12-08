@@ -1,80 +1,156 @@
 "use client";
 
+import { useEffect, useState } from 'react';
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Layout from "@/components/layout/Layout";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import StatsCard from '@/components/dashboard/StatsCard';
+import RecentActivity from '@/components/dashboard/RecentActivity';
+import NewEvaluation from '@/components/dashboard/NewEvaluation';
+import { DashboardData } from '@/types/dashboard';
+import { useAuth } from '@/contexts/AuthContext';
+import api from '@/lib/api';
+
+function formatRelativeTime(dateString: string): string {
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffMs = now.getTime() - past.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+}
+
+function mapStatus(backendStatus: string): 'completed' | 'processing' | 'error' {
+  const statusMap: Record<string, 'completed' | 'processing' | 'error'> = {
+    'completed': 'completed',
+    'processing': 'processing',
+    'pending': 'processing',
+    'failed': 'error'
+  };
+  return statusMap[backendStatus] || 'processing';
+}
 
 export default function DashboardPage() {
-	const { user, logout } = useAuth();
-	const router = useRouter();
+  const { user } = useAuth();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-	const handleLogout = () => {
-		logout();
-		router.push("/auth/login");
-	};
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        setLoading(true);
+        const response = await api.get('/dashboard');
+        const data = response.data;
+        
+        setDashboardData({
+          userName: user?.email?.split('@')[0] || 'User',
+          stats: [
+            {
+              title: 'Total Candidates',
+              value: data.totalCandidates.toString(),
+              change: '',
+              trend: 'up'
+            },
+            {
+              title: 'Avg Role Fit Score',
+              value: `${data.averageRoleFitScore}%`,
+              change: '',
+              trend: 'up'
+            },
+            {
+              title: 'Shortlisted',
+              value: data.shortlistCount.toString(),
+              change: '',
+              trend: 'up'
+            },
+            {
+              title: 'Pending Reviews',
+              value: data.processingCount.toString(),
+              change: '',
+              trend: 'down'
+            }
+          ],
+          recentActivity: {
+            title: 'Recent Activity',
+            activities: data.recentCandidates.map((candidate: any) => ({
+              name: candidate.name,
+              role: candidate.jobRole,
+              time: formatRelativeTime(candidate.createdAt),
+              status: mapStatus(candidate.status),
+              score: candidate.roleFitScore
+            }))
+          }
+        });
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    }
 
-	return (
-		<ProtectedRoute>
-			<Layout>
-				<div className="p-8">
-					<div className="max-w-7xl mx-auto">
-						<div className="flex justify-between items-center mb-8">
-							<div>
-								<h1 className="text-3xl font-bold text-gray-900">
-									Dashboard
-								</h1>
-								<p className="text-gray-600 mt-1">
-									Welcome, {user?.email}
-								</p>
-							</div>
-							<button
-								onClick={handleLogout}
-								className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-							>
-								Logout
-							</button>
-						</div>
+    if (user) {
+      fetchDashboard();
+    }
+  }, [user]);
 
-						<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-							<div className="bg-white p-6 rounded-lg shadow">
-								<h3 className="text-lg font-medium text-gray-900">
-									Total Candidates
-								</h3>
-								<p className="text-3xl font-bold text-blue-600">
-									0
-								</p>
-							</div>
-							<div className="bg-white p-6 rounded-lg shadow">
-								<h3 className="text-lg font-medium text-gray-900">
-									Average Score
-								</h3>
-								<p className="text-3xl font-bold text-green-600">
-									0
-								</p>
-							</div>
-							<div className="bg-white p-6 rounded-lg shadow">
-								<h3 className="text-lg font-medium text-gray-900">
-									Shortlisted
-								</h3>
-								<p className="text-3xl font-bold text-purple-600">
-									0
-								</p>
-							</div>
-						</div>
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin h-12 w-12 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
 
-						<div className="bg-white p-6 rounded-lg shadow">
-							<h2 className="text-xl font-bold text-gray-900 mb-4">
-								Recent Candidates
-							</h2>
-							<p className="text-gray-500">
-								No candidates yet. Start by uploading resumes or
-								LinkedIn profiles.
-							</p>
-						</div>
-					</div>
-				</div>
-			</Layout>
-		</ProtectedRoute>
-	);
+  if (error) {
+    return (
+      <ProtectedRoute>
+        <Layout>
+          <div className="p-6 md:p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Error Loading Dashboard</h3>
+                <p className="text-red-600">{error}</p>
+              </div>
+            </div>
+          </div>
+        </Layout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (!dashboardData) return null;
+
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <div className="p-6 md:p-8">
+          <div className="max-w-7xl mx-auto">
+            <DashboardHeader userName={dashboardData.userName} />
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {dashboardData.stats.map((stat, index) => (
+                <StatsCard key={index} {...stat} />
+              ))}
+            </div>
+            
+            <div className="mb-8">
+              <RecentActivity {...dashboardData.recentActivity} />
+            </div>
+            
+            <NewEvaluation />
+          </div>
+        </div>
+      </Layout>
+    </ProtectedRoute>
+  );
 }
