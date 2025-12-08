@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Delete, Param, Query, UseGuards,Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CandidatesService } from './candidates.service';
 import { CandidateFilterDto } from './dto/candidate-filter.dto';
@@ -21,8 +21,8 @@ export class CandidatesController {
   @ApiQuery({ name: 'score_min', required: false, description: 'Minimum role fit score (0-100)' })
   @ApiQuery({ name: 'score_max', required: false, description: 'Maximum role fit score (0-100)' })
   @ApiQuery({ name: 'jobRole', required: false, description: 'Filter by job role' })
-  async findAll(@Query() filters: CandidateFilterDto) {
-    return this.candidatesService.findAll(filters);
+  async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
+    return this.candidatesService.findAll(filters, req.user.id, req.user.role);
   }
 
   @Get(':id')

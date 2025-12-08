@@ -4,7 +4,8 @@ import {
   Body, 
   UseInterceptors, 
   UploadedFile, 
-  UseGuards 
+  UseGuards,
+  Request 
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { 
@@ -54,8 +55,9 @@ export class UploadController {
   async uploadResume(
     @UploadedFile(FileValidationPipe) file: Express.Multer.File,
     @Body() uploadResumeDto: UploadResumeDto,
+    @Request() req,
   ) {
-    return this.uploadService.processResume(file, uploadResumeDto.jobRole);
+    return this.uploadService.processResume(file, uploadResumeDto.jobRole, req.user.id);
   }
 
   @Post('linkedin')
@@ -63,10 +65,14 @@ export class UploadController {
   @ApiResponse({ status: 201, description: 'LinkedIn profile processing started' })
   @ApiResponse({ status: 400, description: 'Invalid LinkedIn URL or missing job role' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async processLinkedin(@Body() linkedinProfileDto: LinkedinProfileDto) {
+  async processLinkedin(
+    @Body() linkedinProfileDto: LinkedinProfileDto,
+    @Request() req,
+  ) {
     return this.uploadService.processLinkedinProfile(
       linkedinProfileDto.linkedinUrl,
       linkedinProfileDto.jobRole,
+      req.user.id,
     );
   }
 }

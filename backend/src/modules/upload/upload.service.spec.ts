@@ -147,7 +147,7 @@ describe('UploadService', () => {
     });
 
     it('should process PDF resume successfully', async () => {
-      const result = await service.processResume(mockPdfFile, 'Backend Engineer');
+      const result = await service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id');
 
       expect(pdfParse).toHaveBeenCalledWith(mockPdfFile.buffer);
       expect(candidatesService.create).toHaveBeenCalledWith({
@@ -155,6 +155,7 @@ describe('UploadService', () => {
         rawText: 'Extracted PDF text content',
         jobRole: 'Backend Engineer',
         status: 'pending',
+        createdBy: 'test-user-id',
       });
 
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
@@ -170,7 +171,7 @@ describe('UploadService', () => {
     });
 
     it('should process Word document successfully', async () => {
-      const result = await service.processResume(mockWordFile, 'Frontend Engineer');
+      const result = await service.processResume(mockWordFile, 'Frontend Engineer', 'test-user-id');
 
       expect(mammoth.extractRawText).toHaveBeenCalledWith({
         buffer: mockWordFile.buffer,
@@ -192,7 +193,7 @@ describe('UploadService', () => {
       };
 
       await expect(
-        service.processResume(unsupportedFile, 'Backend Engineer')
+        service.processResume(unsupportedFile, 'Backend Engineer', 'test-user-id')
       ).rejects.toThrow('Unsupported file type');
     });
 
@@ -200,7 +201,7 @@ describe('UploadService', () => {
       candidatesService.create.mockRejectedValue(new Error('Database error'));
 
       await expect(
-        service.processResume(mockPdfFile, 'Backend Engineer')
+        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id')
       ).rejects.toThrow('Database error');
     });
 
@@ -210,7 +211,7 @@ describe('UploadService', () => {
       );
 
       await expect(
-        service.processResume(mockPdfFile, 'Backend Engineer')
+        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id')
       ).rejects.toThrow('Invalid PDF structure');
     });
 
@@ -220,7 +221,7 @@ describe('UploadService', () => {
       );
 
       await expect(
-        service.processResume(mockWordFile, 'Frontend Engineer')
+        service.processResume(mockWordFile, 'Frontend Engineer', 'test-user-id')
       ).rejects.toThrow('Invalid Word document');
     });
   });
@@ -237,7 +238,7 @@ describe('UploadService', () => {
     });
 
     it('should process LinkedIn profile successfully', async () => {
-      const result = await service.processLinkedinProfile(linkedinUrl, jobRole);
+      const result = await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
 
       expect(apifyService.scrapeLinkedInProfiles).toHaveBeenCalledWith([linkedinUrl]);
       expect(linkedInMapper.transformMultipleProfiles).toHaveBeenCalledWith([mockLinkedInProfile]);
@@ -248,6 +249,7 @@ describe('UploadService', () => {
         rawText: expect.stringContaining('Name: John Doe'),
         jobRole,
         status: 'pending',
+        createdBy: 'test-user-id',
       });
 
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
@@ -266,7 +268,7 @@ describe('UploadService', () => {
       apifyService.scrapeLinkedInProfiles.mockResolvedValue([]);
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole)
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toThrow(
         new HttpException(
           'Failed to scrape LinkedIn profile',
@@ -279,7 +281,7 @@ describe('UploadService', () => {
       linkedInMapper.transformMultipleProfiles.mockResolvedValue([]);
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole)
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toThrow(
         new HttpException(
           'Failed to process LinkedIn profile data',
@@ -295,7 +297,7 @@ describe('UploadService', () => {
       );
 
       await expect(
-        service.processLinkedinProfile(invalidUrl, jobRole)
+        service.processLinkedinProfile(invalidUrl, jobRole, 'test-user-id')
       ).rejects.toThrow(InvalidLinkedInUrlException);
     });
 
@@ -305,7 +307,7 @@ describe('UploadService', () => {
       );
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole)
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toThrow(ProfileNotFoundException);
     });
 
@@ -315,7 +317,7 @@ describe('UploadService', () => {
       );
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole)
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toThrow(
         new HttpException(
           'Failed to process LinkedIn profile',
@@ -333,7 +335,8 @@ describe('UploadService', () => {
 
       await service.processLinkedinProfile(
         'https://www.linkedin.com/in/johndoe',
-        'Backend Engineer'
+        'Backend Engineer',
+        'test-user-id'
       );
 
       const createCall = candidatesService.create.mock.calls[0][0];
@@ -364,7 +367,8 @@ describe('UploadService', () => {
 
       await service.processLinkedinProfile(
         'https://www.linkedin.com/in/janesmith',
-        'Frontend Engineer'
+        'Frontend Engineer',
+        'test-user-id'
       );
 
       const createCall = candidatesService.create.mock.calls[0][0];
@@ -382,7 +386,7 @@ describe('UploadService', () => {
       candidatesService.create.mockResolvedValue(mockCandidate as any);
       queueService.addAIProcessingJob.mockResolvedValue(undefined);
       
-      const result = await service.processResume(mockPdfFile, 'Data Scientist');
+      const result = await service.processResume(mockPdfFile, 'Data Scientist', 'test-user-id');
 
       // Verify the complete workflow
       expect(pdfParse).toHaveBeenCalledTimes(1);
@@ -400,7 +404,8 @@ describe('UploadService', () => {
 
       const result = await service.processLinkedinProfile(
         'https://www.linkedin.com/in/johndoe',
-        'Full Stack Engineer'
+        'Full Stack Engineer',
+        'test-user-id'
       );
 
       // Verify the complete workflow
