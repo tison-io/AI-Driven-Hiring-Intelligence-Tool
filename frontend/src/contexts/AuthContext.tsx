@@ -31,12 +31,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const token = tokenStorage.get();
     if (token && tokenStorage.isValid(token)) {
-      const userData = tokenStorage.parseUser(token);
-      if (userData) {
-        setUser(userData);
-      }
+      // Fetch full profile on mount
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data) setUser(data);
+          else {
+            const userData = tokenStorage.parseUser(token);
+            if (userData) setUser(userData);
+          }
+        })
+        .catch(() => {
+          const userData = tokenStorage.parseUser(token);
+          if (userData) setUser(userData);
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
     isInitialized.current = true;
   }, []);
 
@@ -54,6 +68,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       const { access_token } = await response.json();
       tokenStorage.set(access_token);
+      
+      // Fetch full profile data
+      const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+        headers: { 'Authorization': `Bearer ${access_token}` }
+      });
+      
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        setUser(profileData);
+        return profileData;
+      }
+      
       const userData = tokenStorage.parseUser(access_token);
       if (userData) {
         setUser(userData);

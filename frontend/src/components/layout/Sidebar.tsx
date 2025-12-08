@@ -77,11 +77,19 @@ export default function Sidebar() {
       {/* User Profile */}
       <div className="p-4 border-t border-gray-800">
         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-800/50">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
-            {user?.email?.substring(0, 2).toUpperCase() || 'U'}
-          </div>
+          {user?.userPhoto ? (
+            <img 
+              src={user.userPhoto} 
+              alt={user.fullName || user.email} 
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold">
+              {(user?.fullName || user?.email)?.substring(0, 2).toUpperCase() || 'U'}
+            </div>
+          )}
           <div className="flex-1">
-            <p className="text-white text-sm font-medium">{user?.email || 'User'}</p>
+            <p className="text-white text-sm font-medium">{user?.fullName || user?.email || 'User'}</p>
             <p className="text-gray-400 text-xs capitalize">{user?.role || 'Guest'}</p>
           </div>
         </div>
