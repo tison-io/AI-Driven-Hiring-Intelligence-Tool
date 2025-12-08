@@ -37,20 +37,20 @@ const CandidatesPage = () => {
 	return (
 		<ProtectedRoute>
 			<Layout>
-				<div className="p-8">
+				<div className="p-4 md:p-6 lg:p-8">
 					<div className="max-w-7xl mx-auto">
 						{/* Header */}
-						<div className="mb-8">
-							<h1 className="text-3xl font-bold text-black mb-2">
+						<div className="mb-6 md:mb-8">
+							<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
 								Candidate Pipeline
 							</h1>
-							<p className="text-gray-400">
+							<p className="text-gray-400 text-sm md:text-base">
 								Filter and manage your candidate pool
 							</p>
 						</div>
 
 						{/* Search and Filters Section */}
-						<div className="bg-[#fff] rounded-xl border border-gray-800 p-6 mb-6">
+						<div className="bg-[#fff] rounded-xl border border-gray-800 p-4 md:p-6 mb-4 md:mb-6">
 							{/* Search Bar */}
 							<div className="relative mb-6">
 								<Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -62,21 +62,21 @@ const CandidatesPage = () => {
 							</div>
 
 							{/* Filters Row */}
-							<div className="flex items-center justify-between mb-6">
-								<button className="flex items-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors">
+							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+								<button className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors">
 									<Filter className="w-4 h-4" />
 									<span className="text-sm font-bold">
 										Clear Filters
 									</span>
 								</button>
-								<button className="flex items-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black-400 hover:bg-cyan-500/20 transition-colors">
+								<button className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black-400 hover:bg-cyan-500/20 transition-colors">
 									<Download className="w-4 h-4" />
 									<span className="text-sm">Export CSV</span>
 								</button>
 							</div>
 
 							{/* Range Sliders */}
-							<div className="grid grid-cols-2 gap-8">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
 								{/* Experience Range */}
 								<div>
 									<label className="text-sm text-gray-400 mb-3 block">
@@ -127,33 +127,97 @@ const CandidatesPage = () => {
 						) : candidates.length === 0 ? (
 							<EmptyState />
 						) : (
-						<div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-							<div className="overflow-x-auto">
-								<table className="w-full">
+						<>
+							{/* Mobile & Tablet Card View */}
+							<div className="lg:hidden space-y-4">
+								{candidates.map((candidate) => (
+									<div
+										key={candidate._id || candidate.id}
+										className="bg-white rounded-lg border border-gray-200 p-4"
+									>
+										<div className="flex items-start justify-between mb-3">
+											<div className="flex-1">
+												<h3 className="font-semibold text-gray-900 mb-1">
+													{candidate.name}
+												</h3>
+												<p className="text-sm text-gray-500">
+													{candidate.jobRole || 'N/A'}
+												</p>
+											</div>
+											<span
+												className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || 'New')}`}
+											>
+												{candidate.status || 'New'}
+											</span>
+										</div>
+										
+										<div className="grid grid-cols-2 gap-3 mb-3">
+											<div>
+												<p className="text-xs text-gray-500 mb-1">Role Fit</p>
+												<span
+													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
+												>
+													{candidate.roleFitScore || 0}
+												</span>
+											</div>
+											<div>
+												<p className="text-xs text-gray-500 mb-1">Experience</p>
+												<p className="text-sm font-medium text-gray-700">
+													{candidate.experienceYears || 0} yrs
+												</p>
+											</div>
+										</div>
+										
+										<div className="flex items-center justify-between pt-3 border-t border-gray-200">
+											<span className="text-sm text-gray-600">
+												Confidence: {candidate.confidenceScore || 0}%
+											</span>
+											<div className="flex items-center gap-2">
+												<button
+													onClick={() =>
+														(window.location.href = `/candidates/${candidate._id || candidate.id}`)
+													}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
+													<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+												</button>
+												<button className="p-2 hover:bg-gray-100 rounded-lg transition-colors group">
+													<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
+												</button>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+
+							{/* Desktop Table View */}
+							<div className="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden">
+								<div className="overflow-x-auto">
+									<table className="w-full">
 									<thead>
 										<tr className="border-b border-gray-200 bg-gray-50">
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Candidate Name
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Target Role
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Experience
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Top Skills
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Role Fit
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Confidence
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Status
 											</th>
-											<th className="text-left py-4 px-6 text-sm font-bold text-gray-600 uppercase tracking-wider">
+											<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 												Actions
 											</th>
 										</tr>
@@ -164,27 +228,27 @@ const CandidatesPage = () => {
 												key={candidate._id || candidate.id}
 												className="hover:bg-gray-50 transition-colors"
 											>
-												<td className="py-4 px-6">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
 													<div>
-														<p className="text-gray-900 font-medium">
+														<p className="text-sm xl:text-base text-gray-900 font-medium">
 															{candidate.name}
 														</p>
-														<p className="text-sm text-gray-500">
+														<p className="text-xs xl:text-sm text-gray-500">
 															{candidate.jobRole || 'N/A'}
 														</p>
 													</div>
 												</td>
-												<td className="py-4 px-6">
-													<p className="text-gray-700">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
+													<p className="text-sm xl:text-base text-gray-700">
 														{candidate.jobRole || 'N/A'}
 													</p>
 												</td>
-												<td className="py-4 px-6">
-													<p className="text-gray-700">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
+													<p className="text-sm xl:text-base text-gray-700">
 														{candidate.experienceYears || 0} yrs
 													</p>
 												</td>
-												<td className="py-4 px-6">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
 													<div className="flex flex-wrap gap-1">
 														{(candidate.skills || []).slice(0, 3).map(
 															(skill: string, idx:string) => (
@@ -198,26 +262,26 @@ const CandidatesPage = () => {
 														)}
 													</div>
 												</td>
-												<td className="py-4 px-6">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
 													<span
-														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
+														className={`inline-flex items-center px-2 xl:px-3 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
 													>
 														{candidate.roleFitScore || 0}
 													</span>
 												</td>
-												<td className="py-4 px-6">
-													<span className="text-gray-700">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
+													<span className="text-sm xl:text-base text-gray-700">
 														{candidate.confidenceScore || 0}%
 													</span>
 												</td>
-												<td className="py-4 px-6">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
 													<span
-														className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || 'New')}`}
+														className={`inline-flex items-center px-2 xl:px-3 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || 'New')}`}
 													>
 														{candidate.status || 'New'}
 													</span>
 												</td>
-												<td className="py-4 px-6">
+												<td className="py-3 px-3 lg:px-4 xl:px-6">
 													<div className="flex items-center gap-2">
 														<button
 															onClick={() =>
@@ -235,9 +299,10 @@ const CandidatesPage = () => {
 											</tr>
 										))}
 									</tbody>
-								</table>
+									</table>
+								</div>
 							</div>
-						</div>
+						</>
 						)}
 					</div>
 				</div>

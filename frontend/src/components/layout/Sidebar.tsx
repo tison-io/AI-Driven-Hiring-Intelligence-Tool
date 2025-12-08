@@ -31,7 +31,7 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="fixed inset-y-0 left-0 w-60 bg-[#0a1628] border-r border-gray-800 flex flex-col z-50">
+    <div className="fixed inset-y-0 left-0 w-52 bg-[#0a1628] border-r border-gray-800 flex flex-col z-50">
       {/* Header */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-3">
