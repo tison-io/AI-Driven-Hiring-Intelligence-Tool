@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res, UseGuards, Request } from '@nestjs/common';
 import { Response } from 'express';
 import { 
   ApiTags, 
@@ -33,6 +33,7 @@ export class ExportController {
   async exportCandidates(
     @Query() exportDto: ExportCandidatesDto,
     @Res() res: Response,
+    @Request() req,
   ) {
     const { format, ...filters } = exportDto;
     let buffer: Buffer;
@@ -40,11 +41,11 @@ export class ExportController {
     let contentType: string;
 
     if (format === 'csv') {
-      buffer = await this.exportService.exportCandidatesCSV(filters);
+      buffer = await this.exportService.exportCandidatesCSV(filters, req.user.id, req.user.role);
       filename = `candidates-${new Date().toISOString().split('T')[0]}.csv`;
       contentType = 'text/csv';
     } else if (format === 'xlsx') {
-      buffer = await this.exportService.exportCandidatesXLSX(filters);
+      buffer = await this.exportService.exportCandidatesXLSX(filters, req.user.id, req.user.role);
       filename = `candidates-${new Date().toISOString().split('T')[0]}.xlsx`;
       contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     } else {

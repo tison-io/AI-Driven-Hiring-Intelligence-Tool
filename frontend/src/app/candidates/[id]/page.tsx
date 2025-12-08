@@ -15,8 +15,8 @@ export default function CandidateDetailPage() {
 		return (
 			<ProtectedRoute>
 				<Layout>
-					<div className="min-h-screen bg-[#0a0f1a] p-8 flex items-center justify-center">
-						<div className="text-white text-xl">Loading candidate details...</div>
+					<div className="min-h-screen bg-[#0a0f1a] p-4 md:p-8 flex items-center justify-center">
+						<div className="text-white text-lg md:text-xl">Loading candidate details...</div>
 					</div>
 				</Layout>
 			</ProtectedRoute>
@@ -27,13 +27,13 @@ export default function CandidateDetailPage() {
 		return (
 			<ProtectedRoute>
 				<Layout>
-					<div className="min-h-screen bg-[#0a0f1a] p-8 flex items-center justify-center">
+					<div className="min-h-screen bg-[#0a0f1a] p-4 md:p-8 flex items-center justify-center">
 						<div className="text-center">
-							<h2 className="text-red-400 text-2xl mb-4">Error Loading Candidate</h2>
-							<p className="text-gray-400">{error || "Candidate not found"}</p>
+							<h2 className="text-red-400 text-xl md:text-2xl mb-4">Error Loading Candidate</h2>
+							<p className="text-gray-400 text-sm md:text-base">{error || "Candidate not found"}</p>
 							<button
 								onClick={() => (window.location.href = "/candidates")}
-								className="mt-4 px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600"
+								className="mt-4 px-4 md:px-6 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 text-sm md:text-base"
 							>
 								Back to Candidates
 							</button>
@@ -62,7 +62,7 @@ export default function CandidateDetailPage() {
 	return (
 		<ProtectedRoute>
 			<Layout>
-				<CandidateDetail candidate={transformedCandidate} />
+				<CandidateDetail candidate={transformedCandidate} candidateId={id} />
 			</Layout>
 		</ProtectedRoute>
 	);
