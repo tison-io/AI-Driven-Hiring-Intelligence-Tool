@@ -11,6 +11,17 @@ export class MetricWithChange {
   trend: 'up' | 'down' | 'neutral';
 }
 
+export class SystemHealthDto {
+  @ApiProperty({ example: 2500, description: 'Average processing time in milliseconds' })
+  averageProcessingTime: number;
+
+  @ApiProperty({ example: 95.5, description: 'Success rate percentage' })
+  successRate: number;
+
+  @ApiProperty({ example: 3, description: 'Number of failed processing attempts' })
+  failedProcessingCount: number;
+}
+
 export class AdminDashboardResponseDto {
   @ApiProperty({ type: MetricWithChange })
   totalCandidatesProcessed: MetricWithChange;
@@ -20,4 +31,7 @@ export class AdminDashboardResponseDto {
 
   @ApiProperty({ type: MetricWithChange })
   totalShortlisted: MetricWithChange;
+
+  @ApiProperty({ type: SystemHealthDto })
+  systemHealth: SystemHealthDto;
 }

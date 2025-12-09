@@ -85,6 +85,9 @@ export class DashboardService {
     const scoreChange = this.calculatePercentageChange(currentAvgScore, lastAvgScore);
     const shortlistedChange = this.calculatePercentageChange(currentShortlisted, lastShortlisted);
 
+    // Get system health metrics
+    const systemHealth = await this.getSystemHealthMetrics();
+
     return {
       totalCandidatesProcessed: {
         current: currentProcessed,
@@ -100,7 +103,8 @@ export class DashboardService {
         current: currentShortlisted,
         percentageChange: shortlistedChange,
         trend: this.getTrend(shortlistedChange)
-      }
+      },
+      systemHealth
     };
   }
 
@@ -185,5 +189,28 @@ export class DashboardService {
     });
 
     return distribution;
+  }
+
+  async getSystemHealthMetrics() {
+    const completedCandidates = await this.candidateModel.find({
+      status: 'completed',
+      processingTime: { $exists: true, $ne: null }
+    }).select('processingTime');
+
+    const avgProcessingTime = completedCandidates.length > 0
+      ? completedCandidates.reduce((sum, c) => sum + (c.processingTime || 0), 0) / completedCandidates.length
+      : 0;
+
+    const failedCount = await this.candidateModel.countDocuments({ status: 'failed' });
+    const totalProcessed = await this.candidateModel.countDocuments({ 
+      status: { $in: ['completed', 'failed'] } 
+    });
+    const successRate = totalProcessed > 0 ? ((totalProcessed - failedCount) / totalProcessed) * 100 : 100;
+
+    return {
+      averageProcessingTime: Math.round(avgProcessingTime),
+      successRate: Math.round(successRate * 100) / 100,
+      failedProcessingCount: failedCount
+    };
   }
 }

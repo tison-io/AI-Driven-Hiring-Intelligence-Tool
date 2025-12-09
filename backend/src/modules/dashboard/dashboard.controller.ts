@@ -85,6 +85,14 @@ export class DashboardController {
             percentageChange: { type: 'number', example: 8.0 },
             trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'up' }
           }
+        },
+        systemHealth: {
+          type: 'object',
+          properties: {
+            averageProcessingTime: { type: 'number', example: 2500, description: 'Average processing time in milliseconds' },
+            successRate: { type: 'number', example: 95.5, description: 'Success rate percentage' },
+            failedProcessingCount: { type: 'number', example: 3, description: 'Number of failed processing attempts' }
+          }
         }
       }
     }
