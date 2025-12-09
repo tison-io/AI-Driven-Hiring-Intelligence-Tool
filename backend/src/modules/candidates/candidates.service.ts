@@ -82,4 +82,15 @@ export class CandidatesService {
       message: 'Candidate and all PII data deleted successfully'
     };
   }
+
+  async toggleShortlist(id: string): Promise<Candidate> {
+    const candidate = await this.candidateModel.findById(id).exec();
+    
+    if (!candidate) {
+      throw new Error('Candidate not found');
+    }
+
+    candidate.isShortlisted = !candidate.isShortlisted;
+    return candidate.save();
+  }
 }

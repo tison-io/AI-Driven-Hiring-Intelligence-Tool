@@ -57,6 +57,7 @@ export default function CandidateDetailPage() {
 		potentialGaps: candidate.potentialWeaknesses || [],
 		missingSkills: candidate.missingSkills || [],
 		interviewQuestions: candidate.interviewQuestions || [],
+		isShortlisted: candidate.isShortlisted || false,
 	};
 
 	return (

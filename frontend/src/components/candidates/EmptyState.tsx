@@ -11,7 +11,7 @@ export default function EmptyState() {
         </p>
         <button
           onClick={() => window.location.href = '/upload'}
-          className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-600 hover:to-blue-700 transition-all"
+          className="px-6 py-3 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white rounded-lg hover:opacity-90 transition-all"
         >
           Upload Resume
         </button>

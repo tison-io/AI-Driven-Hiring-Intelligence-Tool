@@ -52,6 +52,12 @@ export const candidatesApi = {
     const response = await api.delete(`/candidates/${id}`);
     return response.data;
   },
+
+  // Toggle shortlist status
+  toggleShortlist: async (id: string) => {
+    const response = await api.patch(`/candidates/${id}/shortlist`);
+    return response.data;
+  },
 };
 
 // Auth API functions

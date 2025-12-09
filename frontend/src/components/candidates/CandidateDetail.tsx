@@ -13,7 +13,7 @@ import CandidateActions from './CandidateActions'
 import DeleteCandidateModal from '../modals/DeleteCandidateModal'
 
 interface CandidateDetailProps {
-  candidate: any // TODO: Replace with proper type from types/index.ts
+  candidate: any & { isShortlisted?: boolean } // TODO: Replace with proper type from types/index.ts
   candidateId: string
 }
 
@@ -21,6 +21,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDownloadingReport, setIsDownloadingReport] = useState(false)
+  const [isShortlisted, setIsShortlisted] = useState(candidate.isShortlisted || false)
 
   const handleDeleteConfirm = async () => {
     try {
@@ -62,9 +63,14 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     }
   }
 
-  const handleShortlist = () => {
-    console.log('Add to shortlist')
-    // TODO: Implement shortlist functionality
+  const handleShortlist = async () => {
+    try {
+      await candidatesApi.toggleShortlist(candidateId)
+      setIsShortlisted(!isShortlisted)
+      toast.success(isShortlisted ? 'Removed from shortlist' : 'Added to shortlist')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update shortlist')
+    }
   }
 
   const handleExportCSV = () => {
@@ -106,6 +112,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
           onDownloadReport={handleDownloadReport}
           onExportCSV={handleExportCSV}
           isDownloadingReport={isDownloadingReport}
+          isShortlisted={isShortlisted}
         />
 
         <DeleteCandidateModal

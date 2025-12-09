@@ -18,8 +18,17 @@ export interface RecentActivityData {
   activities: ActivityItemData[];
 }
 
+export interface ShortlistedCandidate {
+  _id: string;
+  name: string;
+  role: string;
+  score: number;
+  time: string;
+}
+
 export interface DashboardData {
   stats: StatsCardData[];
   recentActivity: RecentActivityData;
+  shortlistedCandidates: ShortlistedCandidate[];
   userName: string;
 }
