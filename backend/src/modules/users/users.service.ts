@@ -65,4 +65,48 @@ export class UsersService {
   async delete(id: string): Promise<void> {
     await this.userModel.findByIdAndDelete(id).exec();
   }
+
+  async setPasswordResetToken(email: string, hashedToken: string, expires: Date): Promise<void> {
+    await this.userModel.findOneAndUpdate(
+      { email },
+      {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: expires,
+        passwordResetUsed: false,
+        $inc: { passwordResetAttempts: 1 },
+        lastPasswordResetRequest: new Date(),
+      }
+    ).exec();
+  }
+
+  async findByResetToken(hashedToken: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({
+      passwordResetToken: hashedToken,
+      passwordResetExpires: { $gt: new Date() },
+      passwordResetUsed: false,
+    }).exec();
+  }
+
+  async resetPassword(userId: string, hashedPassword: string, oldPasswordHash: string): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+      passwordResetToken: null,
+      passwordResetExpires: null,
+      passwordResetUsed: true,
+      $push: { passwordHistory: { $each: [oldPasswordHash], $slice: -5 } },
+    }).exec();
+  }
+
+  async canRequestReset(email: string): Promise<boolean> {
+    const user = await this.userModel.findOne({ email }).exec();
+    if (!user) return true;
+
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    if (user.lastPasswordResetRequest && user.lastPasswordResetRequest > oneHourAgo) {
+      return user.passwordResetAttempts < 3;
+    }
+
+    await this.userModel.findByIdAndUpdate(user._id, { passwordResetAttempts: 0 }).exec();
+    return true;
+  }
 }

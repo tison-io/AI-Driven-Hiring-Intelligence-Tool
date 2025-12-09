@@ -54,4 +54,23 @@ export const candidatesApi = {
   },
 };
 
+// Auth API functions
+export const authApi = {
+  forgotPassword: async (email: string) => {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`,
+      { email }
+    );
+    return response.data;
+  },
+
+  resetPassword: async (token: string, newPassword: string) => {
+    const response = await axios.post(
+      `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password/${token}`,
+      { newPassword }
+    );
+    return response.data;
+  },
+};
+
 export default api;

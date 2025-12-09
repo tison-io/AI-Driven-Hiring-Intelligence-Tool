@@ -34,6 +34,24 @@ export class User {
 
   @Prop({ default: false })
   profileCompleted?: boolean;
+
+  @Prop()
+  passwordResetToken?: string;
+
+  @Prop()
+  passwordResetExpires?: Date;
+
+  @Prop({ default: false })
+  passwordResetUsed?: boolean;
+
+  @Prop({ type: [String], default: [] })
+  passwordHistory?: string[];
+
+  @Prop({ default: 0 })
+  passwordResetAttempts?: number;
+
+  @Prop()
+  lastPasswordResetRequest?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
