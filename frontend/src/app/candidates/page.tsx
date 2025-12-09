@@ -21,6 +21,8 @@ import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import { candidatesApi } from "@/lib/api";
 
 const CandidatesPage = () => {
+	const [searchQuery, setSearchQuery] = useState('');
+	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 	const [experienceRange, setExperienceRange] = useState([0, 10]);
 	const [debouncedExperienceRange, setDebouncedExperienceRange] = useState([0, 10]);
 	const [minRole, setMinRole] = useState(0);
@@ -29,6 +31,15 @@ const CandidatesPage = () => {
 	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
+
+	// Debounce searchQuery changes
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchQuery(searchQuery);
+		}, 500);
+
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
 
 	// Debounce minRole changes
 	useEffect(() => {
@@ -51,11 +62,12 @@ const CandidatesPage = () => {
 	// Build filters object with useMemo to prevent infinite re-renders
 	const filters = useMemo(() => {
 		const filterObj: any = {};
+		if (debouncedSearchQuery) filterObj.search = debouncedSearchQuery;
 		if (debouncedMinRole > 0) filterObj.score_min = debouncedMinRole;
 		if (debouncedExperienceRange[0] > 0) filterObj.experience_min = debouncedExperienceRange[0];
 		if (debouncedExperienceRange[1] < 10) filterObj.experience_max = debouncedExperienceRange[1];
 		return filterObj;
-	}, [debouncedMinRole, debouncedExperienceRange]);
+	}, [debouncedSearchQuery, debouncedMinRole, debouncedExperienceRange]);
 
 	const { candidates, isLoading, error, refetch } = useCandidates(filters);
 
@@ -74,6 +86,13 @@ const CandidatesPage = () => {
 			toast.error(error.response?.data?.message || 'Failed to delete candidate');
 			throw error;
 		}
+	};
+
+	const handleClearFilters = () => {
+		setSearchQuery('');
+		setExperienceRange([0, 10]);
+		setMinRole(0);
+		toast.success('Filters cleared');
 	};
 
 	const handleExport = async (format: 'csv' | 'xlsx') => {
@@ -146,13 +165,18 @@ const CandidatesPage = () => {
 								<input
 									type="text"
 									placeholder="Search Candidates..."
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
 									className="w-full bg-[#f6f6f6] border border-gray-700 rounded-lg pl-12 pr-4 py-3 text-black placeholder-gray-500 focus:outline-none focus:border-gray-500 transition-colors"
 								/>
 							</div>
 
 							{/* Filters Row */}
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-								<button className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors">
+								<button 
+									onClick={handleClearFilters}
+									className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+								>
 									<Filter className="w-4 h-4" />
 									<span className="text-sm font-bold">
 										Clear Filters

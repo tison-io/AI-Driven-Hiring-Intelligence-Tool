@@ -21,6 +21,7 @@ export class CandidatesController {
   @ApiQuery({ name: 'score_min', required: false, description: 'Minimum role fit score (0-100)' })
   @ApiQuery({ name: 'score_max', required: false, description: 'Maximum role fit score (0-100)' })
   @ApiQuery({ name: 'jobRole', required: false, description: 'Filter by job role' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search across name, skills, and job role' })
   async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
     return this.candidatesService.findAll(filters, req.user.id, req.user.role);
   }
