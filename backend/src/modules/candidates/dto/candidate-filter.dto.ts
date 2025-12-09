@@ -42,4 +42,9 @@ export class CandidateFilterDto {
   @IsOptional()
   @IsString()
   jobRole?: string;
+
+  @ApiPropertyOptional({ example: 'john', description: 'Search across name, skills, and job role' })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
