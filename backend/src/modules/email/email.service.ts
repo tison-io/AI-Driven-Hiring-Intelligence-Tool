@@ -14,7 +14,7 @@ export class EmailService {
   }
 
   async sendPasswordResetEmail(to: string, resetToken: string, userName?: string): Promise<void> {
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/reset-password/${resetToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/reset-password/${resetToken}`;
     const greeting = userName ? `Hi ${userName},` : 'Hi,';
     
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
