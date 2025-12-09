@@ -49,7 +49,7 @@ export default function DashboardPage() {
         const data = response.data;
         
         setDashboardData({
-          userName: user?.email?.split('@')[0] || 'User',
+          userName: user?.fullName || user?.email?.split('@')[0] || 'User',
           stats: [
             {
               title: 'Total Candidates',
