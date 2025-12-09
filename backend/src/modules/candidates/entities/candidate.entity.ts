@@ -59,6 +59,9 @@ export class Candidate {
   @Prop({ enum: ProcessingStatus, default: ProcessingStatus.PENDING })
   status: ProcessingStatus;
 
+  @Prop({ default: false })
+  isShortlisted: boolean;
+
   @Prop()
   fileUrl?: string;
 

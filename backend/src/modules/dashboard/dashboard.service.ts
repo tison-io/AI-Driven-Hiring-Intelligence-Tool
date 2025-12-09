@@ -27,7 +27,10 @@ export class DashboardService {
 
     const shortlistCount = await this.candidateModel.countDocuments({
       ...query,
-      roleFitScore: { $gte: 80 }
+      $or: [
+        { isShortlisted: true },
+        { roleFitScore: { $gte: 80 } }
+      ]
     });
 
     const processingCount = await this.candidateModel.countDocuments({
@@ -42,12 +45,26 @@ export class DashboardService {
       .select('name jobRole roleFitScore status createdAt')
       .exec();
 
+    const shortlistedCandidates = await this.candidateModel
+      .find({
+        ...query,
+        $or: [
+          { isShortlisted: true },
+          { roleFitScore: { $gte: 80 } }
+        ]
+      })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('name jobRole roleFitScore createdAt')
+      .exec();
+
     return {
       totalCandidates,
       averageRoleFitScore: Math.round(averageRoleFitScore * 100) / 100,
       shortlistCount,
       processingCount,
       recentCandidates,
+      shortlistedCandidates,
     };
   }
 
