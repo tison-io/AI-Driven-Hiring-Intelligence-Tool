@@ -53,6 +53,48 @@ export class DashboardController {
     return this.dashboardService.getDashboardMetrics(req.user.id, req.user.role);
   }
 
+  @Get('admin')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get admin dashboard metrics with month-over-month comparison' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Admin dashboard metrics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        totalCandidatesProcessed: {
+          type: 'object',
+          properties: {
+            current: { type: 'number', example: 150 },
+            percentageChange: { type: 'number', example: 12.5 },
+            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'up' }
+          }
+        },
+        averageRoleFitScore: {
+          type: 'object',
+          properties: {
+            current: { type: 'number', example: 75.5 },
+            percentageChange: { type: 'number', example: -3.2 },
+            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'down' }
+          }
+        },
+        totalShortlisted: {
+          type: 'object',
+          properties: {
+            current: { type: 'number', example: 45 },
+            percentageChange: { type: 'number', example: 8.0 },
+            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'up' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getAdminDashboardMetrics() {
+    return this.dashboardService.getAdminDashboardMetrics();
+  }
+
   @Get('score-distribution')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get role fit score distribution (Admin only)' })
