@@ -1,5 +1,6 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
@@ -8,6 +9,8 @@ import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CompleteProfileDto } from './dto/complete-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -94,5 +97,25 @@ export class AuthController {
       userPhotoUrl,
       companyLogoUrl
     );
+  }
+
+  @Post('forgot-password')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Request password reset (Rate limit: 3 per hour)' })
+  @ApiResponse({ status: 200, description: 'Reset link sent if email exists' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Post('reset-password/:token')
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successful' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async resetPassword(
+    @Param('token') token: string,
+    @Body() resetPasswordDto: ResetPasswordDto
+  ) {
+    return this.authService.resetPassword(token, resetPasswordDto.newPassword);
   }
 }

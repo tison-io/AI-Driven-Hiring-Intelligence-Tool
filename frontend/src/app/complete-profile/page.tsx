@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import SuccessPopup from '@/components/ui/SuccessPopup';
 import { tokenStorage } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ProfileData {
   fullName: string;
@@ -24,10 +25,20 @@ export default function CompleteProfilePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [userRole, setUserRole] = useState<string>('recruiter');
   const router = useRouter();
+  const { refreshUser } = useAuth();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleFileUpload = (type: 'userPhoto' | 'companyLogo', file: File) => {
     setProfileData({ ...profileData, [type]: file });
+  };
+
+  const handleRedirect = async (role?: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    await refreshUser();
+    const redirectPath = (role || userRole) === 'admin' ? '/admin/dashboard' : '/dashboard';
+    router.push(redirectPath);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,10 +72,12 @@ export default function CompleteProfilePage() {
       }
 
       const data = await response.json();
+      setUserRole(data.role || 'recruiter');
+      await refreshUser();
       setShowSuccessPopup(true);
       
-      setTimeout(() => {
-        router.push('/dashboard');
+      timeoutRef.current = setTimeout(() => {
+        handleRedirect(data.role);
       }, 5000);
     } catch (error) {
       console.error('Profile completion failed:', error);
@@ -163,7 +176,7 @@ export default function CompleteProfilePage() {
       
       <SuccessPopup
         isOpen={showSuccessPopup}
-        onClose={() => setShowSuccessPopup(false)}
+        onClose={() => handleRedirect()}
       />
     </div>
   );

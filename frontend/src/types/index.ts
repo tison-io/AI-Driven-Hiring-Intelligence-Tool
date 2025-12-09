@@ -4,6 +4,11 @@ export interface User {
   email: string;
   role: 'admin' | 'recruiter';
   profileCompleted?: boolean;
+  fullName?: string;
+  jobTitle?: string;
+  companyName?: string;
+  userPhoto?: string;
+  companyLogo?: string;
   createdAt: string;
   updatedAt: string;
 }

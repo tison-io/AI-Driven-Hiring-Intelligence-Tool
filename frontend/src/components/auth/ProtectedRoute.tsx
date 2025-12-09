@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -9,16 +9,19 @@ interface ProtectedRouteProps {
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, isInitialized } = useAuth();
   const router = useRouter();
+  const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login');
+    } else if (!loading && user) {
+      setShowContent(true);
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  if (loading && !isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -29,7 +32,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  if (!user) {
+  if (!user || !showContent) {
     return null;
   }
 
