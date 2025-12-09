@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Param, Query, UseGuards,Request } from '@nestjs/common';
+import { Controller, Get, Delete, Patch, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CandidatesService } from './candidates.service';
 import { CandidateFilterDto } from './dto/candidate-filter.dto';
@@ -41,5 +41,14 @@ export class CandidatesController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async delete(@Param('id') id: string) {
     return this.candidatesService.delete(id);
+  }
+
+  @Patch(':id/shortlist')
+  @ApiOperation({ summary: 'Toggle candidate shortlist status' })
+  @ApiResponse({ status: 200, description: 'Shortlist status updated successfully' })
+  @ApiResponse({ status: 404, description: 'Candidate not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async toggleShortlist(@Param('id') id: string) {
+    return this.candidatesService.toggleShortlist(id);
   }
 }

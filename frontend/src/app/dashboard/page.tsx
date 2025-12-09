@@ -6,6 +6,7 @@ import Layout from "@/components/layout/Layout";
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import StatsCard from '@/components/dashboard/StatsCard';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import ShortlistedCandidates from '@/components/dashboard/ShortlistedCandidates';
 import NewEvaluation from '@/components/dashboard/NewEvaluation';
 import { DashboardData } from '@/types/dashboard';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,7 +86,14 @@ export default function DashboardPage() {
               status: mapStatus(candidate.status),
               score: candidate.roleFitScore
             }))
-          }
+          },
+          shortlistedCandidates: data.shortlistedCandidates.map((candidate: any) => ({
+            _id: candidate._id,
+            name: candidate.name,
+            role: candidate.jobRole,
+            score: candidate.roleFitScore,
+            time: formatRelativeTime(candidate.createdAt)
+          }))
         });
       } catch (err: any) {
         setError(err.response?.data?.message || 'Failed to load dashboard');
@@ -145,6 +153,10 @@ export default function DashboardPage() {
             
             <div className="mb-8">
               <RecentActivity {...dashboardData.recentActivity} />
+            </div>
+            
+            <div className="mb-8">
+              <ShortlistedCandidates candidates={dashboardData.shortlistedCandidates} />
             </div>
             
             <NewEvaluation />

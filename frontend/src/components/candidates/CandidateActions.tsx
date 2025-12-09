@@ -1,21 +1,35 @@
-import { Plus, Download } from 'lucide-react'
+import { Plus, X, Download } from 'lucide-react'
 
 interface CandidateActionsProps {
   onShortlist?: () => void
   onDownloadReport?: () => void
   onExportCSV?: () => void
   isDownloadingReport?: boolean
+  isShortlisted?: boolean
 }
 
-export default function CandidateActions({ onShortlist, onDownloadReport, onExportCSV, isDownloadingReport }: CandidateActionsProps) {
+export default function CandidateActions({ onShortlist, onDownloadReport, onExportCSV, isDownloadingReport, isShortlisted }: CandidateActionsProps) {
   return (
     <div className="flex items-center justify-between gap-4">
       <button 
         onClick={onShortlist}
-        className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-300 rounded-lg text-black font-semibold hover:bg-gray-200 transition-colors"
+        className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-colors ${
+          isShortlisted
+            ? 'bg-red-50 border border-red-300 text-red-600 hover:bg-red-100'
+            : 'bg-white border border-gray-300 text-black hover:bg-gray-200'
+        }`}
       >
-        <Plus className="w-5 h-5" />
-        <span>Add to Shortlist</span>
+        {isShortlisted ? (
+          <>
+            <X className="w-5 h-5" />
+            <span>Remove from Shortlist</span>
+          </>
+        ) : (
+          <>
+            <Plus className="w-5 h-5" />
+            <span>Add to Shortlist</span>
+          </>
+        )}
       </button>
       
       <div className="flex gap-3">
@@ -27,13 +41,6 @@ export default function CandidateActions({ onShortlist, onDownloadReport, onExpo
           <Download className="w-5 h-5" />
           <span>{isDownloadingReport ? 'Downloading...' : 'Download Hiring Report'}</span>
         </button>
-        
-        {/* <button 
-          onClick={onExportCSV}
-          className="px-6 py-3 bg-white border border-gray-300 rounded-lg text-black font-semibold hover:bg-gray-200 transition-colors"
-        >
-          Export CSV
-        </button> */}
       </div>
     </div>
   )
