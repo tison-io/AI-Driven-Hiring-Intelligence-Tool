@@ -65,6 +65,9 @@ export class Candidate {
   @Prop()
   fileUrl?: string;
 
+  @Prop()
+  processingTime?: number; // in milliseconds
+
   createdAt?: Date;
   updatedAt?: Date;
 }

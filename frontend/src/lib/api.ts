@@ -79,4 +79,12 @@ export const authApi = {
   },
 };
 
+// Dashboard API functions
+export const dashboardApi = {
+  getAdminMetrics: async () => {
+    const response = await api.get('/dashboard/admin');
+    return response.data;
+  },
+};
+
 export default api;
