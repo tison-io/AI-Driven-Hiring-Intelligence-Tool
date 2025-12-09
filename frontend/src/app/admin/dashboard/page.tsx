@@ -15,7 +15,7 @@ export default function AdminDashboard() {
       <Layout>
         <AdminHeader currentPage="Admin Dashboard" />
         
-        <div className="min-h-screen bg-gray-100 p-6">
+        <div className="bg-[#F9FAFB] p-6" style={{ minHeight: 'calc(100vh - 73px)' }}>
           <div className="max-w-7xl mx-auto">
             <p className="text-gray-600 mb-6">
               Monitor system performance and usage metrics across the platform

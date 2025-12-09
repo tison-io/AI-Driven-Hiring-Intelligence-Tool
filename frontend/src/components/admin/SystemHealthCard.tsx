@@ -48,18 +48,16 @@ export default function SystemHealthCard({ type, title, value, target, status }:
         <ChevronRight className="w-5 h-5 text-gray-400" />
       </div>
       
-      <div className="mb-3">
+      <div className="flex items-center gap-3 mb-3">
         <p className="text-2xl font-bold text-gray-900">{value}</p>
-      </div>
-      
-      <div className="flex items-center justify-between">
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+        <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-medium bg-orange-50 text-orange-600">
           Monitor
         </span>
-        <a href="/admin/error-logs" className="text-sm text-blue-600 hover:text-blue-800 underline">
-          View Error Logs →
-        </a>
       </div>
+      
+      <a href="/admin/error-logs" className="text-sm text-gray-500 hover:text-gray-700 underline">
+        View Error Logs →
+      </a>
     </div>
   );
 }
