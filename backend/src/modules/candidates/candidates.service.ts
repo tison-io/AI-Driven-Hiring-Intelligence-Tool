@@ -14,6 +14,14 @@ export class CandidatesService {
   async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Candidate[]> {
     const query: any = userRole === 'admin' ? {} : { createdBy: userId };
 
+    if (filters.search) {
+      query.$or = [
+        { name: { $regex: filters.search, $options: 'i' } },
+        { skills: { $regex: filters.search, $options: 'i' } },
+        { jobRole: { $regex: filters.search, $options: 'i' } }
+      ];
+    }
+
     if (filters.skill) {
       query.skills = { $regex: filters.skill, $options: 'i' };
     }
