@@ -45,3 +45,13 @@ body {
   border-color: #6b7280;
   box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1);
 }
+
+
+
+.drag-active {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.file-uploaded {
+  @apply border-green-300 bg-green-50;
+}
