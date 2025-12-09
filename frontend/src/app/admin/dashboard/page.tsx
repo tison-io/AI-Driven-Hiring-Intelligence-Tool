@@ -2,58 +2,75 @@
 
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
-import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import AdminHeader from '@/components/admin/AdminHeader';
+import MetricCard from '@/components/admin/MetricCard';
+import SystemHealthCard from '@/components/admin/SystemHealthCard';
+import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    logout();
-    router.push('/auth/login');
-  };
+  const { data, loading, error } = useAdminDashboard();
 
   return (
     <ProtectedRoute>
       <Layout>
+        <AdminHeader currentPage="Admin Dashboard" />
+        
+        <div className="min-h-screen bg-gray-100 p-6">
+          <div className="max-w-7xl mx-auto">
+            <p className="text-gray-600 mb-6">
+              Monitor system performance and usage metrics across the platform
+            </p>
 
-      
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-2">Welcome, {user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Admin Logout
-            </button>
+            {loading && <p className="text-gray-600">Loading metrics...</p>}
+            {error && <p className="text-red-600">Error: {error}</p>}
+            
+            {data && (
+              <>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">Core Usage Metrics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <MetricCard
+                    title="Total Candidates Processed"
+                    value={data.totalCandidatesProcessed.current}
+                    percentageChange={data.totalCandidatesProcessed.percentageChange}
+                    trend={data.totalCandidatesProcessed.trend}
+                    type="candidates"
+                  />
+                  <MetricCard
+                    title="Average Role-Fit Score"
+                    value={data.averageRoleFitScore.current}
+                    percentageChange={data.averageRoleFitScore.percentageChange}
+                    trend={data.averageRoleFitScore.trend}
+                    type="score"
+                  />
+                  <MetricCard
+                    title="Total Shortlisted"
+                    value={data.totalShortlisted.current}
+                    percentageChange={data.totalShortlisted.percentageChange}
+                    trend={data.totalShortlisted.trend}
+                    type="shortlisted"
+                  />
+                </div>
+
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">System Health Metrics</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <SystemHealthCard
+                    type="latency"
+                    title="Avg. Evaluation Latency"
+                    value={data.systemHealth.averageProcessingTime / 1000}
+                    target={10.0}
+                    status={data.systemHealth.averageProcessingTime / 1000 < 10.0 ? 'within' : 'outside'}
+                  />
+                  <SystemHealthCard
+                    type="errors"
+                    title="Parser/AI Errors (24h)"
+                    value={data.systemHealth.failedProcessingCount}
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-700">Total Users</h3>
-            <p className="text-3xl font-bold text-blue-600 mt-2">0</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-700">Total Candidates</h3>
-            <p className="text-3xl font-bold text-green-600 mt-2">0</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-700">System Status</h3>
-            <p className="text-3xl font-bold text-purple-600 mt-2">Active</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    </Layout>
+      </Layout>
     </ProtectedRoute>
   );
 }
