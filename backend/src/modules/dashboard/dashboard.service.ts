@@ -10,6 +10,104 @@ export class DashboardService {
     private candidateModel: Model<CandidateDocument>,
   ) {}
 
+  private getCurrentMonthDateRange() {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    return { startDate, endDate: now };
+  }
+
+  private getLastMonthDateRange() {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+    return { startDate, endDate };
+  }
+
+  private calculatePercentageChange(current: number, previous: number) {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100 * 100) / 100;
+  }
+
+  private getTrend(percentageChange: number): 'up' | 'down' | 'neutral' {
+    if (percentageChange > 0) return 'up';
+    if (percentageChange < 0) return 'down';
+    return 'neutral';
+  }
+
+  async getAdminDashboardMetrics() {
+    const currentMonth = this.getCurrentMonthDateRange();
+    const lastMonth = this.getLastMonthDateRange();
+
+    // Current month metrics
+    const currentProcessed = await this.candidateModel.countDocuments({
+      status: 'completed',
+      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
+    });
+
+    const currentCompletedCandidates = await this.candidateModel.find({
+      status: 'completed',
+      roleFitScore: { $exists: true, $ne: null },
+      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
+    }).select('roleFitScore');
+
+    const currentAvgScore = currentCompletedCandidates.length > 0
+      ? currentCompletedCandidates.reduce((sum, c) => sum + (c.roleFitScore || 0), 0) / currentCompletedCandidates.length
+      : 0;
+
+    const currentShortlisted = await this.candidateModel.countDocuments({
+      isShortlisted: true,
+      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
+    });
+
+    // Last month metrics
+    const lastProcessed = await this.candidateModel.countDocuments({
+      status: 'completed',
+      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
+    });
+
+    const lastCompletedCandidates = await this.candidateModel.find({
+      status: 'completed',
+      roleFitScore: { $exists: true, $ne: null },
+      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
+    }).select('roleFitScore');
+
+    const lastAvgScore = lastCompletedCandidates.length > 0
+      ? lastCompletedCandidates.reduce((sum, c) => sum + (c.roleFitScore || 0), 0) / lastCompletedCandidates.length
+      : 0;
+
+    const lastShortlisted = await this.candidateModel.countDocuments({
+      isShortlisted: true,
+      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
+    });
+
+    // Calculate changes
+    const processedChange = this.calculatePercentageChange(currentProcessed, lastProcessed);
+    const scoreChange = this.calculatePercentageChange(currentAvgScore, lastAvgScore);
+    const shortlistedChange = this.calculatePercentageChange(currentShortlisted, lastShortlisted);
+
+    // Get system health metrics
+    const systemHealth = await this.getSystemHealthMetrics();
+
+    return {
+      totalCandidatesProcessed: {
+        current: currentProcessed,
+        percentageChange: processedChange,
+        trend: this.getTrend(processedChange)
+      },
+      averageRoleFitScore: {
+        current: Math.round(currentAvgScore * 100) / 100,
+        percentageChange: scoreChange,
+        trend: this.getTrend(scoreChange)
+      },
+      totalShortlisted: {
+        current: currentShortlisted,
+        percentageChange: shortlistedChange,
+        trend: this.getTrend(shortlistedChange)
+      },
+      systemHealth
+    };
+  }
+
   async getDashboardMetrics(userId: string, userRole: string) {
     const query = userRole === 'admin' ? {} : { createdBy: userId };
     
@@ -91,5 +189,28 @@ export class DashboardService {
     });
 
     return distribution;
+  }
+
+  async getSystemHealthMetrics() {
+    const completedCandidates = await this.candidateModel.find({
+      status: 'completed',
+      processingTime: { $exists: true, $ne: null }
+    }).select('processingTime');
+
+    const avgProcessingTime = completedCandidates.length > 0
+      ? completedCandidates.reduce((sum, c) => sum + (c.processingTime || 0), 0) / completedCandidates.length
+      : 0;
+
+    const failedCount = await this.candidateModel.countDocuments({ status: 'failed' });
+    const totalProcessed = await this.candidateModel.countDocuments({ 
+      status: { $in: ['completed', 'failed'] } 
+    });
+    const successRate = totalProcessed > 0 ? ((totalProcessed - failedCount) / totalProcessed) * 100 : 100;
+
+    return {
+      averageProcessingTime: Math.round(avgProcessingTime),
+      successRate: Math.round(successRate * 100) / 100,
+      failedProcessingCount: failedCount
+    };
   }
 }
