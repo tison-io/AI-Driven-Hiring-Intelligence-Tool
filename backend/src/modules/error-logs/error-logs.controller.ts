@@ -1,4 +1,4 @@
-import { Controller, Get, Delete, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ErrorLogsService } from './error-logs.service';
 import { ErrorLogFilterDto } from './dto/error-log-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,13 +17,5 @@ export class ErrorLogsController {
     return this.errorLogsService.findAll(filterDto);
   }
 
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return this.errorLogsService.findOne(id);
-  }
 
-  @Delete()
-  async clearLogs(@Query() filterDto: ErrorLogFilterDto) {
-    return this.errorLogsService.clearLogs(filterDto);
-  }
 }
