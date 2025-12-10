@@ -172,15 +172,16 @@ export default function EvaluationForm({
           {/* Upload Area */}
           {activeTab === 'upload' && (
             <div
+              onClick={handleBrowseClick}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
                 isDragging
                   ? 'border-blue-400 bg-blue-50'
                   : resumeFile
                   ? 'border-green-400 bg-green-50'
-                  : 'border-gray-300 bg-white'
+                  : 'border-gray-300 bg-white hover:bg-gray-50'
               }`}
             >
               <input

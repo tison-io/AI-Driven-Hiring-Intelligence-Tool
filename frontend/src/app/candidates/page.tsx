@@ -71,6 +71,22 @@ const CandidatesPage = () => {
 
 	const { candidates, isLoading, error, refetch } = useCandidates(filters);
 
+	// Detect if any candidates are still processing
+	const hasProcessingCandidates = useMemo(() => {
+		return candidates.some(c => c.status === 'pending' || c.status === 'processing');
+	}, [candidates]);
+
+	// Auto-refetch when candidates are processing
+	useEffect(() => {
+		if (hasProcessingCandidates) {
+			const interval = setInterval(() => {
+				refetch();
+			}, 5000); // Poll every 5 seconds
+
+			return () => clearInterval(interval);
+		}
+	}, [hasProcessingCandidates, refetch]);
+
 	const handleDeleteClick = (id: string, name: string) => {
 		setSelectedCandidate({ id, name });
 		setIsModalOpen(true);
@@ -132,6 +148,10 @@ const CandidatesPage = () => {
 			Shortlisted: "bg-blue-500/20 text-blue-600 border-blue-500/30",
 			New: "bg-gray-500/20 text-gray-600 border-gray-500/30",
 			Rejected: "bg-red-500/20 text-red-600 border-red-500/30",
+			pending: "bg-yellow-500/20 text-yellow-600 border-yellow-500/30 animate-pulse",
+			processing: "bg-blue-500/20 text-blue-600 border-blue-500/30 animate-pulse",
+			completed: "bg-green-500/20 text-green-600 border-green-500/30",
+			failed: "bg-red-500/20 text-red-600 border-red-500/30",
 		};
 		return styles[status] || styles["New"];
 	};
