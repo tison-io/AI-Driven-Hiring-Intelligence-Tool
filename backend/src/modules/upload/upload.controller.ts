@@ -49,7 +49,6 @@ export class UploadController {
         jobDescription: {
           type: 'string',
           example: 'Looking for a backend engineer with 3+ years experience',
-          required: false,
         },
       },
     },
