@@ -11,7 +11,7 @@ interface AuthContextType {
   error: string | null;
   login: (email: string, password: string) => Promise<User | null>;
   register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -115,7 +115,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const token = tokenStorage.get();
+    
+    // Call backend logout endpoint if user is authenticated
+    if (token && tokenStorage.isValid(token)) {
+      try {
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      } catch (error) {
+        console.error('Logout API call failed:', error);
+      }
+    }
+    
+    // Clear local state regardless of API call result
     tokenStorage.remove();
     setUser(null);
     setError(null);

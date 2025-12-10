@@ -29,10 +29,10 @@ export default function Sidebar() {
 
   const navItems = user?.role === 'admin' ? adminNavItems : recruiterNavItems
 
-  const handleNavClick = (href: string, id: string) => {
+  const handleNavClick = async (href: string, id: string) => {
     if (id === 'logout') {
-      logout()
-      router.push('/login')
+      await logout()
+      router.push('/auth/login')
     } else {
       router.push(href)
     }
