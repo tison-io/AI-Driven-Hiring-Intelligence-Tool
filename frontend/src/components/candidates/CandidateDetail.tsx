@@ -37,16 +37,16 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
   const handleDownloadReport = async () => {
     try {
       setIsDownloadingReport(true)
-      
+
       const token = localStorage.getItem('token')
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/export/report/${candidateId}`
-      
+
       const response = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-      
+
       if (!response.ok) throw new Error('Download failed')
-      
+
       const blob = await response.blob()
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -54,7 +54,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
       link.download = `hiring-report-${candidate.name.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.html`
       link.click()
       window.URL.revokeObjectURL(downloadUrl)
-      
+
       toast.success('Report downloaded successfully')
     } catch (error) {
       toast.error('Failed to download report')
@@ -94,7 +94,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
           biasCheck={candidate.biasCheck}
         />
 
-        <ExperienceSection
+         <ExperienceSection
           experience={candidate.experience}
           education={candidate.education}
         />
