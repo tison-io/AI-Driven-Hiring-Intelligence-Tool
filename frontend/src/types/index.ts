@@ -96,3 +96,32 @@ export interface JwtPayload {
   exp?: number;
 }
 
+// Error Log Types
+export interface ErrorLog {
+  id: string;
+  timestamp: string;
+  userOrSystem: string;
+  action: string;
+  target: string;
+  details: string;
+  severity: 'info' | 'warning' | 'error' | 'critical';
+}
+
+export interface ErrorLogFilters {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  severity?: string;
+  userOrSystem?: string;
+  action?: string;
+}
+
+export interface PaginatedErrorLogsResponse {
+  data: ErrorLog[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
