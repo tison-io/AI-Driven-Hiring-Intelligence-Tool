@@ -21,6 +21,13 @@ export interface Candidate {
   rawText: string;
   skills: string[];
   experienceYears: number;
+  workExperience: {
+    company: string;
+    jobTitle: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }[];
   education: any[];
   certifications: string[];
   roleFitScore?: number;
