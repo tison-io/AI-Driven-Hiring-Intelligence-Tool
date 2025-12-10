@@ -46,6 +46,10 @@ export class UploadController {
           type: 'string',
           example: 'Backend Engineer',
         },
+        jobDescription: {
+          type: 'string',
+          example: 'Looking for a backend engineer with 3+ years experience',
+        },
       },
     },
   })
@@ -57,7 +61,12 @@ export class UploadController {
     @Body() uploadResumeDto: UploadResumeDto,
     @Request() req,
   ) {
-    return this.uploadService.processResume(file, uploadResumeDto.jobRole, req.user.id);
+    return this.uploadService.processResume(
+      file, 
+      uploadResumeDto.jobRole, 
+      req.user.id,
+      uploadResumeDto.jobDescription
+    );
   }
 
   @Post('linkedin')
@@ -73,6 +82,7 @@ export class UploadController {
       linkedinProfileDto.linkedinUrl,
       linkedinProfileDto.jobRole,
       req.user.id,
+      linkedinProfileDto.jobDescription,
     );
   }
 }

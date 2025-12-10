@@ -53,6 +53,9 @@ export class Candidate {
   @Prop({ required: true })
   jobRole: string;
 
+  @Prop()
+  jobDescription?: string;
+
   @Prop({ type: String, required: true })
   createdBy: string;
 
@@ -64,6 +67,9 @@ export class Candidate {
 
   @Prop()
   fileUrl?: string;
+
+  @Prop()
+  processingTime?: number; // in milliseconds
 
   createdAt?: Date;
   updatedAt?: Date;

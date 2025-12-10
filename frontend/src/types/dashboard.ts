@@ -32,3 +32,22 @@ export interface DashboardData {
   shortlistedCandidates: ShortlistedCandidate[];
   userName: string;
 }
+
+export interface MetricWithChange {
+  current: number;
+  percentageChange: number;
+  trend: 'up' | 'down' | 'neutral';
+}
+
+export interface SystemHealth {
+  averageProcessingTime: number;
+  successRate: number;
+  failedProcessingCount: number;
+}
+
+export interface AdminDashboardMetrics {
+  totalCandidatesProcessed: MetricWithChange;
+  averageRoleFitScore: MetricWithChange;
+  totalShortlisted: MetricWithChange;
+  systemHealth: SystemHealth;
+}

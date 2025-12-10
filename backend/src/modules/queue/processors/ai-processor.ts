@@ -12,7 +12,8 @@ export class AiProcessor {
 
   @Process('process-candidate')
   async handleAIProcessing(job: Job) {
-    const { candidateId, jobRole } = job.data;
+    const { candidateId, jobRole, jobDescription } = job.data;
+    const startTime = Date.now();
 
     try {
       // Update status to processing
@@ -29,20 +30,27 @@ export class AiProcessor {
       // Call AI service (placeholder)
       const aiResults = await this.aiService.evaluateCandidate(
         candidate.rawText,
-        jobRole
+        jobRole,
+        jobDescription
       );
+
+      const processingTime = Date.now() - startTime;
 
       // Update candidate with AI results
       await this.candidatesService.update(candidateId, {
         ...aiResults,
         status: 'completed' as any,
+        processingTime,
       });
 
       return { success: true, candidateId };
     } catch (error) {
+      const processingTime = Date.now() - startTime;
+      
       // Update status to failed
       await this.candidatesService.update(candidateId, { 
-        status: 'failed' as any 
+        status: 'failed' as any,
+        processingTime,
       });
       
       throw error;

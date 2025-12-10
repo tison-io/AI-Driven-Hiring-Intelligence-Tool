@@ -9,10 +9,11 @@ export class QueueService {
     private aiProcessingQueue: Queue,
   ) {}
 
-  async addAIProcessingJob(candidateId: string, jobRole: string) {
+  async addAIProcessingJob(candidateId: string, jobRole: string, jobDescription?: string) {
     return this.aiProcessingQueue.add('process-candidate', {
       candidateId,
       jobRole,
+      ...(jobDescription && { jobDescription }),
     }, {
       attempts: 3,
       backoff: {

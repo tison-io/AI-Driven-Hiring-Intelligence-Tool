@@ -12,7 +12,7 @@ export class AiService {
     this.aiServiceUrl = this.configService.get('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
-  async evaluateCandidate(rawText: string, jobRole: string) {
+  async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
     try {
       this.logger.log('Starting AI evaluation for candidate');
       
@@ -34,7 +34,7 @@ export class AiService {
       }
 
       // Step 2: Score candidate against job role
-      const scoringResult = await this.scoreCandidateData(extractedData, jobRole);
+      const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
       
       this.logger.debug(`Scoring result: ${JSON.stringify(scoringResult)}`);
 
@@ -67,8 +67,8 @@ export class AiService {
     return response.data.data;
   }
 
-  private async scoreCandidateData(candidateData: any, jobRole: string) {
-    const jobDescription = this.getJobDescription(jobRole);
+  private async scoreCandidateData(candidateData: any, jobRole: string, customJobDescription?: string) {
+    const jobDescription = customJobDescription || this.getJobDescription(jobRole);
     
     const response = await axios.post(`${this.aiServiceUrl}/score`, {
       candidate_data: candidateData,
