@@ -17,7 +17,7 @@ You must output a valid JSON object matching the schema below.
   "summary: "string",
   "total_years_experience": number,
   "skills": ["string", "string"],
-  "work _experience": [
+  "work_experience": [
     {
     "company": "string",
     "job_title": "string",
