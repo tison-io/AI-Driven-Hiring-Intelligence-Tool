@@ -15,18 +15,18 @@ export class AiService {
   async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
     try {
       this.logger.log('Starting AI evaluation for candidate');
-      
+
       // Step 1: Extract structured data from raw text
       const extractedData = await this.extractCandidateData(rawText);
-      
+
       this.logger.debug(`Extracted data: ${JSON.stringify(extractedData)}`);
-      
+
       // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
         this.logger.warn(`AI marked resume as invalid. Reason: ${extractedData.error || 'Unknown'}`);
         return this.getMockResponse();
       }
-      
+
       // Validate we have minimum required data
       if (!extractedData.candidate_name && !extractedData.skills?.length) {
         this.logger.warn('Insufficient data extracted, falling back to mock data');
@@ -35,19 +35,19 @@ export class AiService {
 
       // Step 2: Score candidate against job role
       const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
-      
+
       this.logger.debug(`Scoring result: ${JSON.stringify(scoringResult)}`);
 
       // Step 3: Transform to backend format
       return this.transformAiResponse(extractedData, scoringResult);
-      
+
     } catch (error) {
       this.logger.error('AI evaluation failed', error.stack);
-      
+
       if (error instanceof HttpException) {
         throw error;
       }
-      
+
       // Fallback to mock data if AI service fails
       this.logger.warn('Falling back to mock AI response');
       return this.getMockResponse();
@@ -69,7 +69,7 @@ export class AiService {
 
   private async scoreCandidateData(candidateData: any, jobRole: string, customJobDescription?: string) {
     const jobDescription = customJobDescription || this.getJobDescription(jobRole);
-    
+
     const response = await axios.post(`${this.aiServiceUrl}/score`, {
       candidate_data: candidateData,
       job_description: jobDescription,
@@ -82,14 +82,16 @@ export class AiService {
   }
 
   private transformAiResponse(extractedData: any, scoringResult: any) {
-    const keyStrengths = scoringResult.key_strengths?.map((s: any) => 
+    const keyStrengths = scoringResult.key_strengths?.map((s: any) =>
       typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
     ) || [];
-    
-    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w: any) => 
+
+    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w: any) =>
       typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
     ) || [];
-    
+
+    this.logger.debug(`Transforming Work Exp: ${JSON.stringify(extractedData.work_experience)}`);
+
     return {
       name: extractedData.candidate_name || 'Anonymous',
       roleFitScore: scoringResult.role_fit_score || 0,
@@ -101,6 +103,14 @@ export class AiService {
       biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
       skills: extractedData.skills || [],
       experienceYears: extractedData.total_years_experience || 0,
+      workExperience: extractedData.work_experience?.map((job: any) => ({
+        company: job.company || '',
+        jobTitle: job.job_title || job.jobTitle || '', 
+        startDate: job.start_date || job.startDate || '',
+        endDate: job.end_date || job.endDate || '',
+        description: job.description || '',
+        technologies: job.technologies_used || job.technologies || []
+      })) || [],
       education: extractedData.education || [],
       certifications: extractedData.certifications || []
     };
@@ -108,11 +118,11 @@ export class AiService {
 
   private formatBiasCheck(biasFlag: any): string {
     if (!biasFlag) return 'No bias analysis available';
-    
+
     if (biasFlag.detected) {
       return `Potential bias detected: ${biasFlag.flags?.join(', ') || 'Unknown bias factors'}`;
     }
-    
+
     return 'No significant bias detected in evaluation';
   }
 
@@ -125,7 +135,7 @@ export class AiService {
       'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
       'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.'
     };
-    
+
     return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
   }
 

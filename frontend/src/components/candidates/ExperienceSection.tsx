@@ -1,20 +1,21 @@
 import { Briefcase, GraduationCap } from "lucide-react"
 
-interface Experience {
-  title: string
+interface WorkExperience {
   company: string
-  period: string
+  jobTitle: string
+  startDate: string
+  endDate: string
   description: string
 }
 
 interface Education {
   degree: string
-  school: string
-  year: string
+  institution: string
+  year_graduated: string
 }
 
 interface ExperienceSectionProps {
-  experience: Experience[]
+  experience: WorkExperience[]
   education: Education
 }
 
@@ -32,14 +33,21 @@ export default function ExperienceSection({ experience, education }: ExperienceS
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Experience</h3>
         </div>
         <div className="space-y-6 ml-8">
-          {experience.map((exp, idx) => (
-            <div key={idx}>
-              <h4 className="text-black font-semibold">{exp.title}</h4>
-              <p className="text-cyan-400 text-sm">{exp.company}</p>
-              <p className="text-gray-400 text-sm mb-2">{exp.period}</p>
-              <p className="text-gray-900 text-sm">{exp.description}</p>
-            </div>
-          ))}
+          {/* Handle empty/undefined arrays safely */}
+          {experience && experience.length > 0 ? (
+            experience.map((exp, idx) => (
+              <div key={idx}>
+                <h4 className="text-black font-semibold">{exp.jobTitle}</h4>
+                <p className="text-cyan-400 text-sm">{exp.company}</p>
+                <p className="text-gray-400 text-sm mb-2">
+                  {exp.startDate} - {exp.endDate}
+                </p>
+                <p className="text-gray-900 text-sm">{exp.description}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400 text-sm italic">No experience listed.</p>
+          )}
         </div>
       </div>
 
@@ -52,9 +60,9 @@ export default function ExperienceSection({ experience, education }: ExperienceS
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Education</h3>
         </div>
         <div className="ml-8">
-          <h4 className="text-black font-semibold">{education.degree}</h4>
-          <p className="text-cyan-400 text-sm">{education.school}</p>
-          <p className="text-gray-400 text-sm">{education.year}</p>
+           <h4 className="text-black font-semibold">{education?.degree || education?.institution}</h4>
+           <p className="text-cyan-400 text-sm">{education?.institution}</p>
+           <p className="text-gray-400 text-sm">{education?.year_graduated}</p>
         </div>
       </div>
     </div>
