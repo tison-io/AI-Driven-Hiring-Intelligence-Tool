@@ -95,4 +95,12 @@ export const errorLogsApi = {
   },
 };
 
+// Audit Logs API functions
+export const auditLogsApi = {
+  getAll: async (filters?: any) => {
+    const response = await api.get('/admin/audit-logs', { params: filters });
+    return response.data;
+  },
+};
+
 export default api;

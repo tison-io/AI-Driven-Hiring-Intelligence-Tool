@@ -125,3 +125,31 @@ export interface PaginatedErrorLogsResponse {
   totalPages: number;
 }
 
+// Audit Log Types
+export interface AuditLog {
+  id: string;
+  timestamp: string;
+  userOrSystem: string;
+  action: string;
+  target: string;
+  details: string;
+}
+
+export interface AuditLogFilters {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+  userOrSystem?: string;
+  action?: string;
+  target?: string;
+}
+
+export interface PaginatedAuditLogsResponse {
+  data: AuditLog[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
