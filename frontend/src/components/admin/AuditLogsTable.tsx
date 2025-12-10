@@ -63,29 +63,57 @@ export const AuditLogsTable = () => {
   return (
     <div className="bg-white rounded-lg shadow">
       {/* Top Controls */}
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="p-4">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            >
+              <option value="Last 24 Hours">Last 24 Hours</option>
+              <option value="Last 7 Days">Last 7 Days</option>
+              <option value="Last 30 Days">Last 30 Days</option>
+            </select>
+            
+            <input
+              type="text"
+              placeholder="Search audit logs..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64"
+            />
+          </div>
+          
+          <div className="text-sm text-gray-600">
+            {pagination.total} entities found
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-3">
+          <input
+            type="text"
+            placeholder="Search audit logs..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+          />
+          
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
           >
             <option value="Last 24 Hours">Last 24 Hours</option>
             <option value="Last 7 Days">Last 7 Days</option>
             <option value="Last 30 Days">Last 30 Days</option>
           </select>
           
-          <input
-            type="text"
-            placeholder="Search audit logs..."
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 text-sm w-64"
-          />
-        </div>
-        
-        <div className="text-sm text-gray-600">
-          {pagination.total} entities found
+          <div className="text-sm text-gray-600">
+            {pagination.total} entities found
+          </div>
         </div>
       </div>
 
@@ -136,49 +164,99 @@ export const AuditLogsTable = () => {
       </div>
 
       {/* Bottom Pagination */}
-      <div className="px-6 py-3 border-t border-gray-200 flex justify-between items-center">
-        <div className="text-sm text-gray-700">
-          Showing {Math.min((pagination.page - 1) * filters.limit + 1, pagination.total)} to {Math.min(pagination.page * filters.limit, pagination.total)} of {pagination.total} entries
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => handlePageChange(pagination.page - 1)}
-            disabled={pagination.page === 1}
-            className={`px-3 py-1 text-sm rounded ${
-              pagination.page === 1 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Previous
-          </button>
+      <div className="px-6 py-3 border-t border-gray-200">
+        {/* Desktop Layout */}
+        <div className="hidden md:flex justify-between items-center">
+          <div className="text-sm text-gray-700">
+            Showing {Math.min((pagination.page - 1) * filters.limit + 1, pagination.total)} to {Math.min(pagination.page * filters.limit, pagination.total)}
+          </div>
           
-          {renderPaginationNumbers().map((pageNum) => (
+          <div className="flex items-center space-x-2">
             <button
-              key={pageNum}
-              onClick={() => handlePageChange(pageNum)}
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
               className={`px-3 py-1 text-sm rounded ${
-                pageNum === pagination.page
-                  ? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white'
+                pagination.page === 1 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {pageNum}
+              Previous
             </button>
-          ))}
+            
+            {renderPaginationNumbers().map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`px-3 py-1 text-sm rounded ${
+                  pageNum === pagination.page
+                    ? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className={`px-3 py-1 text-sm rounded ${
+                pagination.page === pagination.totalPages 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Layout */}
+        <div className="md:hidden space-y-3">
+          <div className="text-sm text-gray-700 text-center">
+            Showing {Math.min((pagination.page - 1) * filters.limit + 1, pagination.total)} to {Math.min(pagination.page * filters.limit, pagination.total)}
+          </div>
           
-          <button
-            onClick={() => handlePageChange(pagination.page + 1)}
-            disabled={pagination.page === pagination.totalPages}
-            className={`px-3 py-1 text-sm rounded ${
-              pagination.page === pagination.totalPages 
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Next
-          </button>
+          <div className="flex justify-center items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className={`px-3 py-1 text-sm rounded ${
+                pagination.page === 1 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Previous
+            </button>
+            
+            {renderPaginationNumbers().map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)}
+                className={`px-3 py-1 text-sm rounded ${
+                  pageNum === pagination.page
+                    ? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+            
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className={`px-3 py-1 text-sm rounded ${
+                pagination.page === pagination.totalPages 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
