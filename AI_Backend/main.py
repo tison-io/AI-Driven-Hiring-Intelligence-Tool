@@ -14,6 +14,7 @@ app = FastAPI(title="TalentScan AI Backend")
 class ScoreRequest(BaseModel):
     candidate_data: dict
     role_name: str
+    job_description: str
 
 
 @app.get("/")
@@ -77,7 +78,7 @@ def calculate_score(request: ScoreRequest):
     """
     Analyzes the candidate's JSON against a job description.
     """
-    result = score_candidate(request.candidate_data, request.role_name)
+    result = score_candidate(request.candidate_data, request.role_name, request.job_description)
     return result
 
 
@@ -106,7 +107,18 @@ async def analyze_resume(file: UploadFile = File(...), role_name: str = Form(...
 
     candidate_profile = extract_resume_data(raw_text)
 
-    evaluation = score_candidate(candidate_profile, role_name)
+    # Get job description for the role
+    job_descriptions = {
+        'Backend Engineer': 'Develop server-side applications using Node.js, Python, or Java. Experience with databases, APIs, and cloud services required.',
+        'Frontend Developer': 'Build user interfaces using React, Vue, or Angular. Strong HTML, CSS, JavaScript skills required.',
+        'Full Stack Developer': 'Work on both frontend and backend development. Experience with modern web frameworks and databases.',
+        'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
+        'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.',
+        'Accountant': 'Manage financial records, prepare financial statements, handle payroll, tax preparation. Experience with QuickBooks, Excel, and accounting principles required.'
+    }
+    job_description = job_descriptions.get(role_name, f'Professional role requiring relevant technical skills and experience in {role_name}.')
+    
+    evaluation = score_candidate(candidate_profile, role_name, job_description)
 
     return {
         "filename": file.filename,

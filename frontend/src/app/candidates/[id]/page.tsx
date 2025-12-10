@@ -51,7 +51,7 @@ export default function CandidateDetailPage() {
 		roleFitScore: candidate.roleFitScore || 0,
 		confidenceScore: candidate.confidenceScore || 0,
 		biasCheck: candidate.biasCheck || "Pending",
-		experience: candidate.experience || [],
+		experience: candidate.workExperience || [],
 		education: candidate.education?.[0] || { degree: "N/A", school: "N/A", year: "N/A" },
 		keyStrengths: candidate.keyStrengths || [],
 		potentialGaps: candidate.potentialWeaknesses || [],

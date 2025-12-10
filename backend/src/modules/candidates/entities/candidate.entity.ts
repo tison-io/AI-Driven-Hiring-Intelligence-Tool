@@ -7,7 +7,7 @@ export type CandidateDocument = Candidate & Document;
 @Schema({ timestamps: true })
 export class Candidate {
   _id?: any;
-  
+
   @Prop({ required: true })
   name: string;
 
@@ -22,6 +22,15 @@ export class Candidate {
 
   @Prop({ default: 0 })
   experienceYears: number;
+
+  @Prop({ type: [Object], default: [] })
+  workExperience: {
+    company: string;
+    jobTitle: string;
+    startDate: string;
+    endDate: string;
+    description: string;
+  }[];
 
   @Prop({ type: [Object], default: [] })
   education: any[];

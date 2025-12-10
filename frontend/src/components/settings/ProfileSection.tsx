@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 
 interface ProfileSectionProps {
   formData: {
@@ -7,7 +7,9 @@ interface ProfileSectionProps {
     companyName: string;
   };
   userEmail?: string;
+  userPhoto?: string;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotoChange: (file: File) => void;
   onSave: () => void;
   memberSince?: string;
   lastLogin?: string;
@@ -16,20 +18,63 @@ interface ProfileSectionProps {
 export default function ProfileSection({
   formData,
   userEmail,
+  userPhoto,
   onInputChange,
+  onPhotoChange,
   onSave,
   memberSince = 'March 15, 2023',
   lastLogin = 'Today at 2:34 PM'
 }: ProfileSectionProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size must be less than 5MB');
+        return;
+      }
+      onPhotoChange(file);
+    }
+  };
   return (
     <section className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex flex-col sm:flex-row gap-8">
         {/* Avatar */}
         <aside className="flex flex-col items-center">
-          <div className="w-24 h-24 bg-indigo-500 rounded-full flex items-center justify-center text-white text-3xl font-medium mb-3">
-            {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : userEmail ? userEmail.substring(0, 2).toUpperCase() : 'U'}
-          </div>
-          <button type="button" className="text-sm text-gray-700 hover:text-gray-900 font-medium">
+          {userPhoto ? (
+            <img 
+              src={userPhoto} 
+              alt={formData.fullName || userEmail || 'User'} 
+              className="w-24 h-24 rounded-full object-cover mb-3"
+            />
+          ) : (
+            <div className="w-24 h-24 bg-indigo-500 rounded-full flex items-center justify-center text-white text-3xl font-medium mb-3">
+              {formData.fullName ? formData.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : userEmail ? userEmail.substring(0, 2).toUpperCase() : 'U'}
+            </div>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <button 
+            type="button" 
+            onClick={handlePhotoClick}
+            className="text-sm text-gray-700 hover:text-gray-900 font-medium"
+          >
             Change Photo
           </button>
         </aside>
