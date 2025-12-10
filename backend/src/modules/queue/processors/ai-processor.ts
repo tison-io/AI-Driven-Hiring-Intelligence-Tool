@@ -12,7 +12,7 @@ export class AiProcessor {
 
   @Process('process-candidate')
   async handleAIProcessing(job: Job) {
-    const { candidateId, jobRole } = job.data;
+    const { candidateId, jobRole, jobDescription } = job.data;
     const startTime = Date.now();
 
     try {
@@ -30,7 +30,8 @@ export class AiProcessor {
       // Call AI service (placeholder)
       const aiResults = await this.aiService.evaluateCandidate(
         candidate.rawText,
-        jobRole
+        jobRole,
+        jobDescription
       );
 
       const processingTime = Date.now() - startTime;

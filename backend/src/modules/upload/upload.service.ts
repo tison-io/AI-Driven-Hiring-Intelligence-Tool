@@ -17,7 +17,7 @@ export class UploadService {
 		private linkedInMapper: LinkedInMapper
 	) {}
 
-	async processResume(file: Express.Multer.File, jobRole: string, userId: string) {
+	async processResume(file: Express.Multer.File, jobRole: string, userId: string, jobDescription?: string) {
 		// Extract text from file
 		const rawText = await this.extractTextFromFile(file);
 
@@ -26,6 +26,7 @@ export class UploadService {
 			name: "Extracted from Resume", // Will be updated by AI
 			rawText,
 			jobRole,
+			...(jobDescription && { jobDescription }),
 			status: "pending" as any,
 			createdBy: userId,
 		});
@@ -33,7 +34,8 @@ export class UploadService {
 		// Add to AI processing queue
 		await this.queueService.addAIProcessingJob(
 			candidate._id.toString(),
-			jobRole
+			jobRole,
+			jobDescription
 		);
 
 		return {
@@ -43,7 +45,7 @@ export class UploadService {
 		};
 	}
 
-	async processLinkedinProfile(linkedinUrl: string, jobRole: string, userId: string) {
+	async processLinkedinProfile(linkedinUrl: string, jobRole: string, userId: string, jobDescription?: string) {
 		try {
 			this.logger.log(`Processing LinkedIn profile: ${linkedinUrl}`);
 
@@ -81,6 +83,7 @@ export class UploadService {
 				linkedinUrl,
 				rawText,
 				jobRole,
+				...(jobDescription && { jobDescription }),
 				status: "pending" as any,
 				createdBy: userId,
 			});
@@ -88,7 +91,8 @@ export class UploadService {
 			// Add to AI processing queue
 			await this.queueService.addAIProcessingJob(
 				candidate._id.toString(),
-				jobRole
+				jobRole,
+				jobDescription
 			);
 
 			return {

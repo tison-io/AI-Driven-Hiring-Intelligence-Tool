@@ -53,6 +53,9 @@ export class Candidate {
   @Prop({ required: true })
   jobRole: string;
 
+  @Prop()
+  jobDescription?: string;
+
   @Prop({ type: String, required: true })
   createdBy: string;
 

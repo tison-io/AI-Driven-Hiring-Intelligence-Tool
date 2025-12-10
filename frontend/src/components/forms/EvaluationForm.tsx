@@ -20,6 +20,7 @@ export default function EvaluationForm({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'upload' | 'linkedin'>('upload');
   const [jobRole, setJobRole] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState('');
@@ -90,6 +91,7 @@ export default function EvaluationForm({
         const formData = new FormData();
         formData.append('file', resumeFile);
         formData.append('jobRole', jobRole);
+        if (jobDescription) formData.append('jobDescription', jobDescription);
 
         await api.post('/candidates/upload-resume', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -98,6 +100,7 @@ export default function EvaluationForm({
         await api.post('/candidates/linkedin', {
           linkedinUrl,
           jobRole,
+          ...(jobDescription && { jobDescription }),
         });
       }
 
@@ -132,6 +135,24 @@ export default function EvaluationForm({
           onChange={(e) => setJobRole(e.target.value)}
           className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+
+      {/* Job Description */}
+      <div>
+        <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 mb-2">
+          Target Job Role Description
+        </label>
+        <textarea
+          id="job-description"
+          placeholder="Enter job description, required skills, key responsibilities, or specific criteria you're looking for..."
+          value={jobDescription}
+          onChange={(e) => setJobDescription(e.target.value)}
+          rows={4}
+          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Provide details to help AI better evaluate candidates against your specific requirements
+        </p>
       </div>
 
       {/* Candidate Source */}
@@ -271,7 +292,12 @@ export default function EvaluationForm({
             type="button"
             onClick={handleRunAnalysis}
             className="px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!jobRole || isAnalyzing}
+            disabled={
+              !jobRole || 
+              isAnalyzing || 
+              (activeTab === 'upload' && !resumeFile) || 
+              (activeTab === 'linkedin' && !linkedinUrl)
+            }
           >
             {isAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
           </button>
