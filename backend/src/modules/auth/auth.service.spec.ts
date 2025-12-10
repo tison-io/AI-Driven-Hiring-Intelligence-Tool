@@ -4,6 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { EmailService } from '../email/email.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
@@ -23,6 +24,12 @@ describe('AuthService', () => {
     email: 'test@example.com',
     password: '$2b$10$hashedPassword',
     role: UserRole.RECRUITER,
+    toObject: jest.fn().mockReturnValue({
+      _id: '64f8a1b2c3d4e5f6789012ab',
+      email: 'test@example.com',
+      password: '$2b$10$hashedPassword',
+      role: UserRole.RECRUITER,
+    }),
   };
 
   const mockUserWithoutPassword = {
@@ -44,6 +51,11 @@ describe('AuthService', () => {
       sign: jest.fn(),
     };
 
+    const mockEmailService = {
+      sendPasswordResetEmail: jest.fn(),
+      sendPasswordResetConfirmation: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -54,6 +66,10 @@ describe('AuthService', () => {
         {
           provide: JwtService,
           useValue: mockJwtService,
+        },
+        {
+          provide: EmailService,
+          useValue: mockEmailService,
         },
       ],
     }).compile();
@@ -89,6 +105,7 @@ describe('AuthService', () => {
         email: mockUser.email,
         sub: mockUser._id,
         role: mockUser.role,
+        profileCompleted: false,
       });
       expect(result.user).toEqual(mockUserWithoutPassword);
       expect(result.access_token).toBe('mock-jwt-token');
@@ -137,6 +154,7 @@ describe('AuthService', () => {
         email: mockUser.email,
         sub: mockUser._id,
         role: mockUser.role,
+        profileCompleted: false,
       });
       expect(result.user).toEqual(mockUserWithoutPassword);
       expect(result.access_token).toBe('mock-jwt-token');
@@ -231,6 +249,7 @@ describe('AuthService', () => {
 
       // Assert
       expect(usersService.findById).toHaveBeenCalledWith(userId);
+      expect(mockUser.toObject).toHaveBeenCalled();
       expect(result).toEqual(mockUserWithoutPassword);
     });
 
