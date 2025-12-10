@@ -34,7 +34,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   const navItems = user?.role === 'admin' ? adminNavItems : recruiterNavItems
 
-  const handleNavClick = (href: string, id: string) => {
+  const handleNavClick = async (href: string, id: string) => {
     onClose() // Close mobile menu on navigation
     if (id === 'logout') {
       await logout()
