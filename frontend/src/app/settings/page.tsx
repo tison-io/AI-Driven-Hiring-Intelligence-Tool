@@ -19,6 +19,8 @@ export default function AccountSettings() {
     jobTitle: '',
     companyName: ''
   });
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,18 +44,37 @@ export default function AccountSettings() {
     });
   };
 
+  const handlePhotoChange = (file: File) => {
+    setSelectedPhoto(file);
+    // Create preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = async () => {
     try {
       setLoading(true);
       setError('');
       setSuccess('');
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('fullName', formData.fullName);
+      formDataToSend.append('jobTitle', formData.jobTitle);
+      formDataToSend.append('companyName', formData.companyName);
+      
+      if (selectedPhoto) {
+        formDataToSend.append('userPhoto', selectedPhoto);
+      }
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/complete-profile`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(formData)
+        body: formDataToSend
       });
       
       if (!response.ok) {
@@ -62,6 +83,8 @@ export default function AccountSettings() {
       }
       
       await refreshUser();
+      setSelectedPhoto(null);
+      setPhotoPreview(null);
       setSuccess('Profile updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -147,7 +170,9 @@ export default function AccountSettings() {
               <ProfileSection
                 formData={formData}
                 userEmail={user?.email}
+                userPhoto={photoPreview || user?.userPhoto}
                 onInputChange={handleInputChange}
+                onPhotoChange={handlePhotoChange}
                 onSave={handleSaveProfile}
                 memberSince={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
                 lastLogin={user?.updatedAt ? new Date(user.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}
