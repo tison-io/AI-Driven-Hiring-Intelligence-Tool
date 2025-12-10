@@ -18,11 +18,9 @@ export class AuditLoggingInterceptor implements NestInterceptor {
     const httpMethod = request.method;
     const url = request.url;
     
-    console.log('🔍 Interceptor called:', { url, method: httpMethod, hasUser: !!user });
     
     // Skip if no user context, except for login and logout
     if (!user && !url.includes('/login') && !url.includes('/logout')) {
-      console.log('❌ Skipping - no user and not login/logout');
       return next.handle();
     }
 
@@ -31,25 +29,20 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         request.url.includes('/admin/error-logs') || 
         request.method === 'OPTIONS' ||
         this.shouldSkipLogging(httpMethod, url)) {
-      console.log('❌ Skipping - shouldSkipLogging returned true');
       return next.handle();
     }
 
-    console.log('✅ Will attempt to log this request');
     const handler = context.getHandler();
     const className = context.getClass().name;
     const methodName = handler.name;
 
     return next.handle().pipe(
       tap((response) => {
-        console.log('📝 In tap handler:', { url, method: httpMethod, hasUser: !!user, hasResponse: !!response });
         
         // For login, extract user info from response
         if (url.includes('/login') && httpMethod === 'POST' && response?.user) {
-          console.log('🔑 Logging login action');
           this.logLoginAction(response.user, request).catch(() => {});
         } else if (user) {
-          console.log('📋 Logging regular action for user:', user.email);
           this.logAction(user, httpMethod, url, className, methodName, request).catch(() => {});
         } else {
           console.log('⚠️ No user context for logging');
