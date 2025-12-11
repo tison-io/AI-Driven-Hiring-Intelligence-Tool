@@ -48,9 +48,17 @@ export default function AdminHeader({ currentPage }: AdminHeaderProps) {
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
           >
-            <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-              {getInitials(user?.fullName, user?.email)}
-            </div>
+            {user?.userPhoto ? (
+              <img 
+                src={user.userPhoto} 
+                alt={user.fullName || user.email || 'Admin'} 
+                className="w-8 h-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                {getInitials(user?.fullName, user?.email)}
+              </div>
+            )}
             <span className="text-gray-700 font-medium">
               {user?.fullName || user?.email}
             </span>
