@@ -52,19 +52,38 @@ def score_candidate(candidate_data: dict, job_description: str, role_name: str):
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": SYSTEM_SCORING_PROMPT},
-                {"role": "user", "content": prompt_content}
+                {"role": "user", "content": prompt_content},
             ],
             response_format={"type": "json_object"},
             temperature=0,
-            seed=42
+            seed=42,
         )
 
-        result = json.loads(response.choices[0].message.content)
+        llm_result = json.loads(response.choices[0].message.content)
+
+        # Ensure the final score is deterministic
+        final_score = base_score
+        qualitative_adjustment = llm_result.get("role_fit_score", final_score) - final_score
         
-        # Fix confidence score if it's decimal (0.85 -> 85)
-        if "confidence_score" in result and result["confidence_score"] < 1:
-            result["confidence_score"] = int(result["confidence_score"] * 100)
-            
+        result = {
+            "reasoning_steps": llm_result.get("reasoning_steps", []),
+            "role_fit_score": final_score,
+            "confidence_score": 100,
+            "scoring_breakdown": {
+                "skill_match": math_result["breakdown"]["skill_match"],
+                "experience_relevance": math_result["breakdown"]["experience_relevance"],
+                "education_fit": math_result["breakdown"]["education_fit"],
+                "certifications": math_result["breakdown"]["certifications"],
+                "base_math_score": base_score,
+                "qualitative_adjustment": qualitative_adjustment,
+            },
+            "key_strengths": llm_result.get("key_strengths", []),
+            "potential_weaknesses": llm_result.get("potential_weaknesses", []),
+            "missing_skills": llm_result.get("missing_skills", []),
+            "recommended_interview_questions": llm_result.get("recommended_interview_questions", []),
+            "bias_check_flag": llm_result.get("bias_check_flag", {}),
+        }
+
         return result
         
     except Exception as e:
