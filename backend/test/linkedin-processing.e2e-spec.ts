@@ -242,4 +242,172 @@ describe('LinkedIn Profile Processing Integration Test (e2e)', () => {
       }
     }, 30000);
   });
+
+  describe('Test 2: Invalid LinkedIn URL → Error Response → No Candidate Created', () => {
+    
+    it('should reject wrong domain (Twitter URL)', async () => {
+      console.log('\n📋 Test 2.1: Wrong Domain');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://twitter.com/billgates',
+          jobRole: 'Technology Executive'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+      expect(response.body.message).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('valid LinkedIn profile URL')
+        ])
+      );
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject company page URL', async () => {
+      console.log('\n📋 Test 2.2: Company Page URL');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/company/microsoft',
+          jobRole: 'Software Engineer'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject URL with missing username', async () => {
+      console.log('\n📋 Test 2.3: Missing Username');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/',
+          jobRole: 'Developer'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject URL with invalid characters', async () => {
+      console.log('\n📋 Test 2.4: Invalid Characters');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/user@123!',
+          jobRole: 'Engineer'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject non-URL string', async () => {
+      console.log('\n📋 Test 2.5: Not a URL');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'not-a-valid-url',
+          jobRole: 'Manager'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject empty LinkedIn URL', async () => {
+      console.log('\n📋 Test 2.6: Empty URL');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: '',
+          jobRole: 'Developer'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should reject missing job role', async () => {
+      console.log('\n📋 Test 2.7: Missing Job Role');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/williamhgates'
+          // jobRole missing
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBeDefined();
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error: ${response.body.message}`);
+    }, 10000);
+
+    it('should not create candidate for invalid URLs', async () => {
+      console.log('\n📋 Test 2.8: Verify No Candidate Created');
+      
+      // Get initial candidate count
+      const beforeResponse = await request(app.getHttpServer())
+        .get('/api/candidates')
+        .set('Authorization', `Bearer ${authToken}`);
+      
+      const initialCount = beforeResponse.body.length;
+
+      // Try to submit invalid URL
+      await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://invalid-url.com/profile',
+          jobRole: 'Test Role'
+        });
+
+      // Get candidate count after failed submission
+      const afterResponse = await request(app.getHttpServer())
+        .get('/api/candidates')
+        .set('Authorization', `Bearer ${authToken}`);
+      
+      const finalCount = afterResponse.body.length;
+
+      // Verify no new candidate was created
+      expect(finalCount).toBe(initialCount);
+
+      console.log(`   ✓ Initial candidates: ${initialCount}`);
+      console.log(`   ✓ Final candidates: ${finalCount}`);
+      console.log(`   ✓ No candidate created for invalid URL`);
+    }, 10000);
+  });
 });
