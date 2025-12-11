@@ -83,4 +83,20 @@ export const dashboardApi = {
   },
 };
 
+// Error Logs API functions
+export const errorLogsApi = {
+  getAll: async (filters?: any) => {
+    const response = await api.get('/admin/error-logs', { params: filters });
+    return response.data;
+  },
+};
+
+// Audit Logs API functions
+export const auditLogsApi = {
+  getAll: async (filters?: any) => {
+    const response = await api.get('/admin/audit-logs', { params: filters });
+    return response.data;
+  },
+};
+
 export default api;

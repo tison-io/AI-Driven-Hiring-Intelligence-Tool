@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 // Configuration
 import { DatabaseConfig } from './config/database.config';
@@ -18,6 +19,10 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { AiModule } from './modules/ai/ai.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
+import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.interceptor';
+import { AuditLoggingInterceptor } from './common/interceptors/audit-logging.interceptor';
 
 @Module({
   imports: [
@@ -53,6 +58,18 @@ import { PrivacyModule } from './modules/privacy/privacy.module';
     QueueModule,
     AiModule,
     PrivacyModule,
+    ErrorLogsModule,
+    AuditLogsModule,
+  ],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ErrorLoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditLoggingInterceptor,
+    },
   ],
 })
 export class AppModule {}
