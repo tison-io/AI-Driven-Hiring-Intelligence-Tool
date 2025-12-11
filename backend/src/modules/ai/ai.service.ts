@@ -19,7 +19,7 @@ export class AiService {
       // Step 1: Extract structured data from raw text
       const extractedData = await this.extractCandidateData(rawText);
 
-      this.logger.debug(`Extracted data: ${JSON.stringify(extractedData)}`);
+
 
       // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
@@ -34,9 +34,14 @@ export class AiService {
       }
 
       // Step 2: Score candidate against job role
+      const startTime = Date.now();
       const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
-
-      this.logger.debug(`Scoring result: ${JSON.stringify(scoringResult)}`);
+      const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      
+      // Log scoring results in table format
+      const breakdown = scoringResult.scoring_breakdown || {};
+      this.logger.log('| Time (s)   | Score    | Conf     | Skill    | Experience   | Education    | Certs    |');
+      this.logger.log(`| ${processingTime.padStart(10)} | ${String(scoringResult.role_fit_score || 0).padStart(8)} | ${String(scoringResult.confidence_score || 0).padStart(8)} | ${String(breakdown.skill_match || 0).padStart(8)} | ${String(breakdown.experience_relevance || 0).padStart(12)} | ${String(breakdown.education_fit || 0).padStart(12)} | ${String(breakdown.certifications || 0).padStart(8)} |`);
 
       // Step 3: Transform to backend format
       return this.transformAiResponse(extractedData, scoringResult);
@@ -90,7 +95,7 @@ export class AiService {
       typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
     ) || [];
 
-    this.logger.debug(`Transforming Work Exp: ${JSON.stringify(extractedData.work_experience)}`);
+
 
     return {
       name: extractedData.candidate_name || 'Anonymous',
