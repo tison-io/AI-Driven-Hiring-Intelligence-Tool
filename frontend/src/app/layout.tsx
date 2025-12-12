@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
 	title: "Hiring Intelligence Tool",
 	description: "AI-Driven Hiring Intelligence Platform",
+	icons: {
+		icon: '/images/logo.png',
+	},
 };
 
 export default function RootLayout({

@@ -1,7 +1,9 @@
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
+import { NotFoundException } from '@nestjs/common';
 import { CandidatesService } from '../../candidates/candidates.service';
 import { AiService } from '../../ai/ai.service';
+import { ProcessingStatus } from '../../../common/enums/processing-status.enum';
 
 @Processor('ai-processing')
 export class AiProcessor {
@@ -18,13 +20,13 @@ export class AiProcessor {
     try {
       // Update status to processing
       await this.candidatesService.update(candidateId, { 
-        status: 'processing' as any 
+        status: ProcessingStatus.PROCESSING
       });
 
       // Get candidate data
       const candidate = await this.candidatesService.findById(candidateId);
       if (!candidate) {
-        throw new Error('Candidate not found');
+        throw new NotFoundException('Candidate not found');
       }
 
       // Call AI service (placeholder)
@@ -39,7 +41,7 @@ export class AiProcessor {
       // Update candidate with AI results
       await this.candidatesService.update(candidateId, {
         ...aiResults,
-        status: 'completed' as any,
+        status: ProcessingStatus.COMPLETED,
         processingTime,
       });
 
@@ -49,7 +51,7 @@ export class AiProcessor {
       
       // Update status to failed
       await this.candidatesService.update(candidateId, { 
-        status: 'failed' as any,
+        status: ProcessingStatus.FAILED,
         processingTime,
       });
       

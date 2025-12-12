@@ -83,7 +83,7 @@ describe('CandidatesController', () => {
     it('should return candidates for recruiter with user context', async () => {
       // Arrange
       const filters: CandidateFilterDto = { skill: 'JavaScript' };
-      candidatesService.findAll.mockResolvedValue([mockCandidate]);
+      candidatesService.findAll.mockResolvedValue([mockCandidate as any]);
 
       // Act
       const result = await controller.findAll(filters, mockRequest);
@@ -100,7 +100,7 @@ describe('CandidatesController', () => {
     it('should return all candidates for admin user', async () => {
       // Arrange
       const filters: CandidateFilterDto = {};
-      candidatesService.findAll.mockResolvedValue([mockCandidate]);
+      candidatesService.findAll.mockResolvedValue([mockCandidate as any]);
 
       // Act
       const result = await controller.findAll(filters, mockAdminRequest);
@@ -142,7 +142,7 @@ describe('CandidatesController', () => {
         jobRole: 'Backend',
         search: 'john'
       };
-      candidatesService.findAll.mockResolvedValue([mockCandidate]);
+      candidatesService.findAll.mockResolvedValue([mockCandidate as any]);
 
       // Act
       const result = await controller.findAll(filters, mockRequest);
