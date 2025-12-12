@@ -438,8 +438,9 @@ export interface DashboardHeaderProps {
 
 // Form Component Props
 export interface EvaluationFormProps {
-  onSubmit: (data: any) => void;
-  isLoading?: boolean;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  showActions?: boolean;
 }
 
 // Icon Component Props

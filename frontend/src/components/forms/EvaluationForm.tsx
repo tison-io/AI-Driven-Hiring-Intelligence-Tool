@@ -93,11 +93,11 @@ export default function EvaluationForm({
         formData.append('jobRole', jobRole);
         formData.append('jobDescription', jobDescription);
 
-        await api.post('/candidates/upload-resume', formData, {
+        await api.post('/api/candidates/upload-resume', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else if (activeTab === 'linkedin') {
-        await api.post('/candidates/linkedin', {
+        await api.post('/api/candidates/linkedin', {
           linkedinUrl,
           jobRole,
           jobDescription,
