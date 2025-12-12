@@ -7,7 +7,7 @@ import ProfileSection from '@/components/settings/ProfileSection';
 import SecuritySection from '@/components/settings/SecuritySection';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
-import DeleteConfirmationModal from '@/components/settings/DeleteConfirmationModal';
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { CheckCircle, XCircle } from 'lucide-react';
