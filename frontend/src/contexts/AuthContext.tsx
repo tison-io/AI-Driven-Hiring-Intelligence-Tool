@@ -1,25 +1,11 @@
 'use client';
 
-import { createContext, ReactNode, useState, useEffect, useContext, useRef } from 'react';
+import { createContext, useState, useEffect, useContext, useRef } from 'react';
+import api from '../lib/api';
 import { tokenStorage } from '../lib/auth';
-import { User } from '../types';
-
-interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  isInitialized: boolean;
-  error: string | null;
-  login: (email: string, password: string) => Promise<User | null>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
-}
+import { User, AuthContextType, AuthProviderProps } from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +19,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const token = tokenStorage.get();
     if (token && tokenStorage.isValid(token)) {
       // Fetch full profile on mount
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      })
-        .then(res => res.ok ? res.json() : null)
-        .then(data => {
-          if (data) setUser(data);
+      api.get('/auth/profile')
+        .then(response => {
+          if (response.data) setUser(response.data);
           else {
             const userData = tokenStorage.parseUser(token);
             if (userData) setUser(userData);
@@ -58,26 +41,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     try {
       setError(null);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!response.ok) throw new Error('Login failed');
-      
-      const { access_token } = await response.json();
+      const response = await api.post('/auth/login', { email, password });
+      const { access_token } = response.data;
       tokenStorage.set(access_token);
       
       // Fetch full profile data
-      const profileResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
-        headers: { 'Authorization': `Bearer ${access_token}` }
-      });
-      
-      if (profileResponse.ok) {
-        const profileData = await profileResponse.json();
-        setUser(profileData);
-        return profileData;
+      try {
+        const profileResponse = await api.get('/auth/profile');
+        setUser(profileResponse.data);
+        return profileResponse.data;
+      } catch (profileError) {
+        // Fallback to token parsing if profile fetch fails
       }
       
       const userData = tokenStorage.parseUser(access_token);
@@ -97,13 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (email: string, password: string) => {
     try {
       setError(null);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      
-      if (!response.ok) throw new Error('Registration failed');
+      await api.post('/auth/register', { email, password });
       
       await login(email, password);
     } catch (err) {
@@ -119,10 +87,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Call backend logout endpoint if user is authenticated
     if (token && tokenStorage.isValid(token)) {
       try {
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        await api.post('/auth/logout');
       } catch (error) {
         console.error('Logout API call failed:', error);
       }
@@ -139,13 +104,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (!token) return;
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-      }
+      const response = await api.get('/auth/profile');
+      setUser(response.data);
     } catch (error) {
       console.error('Failed to refresh user:', error);
     }

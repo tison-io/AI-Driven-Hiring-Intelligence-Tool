@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Candidate, CandidateDocument } from './entities/candidate.entity';
@@ -11,7 +11,7 @@ export class CandidatesService {
     private candidateModel: Model<CandidateDocument>,
   ) {}
 
-  async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Candidate[]> {
+  async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<CandidateDocument[]> {
     const query: any = userRole === 'admin' ? {} : { createdBy: userId };
 
     if (filters.search) {
@@ -57,16 +57,16 @@ export class CandidatesService {
     return this.candidateModel.findById(id).exec();
   }
 
-  async create(candidateData: Partial<Candidate>): Promise<Candidate> {
+  async create(candidateData: Partial<Candidate>): Promise<CandidateDocument> {
     const candidate = new this.candidateModel(candidateData);
     return candidate.save();
   }
 
-  async update(id: string, updateData: Partial<Candidate>): Promise<Candidate | null> {
+  async update(id: string, updateData: Partial<Candidate>): Promise<CandidateDocument | null> {
     return this.candidateModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
 
-  async findByUserId(userId: string): Promise<Candidate[]> {
+  async findByUserId(userId: string): Promise<CandidateDocument[]> {
     // For now, return all candidates since we don't have userId field in candidates
     // In production, you'd add a userId field to candidate schema
     return this.candidateModel.find().exec();
@@ -82,7 +82,7 @@ export class CandidatesService {
     const result = await this.candidateModel.findByIdAndDelete(id).exec();
     
     if (!result) {
-      throw new Error('Candidate not found');
+      throw new NotFoundException('Candidate not found');
     }
 
     return {
@@ -91,11 +91,11 @@ export class CandidatesService {
     };
   }
 
-  async toggleShortlist(id: string): Promise<Candidate> {
+  async toggleShortlist(id: string): Promise<CandidateDocument> {
     const candidate = await this.candidateModel.findById(id).exec();
     
     if (!candidate) {
-      throw new Error('Candidate not found');
+      throw new NotFoundException('Candidate not found');
     }
 
     candidate.isShortlisted = !candidate.isShortlisted;

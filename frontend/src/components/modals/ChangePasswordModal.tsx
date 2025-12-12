@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
-
-interface ChangePasswordModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (currentPassword: string, newPassword: string) => void;
-}
+import { ChangePasswordModalProps } from '@/types';
 
 export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswordModalProps) {
   const [currentPassword, setCurrentPassword] = useState('');

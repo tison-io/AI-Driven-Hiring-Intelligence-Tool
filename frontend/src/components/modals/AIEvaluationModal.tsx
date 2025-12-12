@@ -3,11 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import EvaluationForm from '@/components/forms/EvaluationForm';
-
-interface AIEvaluationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+import { AIEvaluationModalProps } from '@/types';
 
 export default function AIEvaluationModal({ isOpen, onClose }: AIEvaluationModalProps) {
   if (!isOpen) return null;

@@ -4,7 +4,7 @@
   "description": "AI-Driven Hiring Intelligence Tool Frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

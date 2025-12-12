@@ -5,12 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Upload, Link as LinkIcon, Shield, X, FileText } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-
-interface EvaluationFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  showActions?: boolean;
-}
+import { EvaluationFormProps } from '@/types';
 
 export default function EvaluationForm({ 
   onSuccess, 
@@ -74,6 +69,11 @@ export default function EvaluationForm({
       return;
     }
 
+    if (!jobDescription.trim()) {
+      toast.error('Please enter a job description');
+      return;
+    }
+
     if (activeTab === 'upload' && !resumeFile) {
       toast.error('Please upload a resume');
       return;
@@ -91,16 +91,16 @@ export default function EvaluationForm({
         const formData = new FormData();
         formData.append('file', resumeFile);
         formData.append('jobRole', jobRole);
-        if (jobDescription) formData.append('jobDescription', jobDescription);
+        formData.append('jobDescription', jobDescription);
 
-        await api.post('/candidates/upload-resume', formData, {
+        await api.post('/api/candidates/upload-resume', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else if (activeTab === 'linkedin') {
-        await api.post('/candidates/linkedin', {
+        await api.post('/api/candidates/linkedin', {
           linkedinUrl,
           jobRole,
-          ...(jobDescription && { jobDescription }),
+          jobDescription,
         });
       }
 
@@ -140,7 +140,7 @@ export default function EvaluationForm({
       {/* Job Description */}
       <div>
         <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 mb-2">
-          Target Job Role Description
+          Target Job Role Description <span className="text-red-500">*</span>
         </label>
         <textarea
           id="job-description"
@@ -193,11 +193,13 @@ export default function EvaluationForm({
           {/* Upload Area */}
           {activeTab === 'upload' && (
             <div
-              onClick={handleBrowseClick}
+              onClick={!resumeFile ? handleBrowseClick : undefined}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                !resumeFile ? 'cursor-pointer' : ''
+              } ${
                 isDragging
                   ? 'border-blue-400 bg-blue-50'
                   : resumeFile
@@ -222,7 +224,10 @@ export default function EvaluationForm({
                     </p>
                     <button
                       type="button"
-                      onClick={removeFile}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
                       className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-2"
                     >
                       <X size={16} />
@@ -236,13 +241,9 @@ export default function EvaluationForm({
                     </div>
                     <p className="text-sm text-gray-600">
                       Drag and drop your resume here, or{' '}
-                      <button 
-                        type="button"
-                        onClick={handleBrowseClick}
-                        className="text-blue-500 font-medium hover:text-blue-600"
-                      >
+                      <span className="text-blue-500 font-medium hover:text-blue-600">
                         browse
-                      </button>
+                      </span>
                     </p>
                     <p className="text-xs text-gray-500">
                       Supported formats: PDF, DOC, DOCX
@@ -294,6 +295,7 @@ export default function EvaluationForm({
             className="px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               !jobRole || 
+              !jobDescription ||
               isAnalyzing || 
               (activeTab === 'upload' && !resumeFile) || 
               (activeTab === 'linkedin' && !linkedinUrl)

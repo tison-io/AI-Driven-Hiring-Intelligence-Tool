@@ -2,13 +2,7 @@
 
 import { useState } from 'react'
 import { X, AlertTriangle } from 'lucide-react'
-
-interface DeleteCandidateModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => Promise<void>
-  candidateName: string
-}
+import { DeleteCandidateModalProps } from '@/types'
 
 export default function DeleteCandidateModal({ 
   isOpen, 

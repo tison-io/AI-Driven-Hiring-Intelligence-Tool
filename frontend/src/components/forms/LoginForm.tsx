@@ -8,11 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+import { LoginFormData } from '@/types';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);

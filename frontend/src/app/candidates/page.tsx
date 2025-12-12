@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from 'next/navigation';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
 import {
@@ -21,6 +22,7 @@ import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import { candidatesApi } from "@/lib/api";
 
 const CandidatesPage = () => {
+	const searchParams = useSearchParams();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 	const [experienceRange, setExperienceRange] = useState([0, 10]);
@@ -31,11 +33,15 @@ const CandidatesPage = () => {
 	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
+	const [currentPage, setCurrentPage] = useState(1);
+	const [showShortlistedOnly, setShowShortlistedOnly] = useState(searchParams?.get('shortlisted') === 'true');
+	const ITEMS_PER_PAGE = 6;
 
 	// Debounce searchQuery changes
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedSearchQuery(searchQuery);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -45,6 +51,7 @@ const CandidatesPage = () => {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedMinRole(minRole);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -54,6 +61,7 @@ const CandidatesPage = () => {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedExperienceRange(experienceRange);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -69,7 +77,33 @@ const CandidatesPage = () => {
 		return filterObj;
 	}, [debouncedSearchQuery, debouncedMinRole, debouncedExperienceRange]);
 
-	const { candidates, isLoading, error, refetch } = useCandidates(filters);
+	// Get ALL candidates without pagination for filtering
+	const { candidates: allCandidates, isLoading, error, refetch } = useCandidates(filters, 1, 1000);
+
+	// Filter candidates based on shortlist toggle
+	const filteredCandidates = useMemo(() => {
+		if (showShortlistedOnly) {
+			return allCandidates.filter(c => c.isShortlisted);
+		}
+		return allCandidates;
+	}, [allCandidates, showShortlistedOnly]);
+
+	// Client-side pagination
+	const totalFiltered = filteredCandidates.length;
+	const totalPages = Math.ceil(totalFiltered / ITEMS_PER_PAGE);
+	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+	const candidates = filteredCandidates.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+	const pagination = {
+		total: totalFiltered,
+		page: currentPage,
+		totalPages
+	};
+
+	// Count shortlisted candidates
+	const shortlistedCount = useMemo(() => {
+		return allCandidates.filter(c => c.isShortlisted).length;
+	}, [allCandidates]);
 
 	// Detect if any candidates are still processing
 	const hasProcessingCandidates = useMemo(() => {
@@ -108,6 +142,7 @@ const CandidatesPage = () => {
 		setSearchQuery('');
 		setExperienceRange([0, 10]);
 		setMinRole(0);
+		setShowShortlistedOnly(false);
 		toast.success('Filters cleared');
 	};
 
@@ -193,15 +228,32 @@ const CandidatesPage = () => {
 
 							{/* Filters Row */}
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-								<button 
-									onClick={handleClearFilters}
-									className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
-								>
-									<Filter className="w-4 h-4" />
-									<span className="text-sm font-bold">
-										Clear Filters
-									</span>
-								</button>
+								<div className="flex gap-3">
+									<button 
+										onClick={() => {
+											setShowShortlistedOnly(!showShortlistedOnly);
+											setCurrentPage(1);
+										}}
+										className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+											showShortlistedOnly
+												? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white border-transparent'
+												: 'bg-f6f6f6 border-gray-300 text-black hover:border-gray-600'
+										}`}
+									>
+										<span className="text-sm font-bold">
+											Shortlisted {shortlistedCount > 0 && `(${shortlistedCount})`}
+										</span>
+									</button>
+									<button 
+										onClick={handleClearFilters}
+										className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+									>
+										<Filter className="w-4 h-4" />
+										<span className="text-sm font-bold">
+											Clear Filters
+										</span>
+									</button>
+								</div>
 								<div className="relative">
 									<button 
 										onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
@@ -268,6 +320,13 @@ const CandidatesPage = () => {
 								</div>
 							</div>
 						</div>
+
+						{/* Results Count */}
+						{!isLoading && !error && candidates.length > 0 && (
+							<div className="mb-4 text-sm text-gray-600">
+								Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, pagination.total)} of {pagination.total} candidates
+							</div>
+						)}
 
 						{/* Candidates Table */}
 						{isLoading ? (
@@ -461,6 +520,67 @@ const CandidatesPage = () => {
 									</table>
 								</div>
 							</div>
+
+							{/* Pagination */}
+							{pagination.totalPages > 1 && (
+								<div className="mt-6 flex justify-end">
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+											disabled={currentPage === 1}
+											className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Previous
+										</button>
+										
+										{currentPage > 2 && (
+											<button
+												onClick={() => setCurrentPage(1)}
+												className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+											>
+												1
+											</button>
+										)}
+										
+										{currentPage > 3 && <span className="px-2">...</span>}
+										
+										{[currentPage - 1, currentPage, currentPage + 1]
+											.filter(p => p > 0 && p <= pagination.totalPages)
+											.map(p => (
+												<button
+													key={p}
+													onClick={() => setCurrentPage(p)}
+													className={`px-3 py-2 text-sm border rounded-lg ${
+														p === currentPage
+															? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white border-transparent'
+															: 'border-gray-300 hover:bg-gray-50'
+													}`}
+												>
+													{p}
+												</button>
+											))}
+										
+										{currentPage < pagination.totalPages - 2 && <span className="px-2">...</span>}
+										
+										{currentPage < pagination.totalPages - 1 && (
+											<button
+												onClick={() => setCurrentPage(pagination.totalPages)}
+												className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+											>
+												{pagination.totalPages}
+											</button>
+										)}
+										
+										<button
+											onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+											disabled={currentPage === pagination.totalPages}
+											className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Next
+										</button>
+									</div>
+								</div>
+							)}
 						</>
 						)}
 

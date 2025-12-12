@@ -2,15 +2,9 @@
 
 import { ArrowLeft, Linkedin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { CandidateHeaderProps } from '@/types'
 
-interface CandidateHeaderProps {
-  name: string
-  title: string
-  linkedinUrl?: string
-  onDelete?: () => void
-}
-
-export default function CandidateHeader({ name, title, linkedinUrl, onDelete }: CandidateHeaderProps) {
+export default function CandidateHeader({ name, title = 'Candidate', linkedinUrl, onDelete }: CandidateHeaderProps) {
   const router = useRouter()
 
   return (

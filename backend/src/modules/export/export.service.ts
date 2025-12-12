@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CandidatesService } from '../candidates/candidates.service';
 import * as XLSX from 'xlsx';
 import { createObjectCsvWriter } from 'csv-writer';
@@ -61,7 +61,7 @@ export class ExportService {
     const candidate = await this.candidatesService.findById(candidateId);
     
     if (!candidate) {
-      throw new Error('Candidate not found');
+      throw new NotFoundException('Candidate not found');
     }
 
     const markdownReport = `

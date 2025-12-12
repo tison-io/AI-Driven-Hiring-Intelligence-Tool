@@ -6,8 +6,6 @@ export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
-  _id?: any;
-  
   @Prop({ required: true, unique: true })
   email: string;
 

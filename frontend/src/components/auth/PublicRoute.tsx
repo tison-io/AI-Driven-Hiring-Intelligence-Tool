@@ -3,10 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-
-interface PublicRouteProps {
-  children: React.ReactNode;
-}
+import { PublicRouteProps } from '@/types';
 
 export default function PublicRoute({ children }: PublicRouteProps) {
   const { user, loading } = useAuth();

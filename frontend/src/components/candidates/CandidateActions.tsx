@@ -1,14 +1,7 @@
 import { Plus, X, Download } from 'lucide-react'
+import { CandidateActionsProps } from '@/types'
 
-interface CandidateActionsProps {
-  onShortlist?: () => void
-  onDownloadReport?: () => void
-  onExportCSV?: () => void
-  isDownloadingReport?: boolean
-  isShortlisted?: boolean
-}
-
-export default function CandidateActions({ onShortlist, onDownloadReport, onExportCSV, isDownloadingReport, isShortlisted }: CandidateActionsProps) {
+export default function CandidateActions({ onShortlist, onDownloadReport, isDownloadingReport, isShortlisted }: CandidateActionsProps) {
   return (
     <div className="flex items-center justify-between gap-4">
       <button 

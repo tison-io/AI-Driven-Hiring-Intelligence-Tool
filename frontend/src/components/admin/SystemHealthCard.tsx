@@ -1,14 +1,7 @@
 'use client';
 
 import { CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
-
-interface SystemHealthCardProps {
-  type: 'latency' | 'errors';
-  title: string;
-  value: number;
-  target?: number;
-  status?: 'within' | 'outside';
-}
+import { SystemHealthCardProps } from '@/types';
 
 export default function SystemHealthCard({ type, title, value, target, status }: SystemHealthCardProps) {
   if (type === 'latency') {

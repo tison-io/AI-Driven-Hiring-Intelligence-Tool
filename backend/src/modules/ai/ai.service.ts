@@ -95,11 +95,12 @@ export class AiService {
       typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
     ) || [];
 
-
+    const roleFitScore = scoringResult.role_fit_score || 0;
 
     return {
       name: extractedData.candidate_name || 'Anonymous',
-      roleFitScore: scoringResult.role_fit_score || 0,
+      roleFitScore,
+      isShortlisted: roleFitScore >= 80,
       keyStrengths,
       potentialWeaknesses,
       missingSkills: scoringResult.missing_skills || [],

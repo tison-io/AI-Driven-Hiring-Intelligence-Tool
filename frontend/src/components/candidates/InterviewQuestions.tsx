@@ -1,6 +1,4 @@
-interface InterviewQuestionsProps {
-  questions: string[]
-}
+import { InterviewQuestionsProps } from '@/types'
 
 export default function InterviewQuestions({ questions }: InterviewQuestionsProps) {
   return (
