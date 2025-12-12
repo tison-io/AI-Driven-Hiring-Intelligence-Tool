@@ -168,7 +168,7 @@ export const AuditLogsTable = () => {
         {/* Desktop Layout */}
         <div className="hidden md:flex justify-between items-center">
           <div className="text-sm text-gray-700">
-            Showing {Math.min((pagination.page - 1) * filters.limit + 1, pagination.total)} to {Math.min(pagination.page * filters.limit, pagination.total)}
+            Showing {Math.min((pagination.page - 1) * (filters.limit ?? 10) + 1, pagination.total)} to {Math.min(pagination.page * (filters.limit ?? 10), pagination.total)}
           </div>
           
           <div className="flex items-center space-x-2">
@@ -215,7 +215,7 @@ export const AuditLogsTable = () => {
         {/* Mobile Layout */}
         <div className="md:hidden space-y-3">
           <div className="text-sm text-gray-700 text-center">
-            Showing {Math.min((pagination.page - 1) * filters.limit + 1, pagination.total)} to {Math.min(pagination.page * filters.limit, pagination.total)}
+            Showing {Math.min((pagination.page - 1) * (filters.limit ?? 10) + 1, pagination.total)} to {Math.min(pagination.page * (filters.limit ?? 10), pagination.total)}
           </div>
           
           <div className="flex justify-center items-center space-x-2">
