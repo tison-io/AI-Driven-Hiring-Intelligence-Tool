@@ -47,60 +47,59 @@ A comprehensive hiring platform that evaluates candidates from resumes and Linke
 -   Brevo API Key (for emails)
 -   Git
 
-### **1. Clone & Install**
+### **Step 1: Clone Repository**
 
 ```bash
 git clone <repository-url>
 cd TestProject
+```
 
-# Install backend dependencies
+### **Step 2: Install Dependencies**
+
+```bash
+# Backend dependencies
 cd backend
 npm install
 
-# Install frontend dependencies
+# Frontend dependencies
 cd ../frontend
 npm install
+
+# AI Backend dependencies
+cd ../AI_Backend
+pip install -r requirements.txt
+
 cd ..
 ```
 
-### **2. Environment Setup**
+### **Step 3: Environment Configuration**
 
+#### **Backend Environment** (`backend/.env`)
 ```bash
+cd backend
 cp .env.example .env
 ```
 
-**Configure `.env` file:**
-
 ```env
-# Database (Required)
+# Database
 DATABASE_URL=mongodb://localhost:27017/hiring_intelligence_db
-# Or MongoDB Atlas: mongodb+srv://username:password@cluster.mongodb.net/dbname
 
-# JWT (Required)
+# JWT
 JWT_SECRET=your-super-secret-jwt-key-here
 JWT_EXPIRES_IN=7d
 
-# Redis (Required for background jobs)
+# Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
 
-# Cloudinary (Optional - for file storage)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# AI Service (Python FastAPI Backend)
+# AI Service
 AI_SERVICE_URL=http://localhost:8000
-OPENAI_API_KEY=your-openai-api-key-here
 
 # Email Service (Brevo)
 BREVO_API_KEY=your-brevo-api-key-here
 BREVO_FROM_EMAIL=noreply@yourcompany.com
 BREVO_FROM_NAME=Hiring Intelligence Tool
-
-# RapidAPI (LinkedIn Scraper)
-RAPIDAPI_KEY=your-rapidapi-key-here
 
 # App
 PORT=3000
@@ -108,49 +107,52 @@ NODE_ENV=development
 FRONTEND_URL=http://localhost:3001
 ```
 
-### **3. Start Services**
+#### **AI Backend Environment** (`AI_Backend/.env`)
+```bash
+cd AI_Backend
+cp .env.example .env
+```
 
+```env
+OPENAI_API_KEY=your-openai-api-key-here
+```
+
+### **Step 4: Start Services**
+
+**Terminal 1 - Database Services:**
 ```bash
 # Start MongoDB (if local)
 mongod
 
 # Start Redis (if local)
 redis-server
+```
 
-# Start the AI Backend (Python FastAPI)
+**Terminal 2 - AI Backend:**
+```bash
 cd AI_Backend
-pip install -r requirements.txt
-cp .env.example .env
-# Configure OPENAI_API_KEY in AI_Backend/.env
 python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
 
-# In a new terminal, start the backend API
+**Terminal 3 - Backend API:**
+```bash
 cd backend
 npm run start:dev
+```
 
-# In a new terminal, start the frontend
+**Terminal 4 - Frontend:**
+```bash
 cd frontend
 npm run dev
 ```
 
-### **4. Run Migration (If Upgrading from Old Version)**
-
-If you have existing candidates without user ownership:
-
-```bash
-cd backend
-node scripts/migrate-user-ownership.js
-```
-
-This assigns all existing candidates to the first admin user. See `MIGRATION_USER_OWNERSHIP.md` for details.
-
-### **5. Access the Application**
+### **Step 5: Access the Application**
 
 -   **Frontend**: http://localhost:3001
 -   **Backend API**: http://localhost:3000
 -   **AI Backend**: http://localhost:8000
--   **Swagger Documentation**: http://localhost:3000/api/docs
--   **AI API Documentation**: http://localhost:8000/docs
+-   **API Documentation**: http://localhost:3000/api/docs
+-   **AI Documentation**: http://localhost:8000/docs
 
 ---
 
@@ -402,143 +404,13 @@ POST /auth/forgot-password
 }
 ```
 
-## 🗃️ Database Migrations
+## 🔗 LinkedIn Integration
 
-### **User Ownership Migration**
-
-If upgrading from a version without user ownership tracking, existing candidates need to be assigned to users.
-
-#### **Migration Process**
-
-1. **Backup Database**
-   ```bash
-   mongodump --db hiring_intelligence_db --out backup/
-   ```
-
-2. **Create Admin User** (if none exists)
-   ```bash
-   cd backend
-   npm run seed:admin
-   ```
-
-3. **Run Migration Script**
-   ```bash
-   node -e "
-   const { MongoClient } = require('mongodb');
-   require('dotenv').config();
-   (async () => {
-     const client = new MongoClient(process.env.DATABASE_URL);
-     await client.connect();
-     const db = client.db();
-     
-     // Get first admin user
-     const admin = await db.collection('users').findOne({ role: 'admin' });
-     if (!admin) {
-       console.log('No admin user found. Create one first.');
-       return;
-     }
-     
-     // Assign all candidates without userId to admin
-     const result = await db.collection('candidates').updateMany(
-       { userId: { \$exists: false } },
-       { \$set: { userId: admin._id } }
-     );
-     
-     console.log(\`Updated \${result.modifiedCount} candidates\`);
-     await client.close();
-   })();
-   "
-   ```
-
-#### **Migration Verification**
-
-```bash
-# Check all candidates have userId
-node -e "
-const { MongoClient } = require('mongodb');
-require('dotenv').config();
-(async () => {
-  const client = new MongoClient(process.env.DATABASE_URL);
-  await client.connect();
-  const db = client.db();
-  
-  const orphaned = await db.collection('candidates').countDocuments({ userId: { \$exists: false } });
-  console.log(\`Candidates without userId: \${orphaned}\`);
-  
-  await client.close();
-})();
-"
-```
-
-### **Database Schema Updates**
-
-When updating the database schema:
-
-1. **Test on Development Database**
-2. **Create Migration Script**
-3. **Backup Production Database**
-4. **Run Migration**
-5. **Verify Data Integrity**
-
-### **Common Migration Tasks**
-
-- **Add User Ownership**: Assign candidates to users
-- **Update Schema**: Add new fields to existing documents
-- **Data Cleanup**: Remove deprecated fields
-- **Index Creation**: Add database indexes for performance
-
-### **LinkedIn Integration**
+The system processes LinkedIn profiles using URL validation and data extraction.
 
 **Location**: `src/modules/upload/upload.service.ts`
 
-**Current placeholder**:
-
-```typescript
-async processLinkedinProfile(linkedinUrl: string, jobRole: string) {
-  // PLACEHOLDER - Replace with real scraping
-  const rawText = `LinkedIn Profile: ${linkedinUrl}`;
-  // ...
-}
-```
-
-**To implement real scraping**:
-
-```typescript
-import puppeteer from 'puppeteer';
-
-async processLinkedinProfile(linkedinUrl: string, jobRole: string) {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-
-  try {
-    await page.goto(linkedinUrl);
-
-    const profileData = await page.evaluate(() => {
-      const name = document.querySelector('h1')?.textContent || '';
-      const headline = document.querySelector('.text-body-medium')?.textContent || '';
-      const about = document.querySelector('.pv-about__summary-text')?.textContent || '';
-
-      return `Name: ${name}\nHeadline: ${headline}\nAbout: ${about}`;
-    });
-
-    await browser.close();
-
-    // Process with AI...
-    const candidate = await this.candidatesService.create({
-      name: 'LinkedIn Profile',
-      linkedinUrl,
-      rawText: profileData,
-      jobRole,
-      status: 'pending' as any,
-    });
-
-    // Continue with existing flow...
-  } catch (error) {
-    await browser.close();
-    throw new Error('Failed to scrape LinkedIn profile');
-  }
-}
-```
+LinkedIn profiles are processed through the AI service which extracts relevant candidate information from the profile data.
 
 ---
 
