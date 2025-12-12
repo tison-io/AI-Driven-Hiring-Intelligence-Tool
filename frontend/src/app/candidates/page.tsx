@@ -31,11 +31,14 @@ const CandidatesPage = () => {
 	const [selectedCandidate, setSelectedCandidate] = useState<{ id: string; name: string } | null>(null);
 	const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 	const [isExporting, setIsExporting] = useState(false);
+	const [currentPage, setCurrentPage] = useState(1);
+	const ITEMS_PER_PAGE = 6;
 
 	// Debounce searchQuery changes
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedSearchQuery(searchQuery);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -45,6 +48,7 @@ const CandidatesPage = () => {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedMinRole(minRole);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -54,6 +58,7 @@ const CandidatesPage = () => {
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setDebouncedExperienceRange(experienceRange);
+			setCurrentPage(1);
 		}, 500);
 
 		return () => clearTimeout(timer);
@@ -69,7 +74,7 @@ const CandidatesPage = () => {
 		return filterObj;
 	}, [debouncedSearchQuery, debouncedMinRole, debouncedExperienceRange]);
 
-	const { candidates, isLoading, error, refetch } = useCandidates(filters);
+	const { candidates, isLoading, error, pagination, refetch } = useCandidates(filters, currentPage, ITEMS_PER_PAGE);
 
 	// Detect if any candidates are still processing
 	const hasProcessingCandidates = useMemo(() => {
@@ -269,6 +274,13 @@ const CandidatesPage = () => {
 							</div>
 						</div>
 
+						{/* Results Count */}
+						{!isLoading && !error && candidates.length > 0 && (
+							<div className="mb-4 text-sm text-gray-600">
+								Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}-{Math.min(currentPage * ITEMS_PER_PAGE, pagination.total)} of {pagination.total} candidates
+							</div>
+						)}
+
 						{/* Candidates Table */}
 						{isLoading ? (
 							<CandidatesTableSkeleton />
@@ -461,6 +473,67 @@ const CandidatesPage = () => {
 									</table>
 								</div>
 							</div>
+
+							{/* Pagination */}
+							{pagination.totalPages > 1 && (
+								<div className="mt-6 flex justify-end">
+									<div className="flex items-center gap-2">
+										<button
+											onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+											disabled={currentPage === 1}
+											className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Previous
+										</button>
+										
+										{currentPage > 2 && (
+											<button
+												onClick={() => setCurrentPage(1)}
+												className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+											>
+												1
+											</button>
+										)}
+										
+										{currentPage > 3 && <span className="px-2">...</span>}
+										
+										{[currentPage - 1, currentPage, currentPage + 1]
+											.filter(p => p > 0 && p <= pagination.totalPages)
+											.map(p => (
+												<button
+													key={p}
+													onClick={() => setCurrentPage(p)}
+													className={`px-3 py-2 text-sm border rounded-lg ${
+														p === currentPage
+															? 'bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white border-transparent'
+															: 'border-gray-300 hover:bg-gray-50'
+													}`}
+												>
+													{p}
+												</button>
+											))}
+										
+										{currentPage < pagination.totalPages - 2 && <span className="px-2">...</span>}
+										
+										{currentPage < pagination.totalPages - 1 && (
+											<button
+												onClick={() => setCurrentPage(pagination.totalPages)}
+												className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+											>
+												{pagination.totalPages}
+											</button>
+										)}
+										
+										<button
+											onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
+											disabled={currentPage === pagination.totalPages}
+											className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											Next
+										</button>
+									</div>
+								</div>
+							)}
 						</>
 						)}
 
