@@ -11,10 +11,11 @@ interface CandidatesFilters {
   jobRole?: string
 }
 
-export function useCandidates(filters?: CandidatesFilters) {
+export function useCandidates(filters?: CandidatesFilters, page: number = 1, limit: number = 6) {
   const [candidates, setCandidates] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({ total: 0, page: 1, totalPages: 1 })
 
   useEffect(() => {
     const fetchCandidates = async () => {
@@ -25,7 +26,14 @@ export function useCandidates(filters?: CandidatesFilters) {
         const sortedData = data.sort((a: any, b: any) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
-        setCandidates(sortedData.slice(0, 6))
+        
+        const total = sortedData.length
+        const totalPages = Math.ceil(total / limit)
+        const startIndex = (page - 1) * limit
+        const paginatedData = sortedData.slice(startIndex, startIndex + limit)
+        
+        setCandidates(paginatedData)
+        setPagination({ total, page, totalPages })
       } catch (err: any) {
         setError(err.message || 'Failed to fetch candidates')
         setCandidates([])
@@ -35,7 +43,7 @@ export function useCandidates(filters?: CandidatesFilters) {
     }
 
     fetchCandidates()
-  }, [filters])
+  }, [filters, page, limit])
 
   const refetch = async () => {
     try {
@@ -45,7 +53,14 @@ export function useCandidates(filters?: CandidatesFilters) {
       const sortedData = data.sort((a: any, b: any) => 
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )
-      setCandidates(sortedData.slice(0, 6))
+      
+      const total = sortedData.length
+      const totalPages = Math.ceil(total / limit)
+      const startIndex = (page - 1) * limit
+      const paginatedData = sortedData.slice(startIndex, startIndex + limit)
+      
+      setCandidates(paginatedData)
+      setPagination({ total, page, totalPages })
     } catch (err: any) {
       setError(err.message || 'Failed to fetch candidates')
       setCandidates([])
@@ -54,5 +69,5 @@ export function useCandidates(filters?: CandidatesFilters) {
     }
   }
 
-  return { candidates, isLoading, error, refetch }
+  return { candidates, isLoading, error, pagination, refetch }
 }
