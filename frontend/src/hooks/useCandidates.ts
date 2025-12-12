@@ -1,15 +1,6 @@
 import { useState, useEffect } from 'react'
 import { candidatesApi } from '@/lib/api'
-
-interface CandidatesFilters {
-  search?: string
-  experience_min?: number
-  experience_max?: number
-  score_min?: number
-  score_max?: number
-  skill?: string
-  jobRole?: string
-}
+import { CandidatesFilters } from '@/types'
 
 export function useCandidates(filters?: CandidatesFilters, page: number = 1, limit: number = 6) {
   const [candidates, setCandidates] = useState<any[]>([])

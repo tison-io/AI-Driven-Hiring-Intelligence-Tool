@@ -4,10 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
+import { ProtectedRouteProps } from '@/types';
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading, isInitialized } = useAuth();

@@ -4,10 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
-
-interface AdminHeaderProps {
-  currentPage: string;
-}
+import { AdminHeaderProps } from '@/types';
 
 export default function AdminHeader({ currentPage }: AdminHeaderProps) {
   const { user, logout } = useAuth();

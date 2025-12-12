@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { CandidateFilters } from '@/types';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,23 +36,23 @@ api.interceptors.response.use(
 
 // Candidate API functions
 export const candidatesApi = {
-  getAll: async (filters?: any) => {
-    const response = await api.get('/candidates', { params: filters });
+  getAll: async (filters?: CandidateFilters) => {
+    const response = await api.get('/api/candidates', { params: filters });
     return response.data;
   },
 
   getById: async (id: string) => {
-    const response = await api.get(`/candidates/${id}`);
+    const response = await api.get(`/api/candidates/${id}`);
     return response.data;
   },
 
   delete: async (id: string) => {
-    const response = await api.delete(`/candidates/${id}`);
+    const response = await api.delete(`/api/candidates/${id}`);
     return response.data;
   },
 
   toggleShortlist: async (id: string) => {
-    const response = await api.patch(`/candidates/${id}/shortlist`);
+    const response = await api.patch(`/api/candidates/${id}/shortlist`);
     return response.data;
   },
 };
@@ -59,18 +60,12 @@ export const candidatesApi = {
 // Auth API functions
 export const authApi = {
   forgotPassword: async (email: string) => {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`,
-      { email }
-    );
+    const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    const response = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password/${token}`,
-      { newPassword }
-    );
+    const response = await api.post(`/auth/reset-password/${token}`, { newPassword });
     return response.data;
   },
 };
@@ -78,23 +73,23 @@ export const authApi = {
 // Dashboard API functions
 export const dashboardApi = {
   getAdminMetrics: async () => {
-    const response = await api.get('/dashboard/admin');
+    const response = await api.get('/api/dashboard/admin');
     return response.data;
   },
 };
 
 // Error Logs API functions
 export const errorLogsApi = {
-  getAll: async (filters?: any) => {
-    const response = await api.get('/admin/error-logs', { params: filters });
+  getAll: async (filters?: Record<string, any>) => {
+    const response = await api.get('/api/admin/error-logs', { params: filters });
     return response.data;
   },
 };
 
 // Audit Logs API functions
 export const auditLogsApi = {
-  getAll: async (filters?: any) => {
-    const response = await api.get('/admin/audit-logs', { params: filters });
+  getAll: async (filters?: Record<string, any>) => {
+    const response = await api.get('/api/admin/audit-logs', { params: filters });
     return response.data;
   },
 };

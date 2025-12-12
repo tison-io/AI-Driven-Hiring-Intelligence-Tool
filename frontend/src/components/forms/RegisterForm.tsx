@@ -5,18 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface RegisterFormData {
-  email: string;
-  password: string;
-  agreeToTerms: boolean;
-}
-
-interface RegisterFormErrors {
-  email?: string;
-  password?: string;
-  agreeToTerms?: string;
-}
+import { RegisterFormData, RegisterFormErrors } from '@/types';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterFormData>({

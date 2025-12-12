@@ -4,10 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import Sidebar from './Sidebar'
 import MobileHeader from './MobileHeader'
-
-interface LayoutProps {
-  children: React.ReactNode
-}
+import { LayoutProps } from '@/types'
 
 export default function Layout({ children }: LayoutProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)

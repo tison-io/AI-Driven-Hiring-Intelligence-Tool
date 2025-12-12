@@ -1,45 +1,23 @@
-import React from 'react';
 import StatusIcon from '@/components/icons/StatusIcon';
 import { ActivityItemData } from '@/types/dashboard';
 
-const ActivityItem: React.FC<ActivityItemData> = ({ 
-  name, 
-  role, 
-  time, 
-  status, 
-  score 
-}) => {
-  const getStatusColor = () => {
-    switch (status) {
-      case 'completed': return 'text-green-500';
-      case 'processing': return 'text-blue-500';
-      case 'error': return 'text-red-500';
-      default: return 'text-gray-500';
-    }
-  };
+const ActivityItem = ({ name, role, time, status, score }: ActivityItemData) => {
 
   return (
-    <div className="flex items-center justify-between py-4 px-2 hover:bg-gray-50 rounded-lg transition-colors">
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          <StatusIcon status={status} />
-          <div>
-            <h4 className="font-medium text-gray-900">{name}</h4>
-            <p className="text-sm text-gray-600">{role}</p>
-          </div>
+    <div className="flex items-center justify-between p-4 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors">
+      <div className="flex items-center space-x-3">
+        <StatusIcon status={status} size={20} />
+        <div>
+          <p className="font-medium text-gray-900">{name}</p>
+          <p className="text-sm text-gray-500">{role}</p>
         </div>
       </div>
       
-      <div className="flex items-center gap-4">
-        <span className="text-sm text-gray-500">{time}</span>
+      <div className="text-right">
         {score && (
-          <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
-            {score}
-          </span>
+          <p className="text-sm font-medium text-gray-900">{score}%</p>
         )}
-        <span className={`text-sm font-medium ${getStatusColor()}`}>
-          {status.charAt(0).toUpperCase() + status.slice(1)}
-        </span>
+        <p className="text-xs text-gray-500">{time}</p>
       </div>
     </div>
   );

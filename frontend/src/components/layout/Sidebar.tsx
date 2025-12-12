@@ -1,15 +1,11 @@
 'use client'
 
-import { LayoutDashboard, Users, Upload, Download, Menu, X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users,   X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '../../../public/images/talentScanLogo.svg'
-
-interface SidebarProps {
-  isOpen: boolean
-  onClose: () => void
-}
+import { SidebarProps } from '@/types'
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter()

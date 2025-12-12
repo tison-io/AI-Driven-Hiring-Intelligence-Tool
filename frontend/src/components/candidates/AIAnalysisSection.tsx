@@ -1,12 +1,7 @@
 import { CheckCircle2, AlertTriangle } from 'lucide-react'
+import { AIAnalysisSectionProps } from '@/types'
 
-interface AIAnalysisSectionProps {
-  keyStrengths: string[]
-  potentialGaps: string[]
-  missingSkills: string[]
-}
-
-export default function AIAnalysisSection({ keyStrengths, potentialGaps, missingSkills }: AIAnalysisSectionProps) {
+export default function AIAnalysisSection({ keyStrengths, potentialGaps = [], missingSkills }: AIAnalysisSectionProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-6 p-4 md:p-6 mb-6 md:mb-8">
       <h2 className="text-lg md:text-xl font-bold text-black mb-4 md:mb-6">AI Analysis</h2>

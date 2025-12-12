@@ -9,11 +9,7 @@ import toast from 'react-hot-toast';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-interface ResetPasswordFormData {
-  newPassword: string;
-  confirmPassword: string;
-}
+import { ResetPasswordFormData } from '@/types';
 
 export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false);

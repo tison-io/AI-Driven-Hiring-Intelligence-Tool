@@ -1,9 +1,8 @@
-import React from 'react';
 import { useRouter } from 'next/navigation';
 import ActivityItem from './ActivityItem';
 import { RecentActivityData } from '@/types/dashboard';
 
-const RecentActivity: React.FC<RecentActivityData> = ({ title, activities }) => {
+const RecentActivity = ({ title, activities }: RecentActivityData) => {
   const router = useRouter();
 
   return (

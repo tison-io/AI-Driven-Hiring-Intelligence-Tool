@@ -5,12 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Upload, Link as LinkIcon, Shield, X, FileText } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
-
-interface EvaluationFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  showActions?: boolean;
-}
+import { EvaluationFormProps } from '@/types';
 
 export default function EvaluationForm({ 
   onSuccess, 

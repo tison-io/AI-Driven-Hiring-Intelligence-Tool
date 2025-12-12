@@ -1,23 +1,5 @@
 import { Briefcase, GraduationCap } from "lucide-react"
-
-interface WorkExperience {
-  company: string
-  jobTitle: string
-  startDate: string
-  endDate: string
-  description: string
-}
-
-interface Education {
-  degree: string
-  institution: string
-  year_graduated: string
-}
-
-interface ExperienceSectionProps {
-  experience: WorkExperience[]
-  education: Education
-}
+import { WorkExperience, Education, ExperienceSectionProps } from '@/types'
 
 export default function ExperienceSection({ experience, education }: ExperienceSectionProps) {
   return (

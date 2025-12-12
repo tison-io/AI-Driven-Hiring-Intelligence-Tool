@@ -1,8 +1,5 @@
 import React from 'react';
-
-interface SecuritySectionProps {
-  onChangePassword: () => void;
-}
+import { SecuritySectionProps } from '@/types';
 
 export default function SecuritySection({ onChangePassword }: SecuritySectionProps) {
   return (

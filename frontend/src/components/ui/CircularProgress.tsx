@@ -1,8 +1,4 @@
-interface CircularProgressProps {
-  value: number
-  color: string
-  label: string
-}
+import { CircularProgressProps } from '@/types'
 
 export default function CircularProgress({ value, color, label }: CircularProgressProps) {
   const radius = 70

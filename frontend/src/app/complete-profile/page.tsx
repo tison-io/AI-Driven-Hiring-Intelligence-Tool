@@ -6,14 +6,7 @@ import { UserIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import SuccessPopup from '@/components/ui/SuccessPopup';
 import { tokenStorage } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface ProfileData {
-  fullName: string;
-  jobTitle: string;
-  companyName: string;
-  userPhoto: File | null;
-  companyLogo: File | null;
-}
+import { ProfileData } from '@/types';
 
 export default function CompleteProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData>({

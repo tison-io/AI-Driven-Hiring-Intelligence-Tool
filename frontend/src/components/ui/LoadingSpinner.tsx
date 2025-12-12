@@ -1,8 +1,4 @@
-interface LoadingSpinnerProps {
-  size?: 'sm' | 'md' | 'lg'
-  color?: 'primary' | 'white' | 'gray'
-  className?: string
-}
+import { LoadingSpinnerProps } from '@/types'
 
 const sizeClasses = {
   sm: 'h-5 w-5',
