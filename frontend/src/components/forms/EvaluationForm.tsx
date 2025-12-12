@@ -74,6 +74,11 @@ export default function EvaluationForm({
       return;
     }
 
+    if (!jobDescription.trim()) {
+      toast.error('Please enter a job description');
+      return;
+    }
+
     if (activeTab === 'upload' && !resumeFile) {
       toast.error('Please upload a resume');
       return;
@@ -91,7 +96,7 @@ export default function EvaluationForm({
         const formData = new FormData();
         formData.append('file', resumeFile);
         formData.append('jobRole', jobRole);
-        if (jobDescription) formData.append('jobDescription', jobDescription);
+        formData.append('jobDescription', jobDescription);
 
         await api.post('/candidates/upload-resume', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
@@ -100,7 +105,7 @@ export default function EvaluationForm({
         await api.post('/candidates/linkedin', {
           linkedinUrl,
           jobRole,
-          ...(jobDescription && { jobDescription }),
+          jobDescription,
         });
       }
 
@@ -140,7 +145,7 @@ export default function EvaluationForm({
       {/* Job Description */}
       <div>
         <label htmlFor="job-description" className="block text-sm font-medium text-gray-700 mb-2">
-          Target Job Role Description
+          Target Job Role Description <span className="text-red-500">*</span>
         </label>
         <textarea
           id="job-description"
@@ -295,6 +300,7 @@ export default function EvaluationForm({
             className="px-6 py-2.5 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={
               !jobRole || 
+              !jobDescription ||
               isAnalyzing || 
               (activeTab === 'upload' && !resumeFile) || 
               (activeTab === 'linkedin' && !linkedinUrl)

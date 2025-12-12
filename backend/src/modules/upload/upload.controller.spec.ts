@@ -81,13 +81,16 @@ describe('UploadController', () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it('should upload resume without job description', async () => {
-      const dtoWithoutDescription = { jobRole: 'Frontend Engineer' };
+    it('should upload resume with job description', async () => {
+      const dtoWithDescription = { 
+        jobRole: 'Frontend Engineer',
+        jobDescription: 'React and TypeScript required'
+      };
       uploadService.processResume.mockResolvedValue(mockResponse);
 
       await controller.uploadResume(
         mockFile,
-        dtoWithoutDescription,
+        dtoWithDescription,
         mockRequest,
       );
 
@@ -95,7 +98,7 @@ describe('UploadController', () => {
         mockFile,
         'Frontend Engineer',
         'user-123',
-        undefined,
+        'React and TypeScript required',
       );
     });
 
@@ -140,20 +143,21 @@ describe('UploadController', () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it('should process LinkedIn profile without job description', async () => {
-      const dtoWithoutDescription = {
+    it('should process LinkedIn profile with job description', async () => {
+      const dtoWithDescription = {
         linkedinUrl: 'https://www.linkedin.com/in/johndoe',
         jobRole: 'Frontend Engineer',
+        jobDescription: 'React and TypeScript required'
       };
       uploadService.processLinkedinProfile.mockResolvedValue(mockResponse);
 
-      await controller.processLinkedin(dtoWithoutDescription, mockRequest);
+      await controller.processLinkedin(dtoWithDescription, mockRequest);
 
       expect(uploadService.processLinkedinProfile).toHaveBeenCalledWith(
         'https://www.linkedin.com/in/johndoe',
         'Frontend Engineer',
         'user-123',
-        undefined,
+        'React and TypeScript required',
       );
     });
 
@@ -170,7 +174,10 @@ describe('UploadController', () => {
 
   describe('User Context', () => {
     it('should extract user ID from request', async () => {
-      const uploadResumeDto = { jobRole: 'Backend Engineer' };
+      const uploadResumeDto = { 
+        jobRole: 'Backend Engineer',
+        jobDescription: 'Node.js required'
+      };
       uploadService.processResume.mockResolvedValue({
         candidateId: 'candidate-123',
         message: 'Success',
@@ -183,7 +190,7 @@ describe('UploadController', () => {
         mockFile,
         'Backend Engineer',
         'user-123',
-        undefined,
+        'Node.js required',
       );
     });
   });
