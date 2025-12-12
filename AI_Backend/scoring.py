@@ -13,6 +13,8 @@ client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 def score_candidate(candidate_data: dict, job_description: str, role_name: str):
     try:
         jd_rules = parse_jd_requirements(job_description, role_name)
+        candidate_data = ensure_consistent_skills(candidate_data)
+        
         math_result = calculate_math_score(candidate_data, jd_rules, job_description)
         final_score = math_result["base_score"]
         years = candidate_data.get("total_years_experience", 0) or 0
@@ -48,7 +50,7 @@ def score_candidate(candidate_data: dict, job_description: str, role_name: str):
         """
 
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": SYSTEM_SCORING_PROMPT},
                 {"role": "user", "content": prompt_content},
@@ -93,3 +95,22 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
     bias_score = 70 if bias_detected else 100
     
     return int((comp_score * 0.6) + (bias_score * 0.4))
+
+def ensure_consistent_skills(candidate_data: dict) -> dict:
+    """Simple skill normalization."""
+    existing_skills = candidate_data.get('skills', [])
+    
+    def normalize_skill(skill):
+        return skill.lower().strip().replace('-', ' ').replace('_', ' ').replace('.js', '').replace('.', '')
+    
+    normalized_skills = []
+    for skill in existing_skills:
+        normalized = normalize_skill(skill)
+        if normalized and normalized not in normalized_skills:
+            normalized_skills.append(normalized)
+    
+    normalized_skills.sort()
+    candidate_data['skills'] = normalized_skills
+    candidate_data['flat_skills_list'] = normalized_skills
+    
+    return candidate_data
