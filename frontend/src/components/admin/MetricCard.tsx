@@ -1,14 +1,7 @@
 'use client';
 
 import { Users, Target, CheckCircle, TrendingUp, TrendingDown } from 'lucide-react';
-
-interface MetricCardProps {
-  title: string;
-  value: number | string;
-  percentageChange: number;
-  trend: 'up' | 'down' | 'neutral';
-  type: 'candidates' | 'score' | 'shortlisted';
-}
+import { MetricCardProps } from '@/types';
 
 export default function MetricCard({ title, value, percentageChange, trend, type }: MetricCardProps) {
   const getIcon = () => {

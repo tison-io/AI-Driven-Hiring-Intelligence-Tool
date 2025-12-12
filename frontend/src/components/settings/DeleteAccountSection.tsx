@@ -1,8 +1,5 @@
 import React from 'react';
-
-interface DeleteAccountSectionProps {
-  onOpenModal: () => void;
-}
+import { DeleteAccountSectionProps } from '@/types';
 
 export default function DeleteAccountSection({ onOpenModal }: DeleteAccountSectionProps) {
   return (

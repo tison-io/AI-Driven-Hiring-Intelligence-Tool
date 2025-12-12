@@ -1,10 +1,6 @@
-import React from 'react';
+import { DashboardHeaderProps } from '@/types';
 
-interface DashboardHeaderProps {
-  userName: string;
-}
-
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
+const DashboardHeader = ({ userName }: DashboardHeaderProps) => {
   return (
     <div className="mb-8">
       <h1 className="text-3xl font-bold text-gray-900">

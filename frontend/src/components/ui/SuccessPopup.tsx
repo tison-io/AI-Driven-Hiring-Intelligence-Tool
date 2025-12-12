@@ -1,16 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-
-interface SuccessPopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  message?: string;
-  buttonText?: string;
-  redirectTo?: string;
-  imageSrc?: string;
-}
+import { SuccessPopupProps } from '@/types';
 
 export default function SuccessPopup({
   isOpen,

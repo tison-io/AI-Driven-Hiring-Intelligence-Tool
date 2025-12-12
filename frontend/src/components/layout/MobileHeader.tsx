@@ -1,15 +1,7 @@
 'use client'
 
 import { Menu } from 'lucide-react'
-
-interface MobileHeaderProps {
-  onMenuClick: () => void
-  user?: {
-    fullName?: string
-    email?: string
-    userPhoto?: string
-  } | null
-}
+import { MobileHeaderProps } from '@/types'
 
 export default function MobileHeader({ onMenuClick, user }: MobileHeaderProps) {
   return (

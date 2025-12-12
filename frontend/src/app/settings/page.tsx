@@ -6,7 +6,7 @@ import Layout from '@/components/layout/Layout';
 import ProfileSection from '@/components/settings/ProfileSection';
 import SecuritySection from '@/components/settings/SecuritySection';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
-import ChangePasswordModal from '@/components/settings/ChangePasswordModal';
+import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
 import DeleteConfirmationModal from '@/components/settings/DeleteConfirmationModal';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';

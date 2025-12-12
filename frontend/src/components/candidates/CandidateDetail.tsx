@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { candidatesApi } from '@/lib/api'
+import { CandidateWithShortlist, CandidateDetailProps } from '@/types'
 import CandidateHeader from './CandidateHeader'
 import ScoreCards from './ScoreCards'
 import ExperienceSection from './ExperienceSection'
@@ -12,10 +13,7 @@ import InterviewQuestions from './InterviewQuestions'
 import CandidateActions from './CandidateActions'
 import DeleteCandidateModal from '../modals/DeleteCandidateModal'
 
-interface CandidateDetailProps {
-  candidate: any & { isShortlisted?: boolean } // TODO: Replace with proper type from types/index.ts
-  candidateId: string
-}
+
 
 export default function CandidateDetail({ candidate, candidateId }: CandidateDetailProps) {
   const router = useRouter()
@@ -73,10 +71,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     }
   }
 
-  const handleExportCSV = () => {
-    console.log('Export CSV')
-    // TODO: Implement CSV export
-  }
+
 
   return (
     <div className="min-h-screen bg-f6f6f6 p-4 md:p-6 lg:p-8">
@@ -95,8 +90,8 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
         />
 
          <ExperienceSection
-          experience={candidate.experience}
-          education={candidate.education}
+          experience={candidate.experience || candidate.workExperience || []}
+          education={candidate.education?.[0]}
         />
 
         <AIAnalysisSection
@@ -110,7 +105,6 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
         <CandidateActions
           onShortlist={handleShortlist}
           onDownloadReport={handleDownloadReport}
-          onExportCSV={handleExportCSV}
           isDownloadingReport={isDownloadingReport}
           isShortlisted={isShortlisted}
         />

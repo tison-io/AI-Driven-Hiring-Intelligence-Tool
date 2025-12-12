@@ -44,26 +44,19 @@ export default function CandidateDetailPage() {
 		);
 	}
 
-	const transformedCandidate = {
-		name: candidate.name,
+	// Add missing properties to candidate object
+	const candidateWithExtras = {
+		...candidate,
 		title: candidate.jobRole || "Candidate",
-		linkedinUrl: candidate.linkedinUrl,
-		roleFitScore: candidate.roleFitScore || 0,
-		confidenceScore: candidate.confidenceScore || 0,
-		biasCheck: candidate.biasCheck || "Pending",
 		experience: candidate.workExperience || [],
-		education: candidate.education?.[0] || { degree: "N/A", school: "N/A", year: "N/A" },
-		keyStrengths: candidate.keyStrengths || [],
 		potentialGaps: candidate.potentialWeaknesses || [],
-		missingSkills: candidate.missingSkills || [],
-		interviewQuestions: candidate.interviewQuestions || [],
 		isShortlisted: candidate.isShortlisted || false,
 	};
 
 	return (
 		<ProtectedRoute>
 			<Layout>
-				<CandidateDetail candidate={transformedCandidate} candidateId={id} />
+				<CandidateDetail candidate={candidateWithExtras} candidateId={id} />
 			</Layout>
 		</ProtectedRoute>
 	);

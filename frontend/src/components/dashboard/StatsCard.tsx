@@ -1,8 +1,7 @@
-import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { StatsCardData } from '@/types/dashboard';
 
-const StatsCard: React.FC<StatsCardData> = ({ title, value, change, trend }) => {
+const StatsCard = ({ title, value, change, trend }: StatsCardData) => {
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       <h3 className="text-sm font-medium text-gray-600 mb-2">{title}</h3>

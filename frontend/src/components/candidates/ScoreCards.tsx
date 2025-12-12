@@ -1,13 +1,8 @@
 import { CheckCircle2, Shield, Info } from 'lucide-react'
 import CircularProgress from '../ui/CircularProgress'
+import { ScoreCardsProps } from '@/types'
 
-interface ScoreCardsProps {
-  roleFitScore: number
-  confidenceScore: number
-  biasCheck: string
-}
-
-export default function ScoreCards({ roleFitScore, confidenceScore, biasCheck }: ScoreCardsProps) {
+export default function ScoreCards({ roleFitScore = 0, confidenceScore = 0, biasCheck = 'Pending' }: ScoreCardsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
       {/* Role Fit Score */}
@@ -40,7 +35,7 @@ export default function ScoreCards({ roleFitScore, confidenceScore, biasCheck }:
         <Shield className="w-16 h-16 text-green-400 mb-3" />
         <div className="flex items-center gap-2">
           <CheckCircle2 className="w-5 h-5 text-green-400" />
-          <span className="text-lg font-semibold text-black">{biasCheck}</span>
+          <span className="text-lg font-semibold text-black">{biasCheck || 'Pending'}</span>
         </div>
         <p className="text-sm text-gray-400 mt-2">No bias detected</p>
       </div>
