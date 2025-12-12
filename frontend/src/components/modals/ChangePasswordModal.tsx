@@ -54,6 +54,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
               <input
                 type="password"
                 id="currentPassword"
+                data-testid="current-password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
@@ -68,6 +69,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
               <input
                 type="password"
                 id="newPassword"
+                data-testid="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 required
@@ -83,6 +85,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
               <input
                 type="password"
                 id="confirmPassword"
+                data-testid="confirm-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -109,6 +112,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
             </button>
             <button
               type="submit"
+              data-testid="submit-password-change"
               className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium rounded-md transition-colors"
             >
               Change Password
