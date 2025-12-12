@@ -193,11 +193,13 @@ export default function EvaluationForm({
           {/* Upload Area */}
           {activeTab === 'upload' && (
             <div
-              onClick={handleBrowseClick}
+              onClick={!resumeFile ? handleBrowseClick : undefined}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                !resumeFile ? 'cursor-pointer' : ''
+              } ${
                 isDragging
                   ? 'border-blue-400 bg-blue-50'
                   : resumeFile
@@ -222,7 +224,10 @@ export default function EvaluationForm({
                     </p>
                     <button
                       type="button"
-                      onClick={removeFile}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFile();
+                      }}
                       className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-2"
                     >
                       <X size={16} />
@@ -236,13 +241,9 @@ export default function EvaluationForm({
                     </div>
                     <p className="text-sm text-gray-600">
                       Drag and drop your resume here, or{' '}
-                      <button 
-                        type="button"
-                        onClick={handleBrowseClick}
-                        className="text-blue-500 font-medium hover:text-blue-600"
-                      >
+                      <span className="text-blue-500 font-medium hover:text-blue-600">
                         browse
-                      </button>
+                      </span>
                     </p>
                     <p className="text-xs text-gray-500">
                       Supported formats: PDF, DOC, DOCX
