@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsUrl, Matches, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsUrl, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class LinkedinProfileDto {
@@ -19,11 +19,11 @@ export class LinkedinProfileDto {
   @IsString()
   jobRole: string;
 
-  @ApiPropertyOptional({ 
+  @ApiProperty({ 
     example: 'Looking for a backend engineer with 3+ years experience in Node.js, MongoDB, and REST APIs',
     description: 'Job description and specific requirements'
   })
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  jobDescription?: string;
+  jobDescription: string;
 }
