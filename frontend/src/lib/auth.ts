@@ -33,6 +33,8 @@ export const tokenStorage = {
 				email: payload.email,
 				role: payload.role,
 				profileCompleted: payload.profileCompleted,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			};
 		} catch {
 			return null;

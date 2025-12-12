@@ -12,6 +12,12 @@ interface RegisterFormData {
   agreeToTerms: boolean;
 }
 
+interface RegisterFormErrors {
+  email?: string;
+  password?: string;
+  agreeToTerms?: string;
+}
+
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterFormData>({
     email: '',
@@ -19,14 +25,14 @@ export default function RegisterForm() {
     agreeToTerms: false
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<Partial<RegisterFormData>>({});
+  const [errors, setErrors] = useState<RegisterFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   
   const { register: registerUser } = useAuth();
   const router = useRouter();
 
   const validateForm = () => {
-    const newErrors: Partial<RegisterFormData> = {};
+    const newErrors: RegisterFormErrors = {};
     
     if (!formData.email) {
       newErrors.email = 'Email is required';

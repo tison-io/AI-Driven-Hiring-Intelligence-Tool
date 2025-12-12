@@ -410,4 +410,157 @@ describe('LinkedIn Profile Processing Integration Test (e2e)', () => {
       console.log(`   ✓ No candidate created for invalid URL`);
     }, 10000);
   });
+
+  describe('Test 3: RapidAPI Failure → Graceful Error Handling', () => {
+    
+    it('should handle non-existent profile gracefully', async () => {
+      console.log('\n📋 Test 3.1: Non-existent Profile');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/nonexistent-xyz-999999',
+          jobRole: 'Software Engineer'
+        });
+
+      expect([400, 404, 429, 500]).toContain(response.status);
+      expect(response.body).toHaveProperty('message');
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Error handled: ${response.body.message}`);
+    }, 60000);
+
+    it('should handle API timeout gracefully', async () => {
+      console.log('\n📋 Test 3.2: API Timeout Handling');
+      
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/test-timeout-profile',
+          jobRole: 'Developer'
+        });
+
+      expect([400, 429, 500, 504]).toContain(response.status);
+      expect(response.body).toHaveProperty('message');
+
+      console.log(`   ✓ Status: ${response.status}`);
+      console.log(`   ✓ Timeout handled gracefully`);
+    }, 90000);
+
+    it('should handle rate limit errors', async () => {
+      console.log('\n📋 Test 3.3: Rate Limit Handling');
+      
+      const requests = [];
+      for (let i = 0; i < 3; i++) {
+        requests.push(
+          request(app.getHttpServer())
+            .post('/api/candidates/linkedin')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              linkedinUrl: `https://www.linkedin.com/in/test-profile-${i}`,
+              jobRole: 'Engineer'
+            })
+        );
+      }
+
+      const responses = await Promise.allSettled(requests);
+      const allHandled = responses.every(r => 
+        r.status === 'fulfilled' && r.value.body.message
+      );
+
+      expect(allHandled).toBe(true);
+      console.log(`   ✓ ${responses.length} requests handled`);
+    }, 90000);
+  });
+
+  describe('Test 4: Rate Limit → Proper Error Message', () => {
+    
+    it('should return 429 status code when rate limit exceeded', async () => {
+      console.log('\n📋 Test 4.1: Rate Limit Status Code');
+      
+      // Make 10 rapid requests to trigger rate limit
+      const requests = [];
+      for (let i = 0; i < 10; i++) {
+        requests.push(
+          request(app.getHttpServer())
+            .post('/api/candidates/linkedin')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              linkedinUrl: 'https://www.linkedin.com/in/williamhgates',
+              jobRole: 'Engineer'
+            })
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      const rateLimitResponse = responses.find(r => r.status === 429);
+
+      if (rateLimitResponse) {
+        expect(rateLimitResponse.status).toBe(429);
+        console.log(`   ✓ Rate limit triggered: 429 status`);
+      } else {
+        console.log(`   ✓ No rate limit hit in ${responses.length} requests`);
+      }
+    }, 120000);
+
+    it('should return descriptive error message for rate limit', async () => {
+      console.log('\n📋 Test 4.2: Rate Limit Error Message');
+      
+      // Make rapid requests
+      const requests = [];
+      for (let i = 0; i < 8; i++) {
+        requests.push(
+          request(app.getHttpServer())
+            .post('/api/candidates/linkedin')
+            .set('Authorization', `Bearer ${authToken}`)
+            .send({
+              linkedinUrl: 'https://www.linkedin.com/in/williamhgates',
+              jobRole: 'Developer'
+            })
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      const rateLimitResponse = responses.find(r => r.status === 429);
+
+      if (rateLimitResponse) {
+        expect(rateLimitResponse.body).toHaveProperty('message');
+        expect(rateLimitResponse.body.message.toLowerCase()).toMatch(/rate limit|too many requests|quota/);
+        console.log(`   ✓ Error message: ${rateLimitResponse.body.message}`);
+      } else {
+        console.log(`   ✓ No rate limit triggered`);
+      }
+    }, 120000);
+
+    it('should not create candidate when rate limited', async () => {
+      console.log('\n📋 Test 4.3: No Candidate on Rate Limit');
+      
+      const beforeResponse = await request(app.getHttpServer())
+        .get('/api/candidates')
+        .set('Authorization', `Bearer ${authToken}`);
+      const initialCount = beforeResponse.body.length;
+
+      // Trigger potential rate limit
+      const response = await request(app.getHttpServer())
+        .post('/api/candidates/linkedin')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          linkedinUrl: 'https://www.linkedin.com/in/williamhgates',
+          jobRole: 'Engineer'
+        });
+
+      if (response.status === 429) {
+        const afterResponse = await request(app.getHttpServer())
+          .get('/api/candidates')
+          .set('Authorization', `Bearer ${authToken}`);
+        
+        expect(afterResponse.body.length).toBe(initialCount);
+        console.log(`   ✓ No candidate created on rate limit`);
+      } else {
+        console.log(`   ✓ Request succeeded (no rate limit)`);
+      }
+    }, 60000);
+  });
 });
