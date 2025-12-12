@@ -40,7 +40,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError(null);
       const response = await api.post('/auth/login', { email, password });
       const { access_token } = response.data;
@@ -71,7 +70,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const register = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError(null);
       await api.post('/auth/register', { email, password });
       
