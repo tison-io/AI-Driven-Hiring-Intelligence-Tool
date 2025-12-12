@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import { authApi } from '@/lib/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';

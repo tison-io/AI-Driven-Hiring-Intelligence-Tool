@@ -1,26 +1,26 @@
 import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
+import toast from '@/lib/toast';
 import { ChangePasswordModalProps } from '@/types';
 
 export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: ChangePasswordModalProps) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
+
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
 
     if (newPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
+      toast.error('Password must be at least 8 characters long');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -34,7 +34,6 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setError('');
     onClose();
   };
 
@@ -91,12 +90,7 @@ export default function ChangePasswordModal({ isOpen, onClose, onSubmit }: Chang
               />
             </div>
 
-            {error && (
-              <div className="flex items-center gap-2 p-2 bg-red-50 border border-red-200 rounded-md" role="alert">
-                <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
+
           </div>
 
           <footer className="flex justify-end gap-3 mt-6">

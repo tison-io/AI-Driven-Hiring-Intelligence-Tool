@@ -459,3 +459,19 @@ export interface ErrorBoundaryState {
   error?: Error;
 }
 
+// Toast Types
+export interface ToastPromiseMessages {
+  loading: string;
+  success: string;
+  error: string;
+}
+
+export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
+
+export interface ToastOptions {
+  duration?: number;
+  position?: 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+  style?: React.CSSProperties;
+  icon?: string;
+}
+

@@ -12,7 +12,7 @@ import {
 	Trash2,
 	ChevronDown,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useCandidates } from "@/hooks/useCandidates";

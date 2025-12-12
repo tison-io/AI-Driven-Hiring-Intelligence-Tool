@@ -11,6 +11,7 @@ import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { CheckCircle, XCircle } from 'lucide-react';
+import toast from '@/lib/toast';
 
 export default function AccountSettings() {
   const { user, refreshUser } = useAuth();
@@ -85,10 +86,11 @@ export default function AccountSettings() {
       await refreshUser();
       setSelectedPhoto(null);
       setPhotoPreview(null);
-      setSuccess('Profile updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Profile updated successfully');
+      setSuccess('');
     } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+      toast.error(err.message || 'Failed to update profile');
+      setError('');
     } finally {
       setLoading(false);
     }
@@ -113,11 +115,12 @@ export default function AccountSettings() {
         throw new Error(data.message || 'Failed to change password');
       }
       
-      setSuccess('Password changed successfully');
+      toast.success('Password changed successfully');
       setIsPasswordModalOpen(false);
-      setTimeout(() => setSuccess(''), 3000);
+      setSuccess('');
     } catch (err: any) {
-      setError(err.message || 'Failed to change password');
+      toast.error(err.message || 'Failed to change password');
+      setError('');
     } finally {
       setLoading(false);
     }
@@ -133,7 +136,8 @@ export default function AccountSettings() {
       localStorage.removeItem('token');
       window.location.href = '/auth/login';
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to delete account');
+      toast.error(err.response?.data?.message || 'Failed to delete account');
+      setError('');
       setIsDeleteModalOpen(false);
     } finally {
       setLoading(false);

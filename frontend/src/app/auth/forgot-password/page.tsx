@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { authApi } from '@/lib/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { ForgotPasswordFormData } from '@/types';

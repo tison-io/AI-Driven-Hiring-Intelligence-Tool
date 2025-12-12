@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
