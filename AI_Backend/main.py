@@ -25,6 +25,7 @@ def health_check():
 class TextRequest(BaseModel):
     text: str
 
+
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
     """
@@ -57,6 +58,7 @@ async def parse_resume(file: UploadFile = File(...)):
         "data": structures_data,
     }
 
+
 @app.post("/parse-text")
 def parse_text(request: TextRequest):
     """
@@ -66,24 +68,30 @@ def parse_text(request: TextRequest):
         raise HTTPException(status_code=400, detail="No text provided.")
 
     structures_data = extract_resume_data(request.text)
-    
+
     return {
         "processed": True,
         "content_length": len(request.text),
-        "data": structures_data
+        "data": structures_data,
     }
+
 
 @app.post("/score")
 def calculate_score(request: ScoreRequest):
     """
     Analyzes the candidate's JSON against a job description.
     """
-    result = score_candidate(request.candidate_data, request.role_name, request.job_description)
+    result = score_candidate(
+        request.candidate_data, request.role_name, request.job_description
+    )
     return result
 
-
 @app.post("/analyze")
-async def analyze_resume(file: UploadFile = File(...), role_name: str = Form(...)):
+async def analyze_resume(
+    file: UploadFile = File(...),
+    role_name: str = Form(...),
+    job_description: str = Form(None),
+):
     """
     End-to-end endpoint to parse, extract, and score a resume against a job role.
     """
@@ -107,18 +115,7 @@ async def analyze_resume(file: UploadFile = File(...), role_name: str = Form(...
 
     candidate_profile = extract_resume_data(raw_text)
 
-    # Get job description for the role
-    job_descriptions = {
-        'Backend Engineer': 'Develop server-side applications using Node.js, Python, or Java. Experience with databases, APIs, and cloud services required.',
-        'Frontend Developer': 'Build user interfaces using React, Vue, or Angular. Strong HTML, CSS, JavaScript skills required.',
-        'Full Stack Developer': 'Work on both frontend and backend development. Experience with modern web frameworks and databases.',
-        'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
-        'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.',
-        'Accountant': 'Manage financial records, prepare financial statements, handle payroll, tax preparation. Experience with QuickBooks, Excel, and accounting principles required.'
-    }
-    job_description = job_descriptions.get(role_name, f'Professional role requiring relevant technical skills and experience in {role_name}.')
-    
-    evaluation = score_candidate(candidate_profile, role_name, job_description)
+    evaluation = score_candidate(candidate_profile, job_description or "", role_name)
 
     return {
         "filename": file.filename,
