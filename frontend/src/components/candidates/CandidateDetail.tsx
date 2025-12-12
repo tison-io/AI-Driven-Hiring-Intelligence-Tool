@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import toast from 'react-hot-toast'
+import toast from '@/lib/toast'
 import { candidatesApi } from '@/lib/api'
 import { CandidateWithShortlist, CandidateDetailProps } from '@/types'
 import CandidateHeader from './CandidateHeader'
@@ -65,7 +65,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     try {
       await candidatesApi.toggleShortlist(candidateId)
       setIsShortlisted(!isShortlisted)
-      toast.success(isShortlisted ? 'Removed from shortlist' : 'Added to shortlist')
+      toast.shortlist(!isShortlisted, candidate.name)
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to update shortlist')
     }
