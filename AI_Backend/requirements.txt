@@ -10,3 +10,5 @@ pypdf
 mammoth
 python-multipart
 numpy
+scikit-learn
+langsmith
