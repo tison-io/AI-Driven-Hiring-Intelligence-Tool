@@ -57,7 +57,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError(null);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
         method: 'POST',
@@ -97,7 +96,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const register = async (email: string, password: string) => {
     try {
-      setLoading(true);
       setError(null);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
         method: 'POST',
