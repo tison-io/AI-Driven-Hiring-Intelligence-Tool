@@ -6,8 +6,6 @@ export type CandidateDocument = Candidate & Document;
 
 @Schema({ timestamps: true })
 export class Candidate {
-  _id?: any;
-
   @Prop({ required: true })
   name: string;
 

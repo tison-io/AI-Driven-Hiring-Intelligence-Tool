@@ -1,8 +1,9 @@
-import { Injectable, HttpException, HttpStatus, Logger } from "@nestjs/common";
+import { Injectable, HttpException, HttpStatus, Logger, BadRequestException } from "@nestjs/common";
 import { CandidatesService } from "../candidates/candidates.service";
 import { QueueService } from "../queue/queue.service";
 import { ApifyService } from "../linkedin-scraper/linkedinScraper.service";
 import { LinkedInMapper } from "../linkedin-scraper/mappers/linkedin-mapper";
+import { ProcessingStatus } from "../../common/enums/processing-status.enum";
 import * as pdfParse from "pdf-parse";
 import * as mammoth from "mammoth";
 
@@ -27,7 +28,7 @@ export class UploadService {
 			rawText,
 			jobRole,
 			...(jobDescription && { jobDescription }),
-			status: "pending" as any,
+			status: ProcessingStatus.PENDING,
 			createdBy: userId,
 		});
 
@@ -84,7 +85,7 @@ export class UploadService {
 				rawText,
 				jobRole,
 				...(jobDescription && { jobDescription }),
-				status: "pending" as any,
+				status: ProcessingStatus.PENDING,
 				createdBy: userId,
 			});
 
@@ -130,7 +131,7 @@ export class UploadService {
 			});
 			return result.value;
 		}
-		throw new Error("Unsupported file type");
+		throw new BadRequestException("Unsupported file type");
 	}
 
 	private formatLinkedInData(profile: any): string {
