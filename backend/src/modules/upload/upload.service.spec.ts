@@ -160,7 +160,8 @@ describe('UploadService', () => {
 
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
         'candidate-id-123',
-        'Backend Engineer'
+        'Backend Engineer',
+        undefined
       );
 
       expect(result).toEqual({
@@ -181,6 +182,7 @@ describe('UploadService', () => {
         rawText: 'Extracted Word document content',
         jobRole: 'Frontend Engineer',
         status: 'pending',
+        createdBy: 'test-user-id',
       });
 
       expect(result.status).toBe('pending');
@@ -254,7 +256,8 @@ describe('UploadService', () => {
 
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
         'candidate-id-123',
-        jobRole
+        jobRole,
+        undefined
       );
 
       expect(result).toEqual({
@@ -269,12 +272,16 @@ describe('UploadService', () => {
 
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
-      ).rejects.toThrow(
-        new HttpException(
-          'Failed to scrape LinkedIn profile',
-          HttpStatus.BAD_REQUEST
-        )
-      );
+      ).rejects.toBeInstanceOf(HttpException);
+      
+      try {
+        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+      } catch (error) {
+        expect(error).toMatchObject({
+          message: 'Failed to scrape LinkedIn profile',
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
     });
 
     it('should handle transformation failure', async () => {
@@ -282,12 +289,16 @@ describe('UploadService', () => {
 
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
-      ).rejects.toThrow(
-        new HttpException(
-          'Failed to process LinkedIn profile data',
-          HttpStatus.BAD_REQUEST
-        )
-      );
+      ).rejects.toBeInstanceOf(HttpException);
+      
+      try {
+        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+      } catch (error) {
+        expect(error).toMatchObject({
+          message: 'Failed to process LinkedIn profile data',
+          status: HttpStatus.BAD_REQUEST,
+        });
+      }
     });
 
     it('should handle invalid LinkedIn URL', async () => {
@@ -318,12 +329,16 @@ describe('UploadService', () => {
 
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
-      ).rejects.toThrow(
-        new HttpException(
-          'Failed to process LinkedIn profile',
-          HttpStatus.INTERNAL_SERVER_ERROR
-        )
-      );
+      ).rejects.toBeInstanceOf(HttpException);
+      
+      try {
+        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+      } catch (error) {
+        expect(error).toMatchObject({
+          message: 'Failed to process LinkedIn profile',
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+        });
+      }
     });
   });
 
