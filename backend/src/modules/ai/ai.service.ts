@@ -20,8 +20,6 @@ export class AiService {
       // Step 1: Extract structured data from raw text
       const extractedData = await this.extractCandidateData(rawText);
 
-
-
       // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
         this.logger.warn(`AI marked resume as invalid. Reason: ${extractedData.error || 'Unknown'}`);
@@ -38,7 +36,7 @@ export class AiService {
       const startTime = Date.now();
       const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      
+
       // Log scoring results in table format
       const breakdown = scoringResult.scoring_breakdown || {};
       this.logger.log('| Time (s)   | Score    | Conf     | Skill    | Experience   | Education    | Certs    |');
@@ -97,6 +95,10 @@ export class AiService {
     ) || [];
 
     const roleFitScore = scoringResult.role_fit_score || 0;
+    const breakdown = scoringResult.scoring_breakdown || {};
+    const relevantExperience = breakdown.relevant_years_calculated !== undefined
+      ? breakdown.relevant_years_calculated
+      : (extractedData.total_years_experience || 0);
 
     return {
       name: extractedData.candidate_name || 'Anonymous',
@@ -109,10 +111,10 @@ export class AiService {
       confidenceScore: scoringResult.confidence_score || 0,
       biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
       skills: extractedData.skills || [],
-      experienceYears: extractedData.total_years_experience || 0,
+      experienceYears: relevantExperience,
       workExperience: extractedData.work_experience?.map((job) => ({
         company: job.company || '',
-        jobTitle: job.job_title || job.jobTitle || '', 
+        jobTitle: job.job_title || job.jobTitle || '',
         startDate: job.start_date || job.startDate || '',
         endDate: job.end_date || job.endDate || '',
         description: job.description || '',

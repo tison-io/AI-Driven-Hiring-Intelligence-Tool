@@ -50,7 +50,7 @@ def score_candidate(candidate_data: dict, job_description: str, role_name: str):
         """
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": SYSTEM_SCORING_PROMPT},
                 {"role": "user", "content": prompt_content},
