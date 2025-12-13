@@ -5,6 +5,7 @@ import { AppModule } from '../src/app.module';
 import { ProcessingStatus } from '../src/common/enums/processing-status.enum';
 import * as fs from 'fs';
 import * as path from 'path';
+import { QueueService } from '../src/modules/queue/queue.service';
 
 describe('Upload + AI + Queue Integration', () => {
   let app: INestApplication;
@@ -171,5 +172,43 @@ describe('Upload + AI + Queue Integration', () => {
     }, 30000);
   });
 
-  // Flow 2 tests removed - pending team decision on retry vs fallback strategy
+  describe('Flow 2: Upload File → Queue Service Down → Graceful Error Handling', () => {
+    it('should handle queue service failures gracefully', async () => {
+      const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
+      
+      // Mock queue service to simulate it being down
+      const queueService = app.get(QueueService);
+      const originalAddJob = queueService.addAIProcessingJob;
+      queueService.addAIProcessingJob = jest.fn().mockRejectedValue(
+        new Error('Redis connection failed')
+      );
+
+      try {
+        // Step 1: Upload should fail when queue is down
+        const uploadResponse = await request(app.getHttpServer())
+          .post('/api/candidates/upload-resume')
+          .set('Authorization', `Bearer ${authToken}`)
+          .attach('file', testPdfPath)
+          .field('jobRole', 'Backend Engineer')
+          .field('jobDescription', 'Node.js developer with 3+ years experience')
+          .expect(500);
+
+        // Step 2: Verify error response
+        expect(uploadResponse.body).toMatchObject({
+          statusCode: 500,
+          message: 'Internal server error'
+        });
+
+        // Step 3: Verify queue service was called
+        expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
+          expect.any(String),
+          'Backend Engineer',
+          'Node.js developer with 3+ years experience'
+        );
+      } finally {
+        // Restore original method
+        queueService.addAIProcessingJob = originalAddJob;
+      }
+    });
+  });
 });
