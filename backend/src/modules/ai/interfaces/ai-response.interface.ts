@@ -42,6 +42,7 @@ export interface ScoringResult {
     experience_relevance?: number;
     education_fit?: number;
     certifications?: number;
+    relevant_years_calculated?: number;
   };
 }
 
