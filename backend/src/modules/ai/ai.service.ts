@@ -22,14 +22,11 @@ export class AiService {
 
       // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
-        this.logger.warn(`AI marked resume as invalid. Reason: ${extractedData.error || 'Unknown'}`);
-        return this.getMockResponse();
+        throw new HttpException(`Invalid resume: ${extractedData.error || 'Unknown'}`, HttpStatus.BAD_REQUEST);
       }
-
       // Validate we have minimum required data
       if (!extractedData.candidate_name && !extractedData.skills?.length) {
-        this.logger.warn('Insufficient data extracted, falling back to mock data');
-        return this.getMockResponse();
+        throw new HttpException('Insufficient data extracted from resume: Missing required data', HttpStatus.BAD_REQUEST);
       }
 
       // Step 2: Score candidate against job role
@@ -51,10 +48,7 @@ export class AiService {
       if (error instanceof HttpException) {
         throw error;
       }
-
-      // Fallback to mock data if AI service fails
-      this.logger.warn('Falling back to mock AI response');
-      return this.getMockResponse();
+      throw error;
     }
   }
 
@@ -148,30 +142,13 @@ export class AiService {
     return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
   }
 
-  private getMockResponse() {
-    return {
-      name: 'John Doe',
-      roleFitScore: Math.floor(Math.random() * 40) + 60,
-      keyStrengths: ['Strong technical background', 'Good communication skills'],
-      potentialWeaknesses: ['Limited leadership experience'],
-      missingSkills: ['Docker', 'Kubernetes'],
-      interviewQuestions: ['Tell me about your experience with microservices'],
-      confidenceScore: Math.floor(Math.random() * 20) + 80,
-      biasCheck: 'AI service unavailable - mock evaluation used',
-      skills: ['JavaScript', 'Node.js', 'React'],
-      experienceYears: Math.floor(Math.random() * 10) + 2,
-      education: [],
-      certifications: []
-    };
-  }
-
   async extractSkills(rawText: string): Promise<string[]> {
     try {
       const extractedData = await this.extractCandidateData(rawText);
       return extractedData.skills || [];
     } catch (error) {
       this.logger.error('Skill extraction failed', error.stack);
-      return ['JavaScript', 'Python', 'React'].filter(() => Math.random() > 0.7);
+      throw error;
     }
   }
 }

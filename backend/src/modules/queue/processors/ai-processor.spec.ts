@@ -20,6 +20,7 @@ describe('AiProcessor', () => {
   const mockAiResults = {
     name: 'John Doe',
     roleFitScore: 85,
+    isShortlisted: true,
     keyStrengths: ['JavaScript', 'Node.js', 'MongoDB'],
     potentialWeaknesses: ['Limited cloud experience'],
     missingSkills: ['Docker', 'Kubernetes'],
