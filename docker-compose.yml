@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6
+    container_name: hiring-tool-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: hiring_intelligence_db
+
+  redis:
+    image: redis:7-alpine
+    container_name: hiring-tool-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hiring-tool-backend
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: mongodb://mongodb:27017/hiring_intelligence_db
+      JWT_SECRET: dev-secret-key-change-in-production
+      JWT_EXPIRES_IN: 7d
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      AI_SERVICE_URL: http://ai-service:8000
+      NODE_ENV: development
+      PORT: 3000
+    depends_on:
+      - mongodb
+      - redis
+      - ai-service
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  ai-service:
+    build:
+      context: ./AI_Backend
+      dockerfile: Dockerfile
+    container_name: hiring-tool-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    volumes:
+      - ./AI_Backend:/app
+
+volumes:
+  mongodb_data:
+  redis_data:

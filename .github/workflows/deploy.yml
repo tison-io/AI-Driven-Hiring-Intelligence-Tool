@@ -1,0 +1,51 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Render
+        run: |
+          echo "Backend deployment configured"
+          # Add your deployment script here
+          # Example for Render:
+          # curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel
+        run: |
+          echo "Frontend deployment configured"
+          # Vercel auto-deploys from GitHub
+          # Or use Vercel CLI:
+          # npm i -g vercel
+          # vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-ai-service:
+    name: Deploy AI Service
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to Render
+        run: |
+          echo "AI Service deployment configured"
+          # Add your deployment script here

@@ -1,5 +1,8 @@
 # AI-Driven Hiring Intelligence Tool
 
+[![CI Pipeline](https://github.com/YOUR_USERNAME/AI-Driven-Hiring-Intelligence-Tool/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/AI-Driven-Hiring-Intelligence-Tool/actions/workflows/ci.yml)
+[![Deploy](https://github.com/YOUR_USERNAME/AI-Driven-Hiring-Intelligence-Tool/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR_USERNAME/AI-Driven-Hiring-Intelligence-Tool/actions/workflows/deploy.yml)
+
 A comprehensive hiring platform that evaluates candidates from resumes and LinkedIn profiles using AI-powered analysis.
 
 ## 🚀 Project Status: MVP Complete (85%)
