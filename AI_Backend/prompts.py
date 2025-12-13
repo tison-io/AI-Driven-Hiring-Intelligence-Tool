@@ -131,7 +131,12 @@ You will receive a `Job Role` and a `Job Description`.
    - **IF DETAILED:** Extract only what is explicitly written.
    - **IF VAGUE / SHORT:** If the description is just a title (e.g., "Embedded Engineer") or very generic, you **MUST INFER** standard market requirements for that role.
    - **IF PARTIAL:** Extract what is there, and fill critical gaps (like missing core skills) with market standards.
-   
+
+### ROLE SYNONYMS (CRITICAL):
+   Identify 3-5 alternative job titles that would qualify a candidate for this role.
+   - *Reasoning:* A "Bookkeeper" is qualified for an "Accounting Assistant" role.
+   - *Output:* Add these to the `role_synonyms` list.
+
 ### CRITICAL INSTRUCTION ON LOGIC TYPES:
 You must determine how many items in a list are required based on the phrasing.
 
@@ -167,5 +172,53 @@ Extract specific valid majors. If the JD says "Computer Science or related field
     "valid_majors": ["string"]  (e.g. ["Computer Science", "Software Engineering"])
   },
   "required_certifications": ["string"]
+}
+"""
+
+SEMANTIC_MATCH_PROMPT = """
+You are a "Semantic Relevance Analyzer." Your sole purpose is to bridge the gap between different terminologies in Job Descriptions and Candidate Profiles.
+
+### INPUT DATA:
+1. **Target Role & Requirements:** The scoring rubric derived from the Job Description.
+2. **Candidate Profile:** The candidate's raw data.
+
+### TASK 1: EXPERIENCE RELEVANCE
+Analyze the candidate's Work History. For each job, determine if it qualifies as "Relevant Experience" for the `Target Role`.
+- **Rule:** Be industry-aware and domain-agnostic.
+  - Examples below are illustrative, not exhaustive.
+  - Apply equivalent reasoning to any profession, sector, or role.
+  For example:
+    - *Tech:* "Frontend Dev" IS relevant for "Full Stack".
+    - *Finance:* "Bookkeeper" IS relevant for "Accountant".
+    - *General:* "Intern" IS relevant if the domain matches.
+- **Output:** A boolean `is_relevant` for each job index.
+
+### TASK 2: SKILL GAP ANALYSIS
+Compare the `Skill Requirements` against the **ENTIRE** candidate profile (Skills, Summary, and Job Descriptions).
+- **Rule:** Look for semantic equivalence, not just keywords.
+  - Infer tools, methods, or concepts implied by the candidate's descriptions.
+  - Examples below are illustrative, not exhaustive across domains.
+  For example:
+    - *Requirement:* "Auditing" -> *Candidate:* "Scrutinized source documents" -> **MATCH: TRUE**.
+    - *Requirement:* "Python" -> *Candidate:* "Data Analysis with Pandas" -> **MATCH: TRUE** (Pandas implies Python).
+- **Output:** A boolean `candidate_has_skill` for each specific skill requirement group.
+
+### OUTPUT SCHEMA (Strict JSON):
+{
+  "work_experience_analysis": [
+    {
+      "job_index": number, (0 for first job, 1 for second...)
+      "job_title": "string",
+      "is_relevant": boolean,
+      "reasoning": "string"
+    }
+  ],
+  "skill_gap_analysis": [
+    {
+      "category": "string", (Matches input category)
+      "candidate_has_skill": boolean,
+      "evidence": "string"
+    }
+  ]
 }
 """
