@@ -16,11 +16,13 @@ describe('Complete Pipeline Integration (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
 
     await app.init();
 
@@ -42,7 +44,7 @@ describe('Complete Pipeline Integration (e2e)', () => {
     const dashboardResponse = await request(app.getHttpServer())
       .get('/api/dashboard')
       .set('Authorization', `Bearer ${authToken}`);
-    
+
     initialMetrics = dashboardResponse.body;
   }, 30000);
 
@@ -50,13 +52,11 @@ describe('Complete Pipeline Integration (e2e)', () => {
     await app.close();
   });
 
-
-
   describe('✅ Success Pipeline: DOCX Resume → Complete Processing', () => {
     it('should handle DOCX files', async () => {
       // Create mock DOCX buffer (simplified)
       const mockDocx = Buffer.from('Mock DOCX content');
-      
+
       const uploadResponse = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
         .set('Authorization', `Bearer ${authToken}`)
@@ -69,11 +69,9 @@ describe('Complete Pipeline Integration (e2e)', () => {
   });
 
   describe('❌ File Processing Failure → Error Handling → No Orphaned Records', () => {
-
-
     it('should handle oversized files', async () => {
       const largeFile = Buffer.alloc(15 * 1024 * 1024); // 15MB
-      
+
       const uploadResponse = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
         .set('Authorization', `Bearer ${authToken}`)
@@ -84,44 +82,49 @@ describe('Complete Pipeline Integration (e2e)', () => {
     }, 30000);
   });
 
-
-
   describe('🔄 Queue System Verification', () => {
     it('should handle multiple concurrent uploads', async () => {
-      const resumePath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
-      const resumeBuffer = fs.readFileSync(resumePath);
-      
-      // Submit 3 concurrent uploads
-      const uploads = Array(3).fill(null).map((_, i) => 
-        request(app.getHttpServer())
-          .post('/api/candidates/upload-resume')
-          .set('Authorization', `Bearer ${authToken}`)
-          .field('jobRole', `Role ${i}`)
-          .attach('file', resumeBuffer, `resume${i}.pdf`)
+      const resumePath = path.join(
+        __dirname,
+        '../../AI_Backend/Sample Resume6.pdf',
       );
+      const resumeBuffer = fs.readFileSync(resumePath);
+
+      // Submit 3 concurrent uploads
+      const uploads = Array(3)
+        .fill(null)
+        .map((_, i) =>
+          request(app.getHttpServer())
+            .post('/api/candidates/upload-resume')
+            .set('Authorization', `Bearer ${authToken}`)
+            .field('jobRole', `Role ${i}`)
+            .attach('file', resumeBuffer, `resume${i}.pdf`),
+        );
 
       const responses = await Promise.all(uploads);
-      
+
       // All should be accepted or fail with auth
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect([201, 401]).toContain(response.status);
       });
 
-      const candidateIds = responses.map(r => r.body.candidateId);
+      const candidateIds = responses.map((r) => r.body.candidateId);
 
       // Wait for all to complete
-      await Promise.all(candidateIds.map(async (id) => {
-        let attempts = 0;
-        while (attempts < 30) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const response = await request(app.getHttpServer())
-            .get(`/api/candidates/${id}`)
-            .set('Authorization', `Bearer ${authToken}`);
-          
-          if (response.body.status !== 'pending') break;
-          attempts++;
-        }
-      }));
+      await Promise.all(
+        candidateIds.map(async (id) => {
+          let attempts = 0;
+          while (attempts < 30) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            const response = await request(app.getHttpServer())
+              .get(`/api/candidates/${id}`)
+              .set('Authorization', `Bearer ${authToken}`);
+
+            if (response.body.status !== 'pending') break;
+            attempts++;
+          }
+        }),
+      );
 
       console.log('✓ Concurrent processing completed');
     }, 120000);
@@ -133,9 +136,12 @@ describe('Complete Pipeline Integration (e2e)', () => {
         .get('/api/dashboard')
         .set('Authorization', `Bearer ${authToken}`);
 
-      const resumePath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
+      const resumePath = path.join(
+        __dirname,
+        '../../AI_Backend/Sample Resume6.pdf',
+      );
       const resumeBuffer = fs.readFileSync(resumePath);
-      
+
       const uploadResponse = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
         .set('Authorization', `Bearer ${authToken}`)
@@ -147,11 +153,11 @@ describe('Complete Pipeline Integration (e2e)', () => {
       // Wait for completion
       let attempts = 0;
       while (attempts < 30) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const response = await request(app.getHttpServer())
           .get(`/api/candidates/${candidateId}`)
           .set('Authorization', `Bearer ${authToken}`);
-        
+
         if (response.body.status === 'completed') break;
         attempts++;
       }
@@ -160,8 +166,13 @@ describe('Complete Pipeline Integration (e2e)', () => {
         .get('/api/dashboard')
         .set('Authorization', `Bearer ${authToken}`);
 
-      if (afterDashboard.body.totalCandidates && beforeDashboard.body.totalCandidates) {
-        expect(afterDashboard.body.totalCandidates).toBeGreaterThan(beforeDashboard.body.totalCandidates);
+      if (
+        afterDashboard.body.totalCandidates &&
+        beforeDashboard.body.totalCandidates
+      ) {
+        expect(afterDashboard.body.totalCandidates).toBeGreaterThan(
+          beforeDashboard.body.totalCandidates,
+        );
       } else {
         console.log('Dashboard metrics not available');
       }

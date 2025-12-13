@@ -1,5 +1,22 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Put,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFiles,
+  Param,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
@@ -18,13 +35,19 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private cloudinaryService: CloudinaryService
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new recruiter user' })
-  @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
-  @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
+  @ApiResponse({
+    status: 201,
+    description: 'Recruiter successfully registered',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid password format or user exists',
+  })
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
@@ -63,18 +86,26 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized or invalid current password' })
-  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized or invalid current password',
+  })
+  async changePassword(
+    @Request() req,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     return this.authService.changePassword(req.user.id, changePasswordDto);
   }
 
   @Put('complete-profile')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'userPhoto', maxCount: 1 },
-    { name: 'companyLogo', maxCount: 1 }
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'userPhoto', maxCount: 1 },
+      { name: 'companyLogo', maxCount: 1 },
+    ]),
+  )
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Complete user profile with optional file uploads' })
   @ApiResponse({ status: 200, description: 'Profile completed successfully' })
@@ -82,7 +113,11 @@ export class AuthController {
   async completeProfile(
     @Request() req,
     @Body() completeProfileDto: CompleteProfileDto,
-    @UploadedFiles() files?: { userPhoto?: Express.Multer.File[], companyLogo?: Express.Multer.File[] }
+    @UploadedFiles()
+    files?: {
+      userPhoto?: Express.Multer.File[];
+      companyLogo?: Express.Multer.File[];
+    },
   ) {
     let userPhotoUrl: string | undefined;
     let companyLogoUrl: string | undefined;
@@ -91,13 +126,13 @@ export class AuthController {
     if (files?.userPhoto?.[0]) {
       userPhotoUrl = await this.cloudinaryService.uploadImage(
         files.userPhoto[0],
-        'user-photos'
+        'user-photos',
       );
     }
     if (files?.companyLogo?.[0]) {
       companyLogoUrl = await this.cloudinaryService.uploadImage(
         files.companyLogo[0],
-        'company-logos'
+        'company-logos',
       );
     }
 
@@ -105,7 +140,7 @@ export class AuthController {
       req.user.id,
       completeProfileDto,
       userPhotoUrl,
-      companyLogoUrl
+      companyLogoUrl,
     );
   }
 
@@ -124,7 +159,7 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Param('token') token: string,
-    @Body() resetPasswordDto: ResetPasswordDto
+    @Body() resetPasswordDto: ResetPasswordDto,
   ) {
     return this.authService.resetPassword(token, resetPasswordDto.newPassword);
   }

@@ -19,8 +19,8 @@ export class AiProcessor {
 
     try {
       // Update status to processing
-      await this.candidatesService.update(candidateId, { 
-        status: ProcessingStatus.PROCESSING
+      await this.candidatesService.update(candidateId, {
+        status: ProcessingStatus.PROCESSING,
       });
 
       // Get candidate data
@@ -33,7 +33,7 @@ export class AiProcessor {
       const aiResults = await this.aiService.evaluateCandidate(
         candidate.rawText,
         jobRole,
-        jobDescription
+        jobDescription,
       );
 
       const processingTime = Date.now() - startTime;
@@ -48,13 +48,13 @@ export class AiProcessor {
       return { success: true, candidateId };
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       // Update status to failed
-      await this.candidatesService.update(candidateId, { 
+      await this.candidatesService.update(candidateId, {
         status: ProcessingStatus.FAILED,
         processingTime,
       });
-      
+
       throw error;
     }
   }

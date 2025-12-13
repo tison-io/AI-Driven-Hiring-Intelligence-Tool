@@ -82,7 +82,9 @@ describe('CandidatesService', () => {
       await service.findAll(filters, userId, userRole);
 
       // Assert
-      expect(mockCandidateModel.find).toHaveBeenCalledWith({ createdBy: userId });
+      expect(mockCandidateModel.find).toHaveBeenCalledWith({
+        createdBy: userId,
+      });
     });
 
     it('should apply skill filter correctly', async () => {
@@ -98,13 +100,16 @@ describe('CandidatesService', () => {
       // Assert
       expect(mockCandidateModel.find).toHaveBeenCalledWith({
         createdBy: userId,
-        skills: { $regex: 'JavaScript', $options: 'i' }
+        skills: { $regex: 'JavaScript', $options: 'i' },
       });
     });
 
     it('should apply experience range filter correctly', async () => {
       // Arrange
-      const filters: CandidateFilterDto = { experience_min: 2, experience_max: 8 };
+      const filters: CandidateFilterDto = {
+        experience_min: 2,
+        experience_max: 8,
+      };
       const userId = 'user123';
       const userRole = 'recruiter';
       mockCandidateModel.exec.mockResolvedValue([mockCandidate]);
@@ -115,7 +120,7 @@ describe('CandidatesService', () => {
       // Assert
       expect(mockCandidateModel.find).toHaveBeenCalledWith({
         createdBy: userId,
-        experienceYears: { $gte: 2, $lte: 8 }
+        experienceYears: { $gte: 2, $lte: 8 },
       });
     });
 
@@ -132,7 +137,7 @@ describe('CandidatesService', () => {
       // Assert
       expect(mockCandidateModel.find).toHaveBeenCalledWith({
         createdBy: userId,
-        roleFitScore: { $gte: 70, $lte: 90 }
+        roleFitScore: { $gte: 70, $lte: 90 },
       });
     });
 
@@ -152,8 +157,8 @@ describe('CandidatesService', () => {
         $or: [
           { name: { $regex: 'john', $options: 'i' } },
           { skills: { $regex: 'john', $options: 'i' } },
-          { jobRole: { $regex: 'john', $options: 'i' } }
-        ]
+          { jobRole: { $regex: 'john', $options: 'i' } },
+        ],
       });
     });
   });
@@ -165,7 +170,7 @@ describe('CandidatesService', () => {
         name: 'Jane Smith',
         rawText: 'Resume content...',
         jobRole: 'Frontend Developer',
-        createdBy: 'user123'
+        createdBy: 'user123',
       };
 
       const expectedResult = { ...candidateData, _id: 'new-id' };
@@ -186,7 +191,9 @@ describe('CandidatesService', () => {
       const mockCandidateDoc = {
         ...mockCandidate,
         isShortlisted: false,
-        save: jest.fn().mockResolvedValue({ ...mockCandidate, isShortlisted: true })
+        save: jest
+          .fn()
+          .mockResolvedValue({ ...mockCandidate, isShortlisted: true }),
       };
       mockCandidateModel.exec.mockResolvedValue(mockCandidateDoc);
 
@@ -205,7 +212,9 @@ describe('CandidatesService', () => {
       const mockCandidateDoc = {
         ...mockCandidate,
         isShortlisted: true,
-        save: jest.fn().mockResolvedValue({ ...mockCandidate, isShortlisted: false })
+        save: jest
+          .fn()
+          .mockResolvedValue({ ...mockCandidate, isShortlisted: false }),
       };
       mockCandidateModel.exec.mockResolvedValue(mockCandidateDoc);
 
@@ -223,7 +232,9 @@ describe('CandidatesService', () => {
       mockCandidateModel.exec.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.toggleShortlist(candidateId)).rejects.toThrow('Candidate not found');
+      await expect(service.toggleShortlist(candidateId)).rejects.toThrow(
+        'Candidate not found',
+      );
       expect(mockCandidateModel.findById).toHaveBeenCalledWith(candidateId);
     });
   });
@@ -238,10 +249,12 @@ describe('CandidatesService', () => {
       const result = await service.delete(candidateId);
 
       // Assert
-      expect(mockCandidateModel.findByIdAndDelete).toHaveBeenCalledWith(candidateId);
+      expect(mockCandidateModel.findByIdAndDelete).toHaveBeenCalledWith(
+        candidateId,
+      );
       expect(result).toEqual({
         success: true,
-        message: 'Candidate and all PII data deleted successfully'
+        message: 'Candidate and all PII data deleted successfully',
       });
     });
 
@@ -251,8 +264,12 @@ describe('CandidatesService', () => {
       mockCandidateModel.exec.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.delete(candidateId)).rejects.toThrow('Candidate not found');
-      expect(mockCandidateModel.findByIdAndDelete).toHaveBeenCalledWith(candidateId);
+      await expect(service.delete(candidateId)).rejects.toThrow(
+        'Candidate not found',
+      );
+      expect(mockCandidateModel.findByIdAndDelete).toHaveBeenCalledWith(
+        candidateId,
+      );
     });
   });
 

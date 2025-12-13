@@ -165,7 +165,10 @@ describe('AuthController', () => {
       authService.changePassword.mockResolvedValue(mockResponse as any);
 
       // Act
-      const result = await controller.changePassword(mockRequest, changePasswordDto);
+      const result = await controller.changePassword(
+        mockRequest,
+        changePasswordDto,
+      );
 
       // Assert
       expect(authService.changePassword).toHaveBeenCalledWith(
@@ -184,7 +187,9 @@ describe('AuthController', () => {
       // Act & Assert
       await expect(
         controller.changePassword(mockRequest, changePasswordDto),
-      ).rejects.toThrow(new UnauthorizedException('Current password is incorrect'));
+      ).rejects.toThrow(
+        new UnauthorizedException('Current password is incorrect'),
+      );
     });
   });
 });

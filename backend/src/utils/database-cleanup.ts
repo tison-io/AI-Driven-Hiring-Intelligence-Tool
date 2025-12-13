@@ -4,11 +4,11 @@ async function cleanupDatabase() {
   try {
     // Connect to MongoDB
     const connection = await connect(process.env.DATABASE_URL);
-    
+
     // Get the users collection
     const db = connection.connection.db;
     const usersCollection = db.collection('users');
-    
+
     // Drop the problematic username index
     try {
       await usersCollection.dropIndex('username_1');
@@ -16,11 +16,10 @@ async function cleanupDatabase() {
     } catch (error) {
       console.log('ℹ️ username_1 index not found or already dropped');
     }
-    
+
     // Close connection
     await connection.disconnect();
     console.log('✅ Database cleanup completed');
-    
   } catch (error) {
     console.error('❌ Database cleanup failed:', error.message);
   }

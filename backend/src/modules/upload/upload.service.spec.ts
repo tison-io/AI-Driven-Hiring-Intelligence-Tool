@@ -72,7 +72,7 @@ describe('UploadService', () => {
   beforeEach(async () => {
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Mock pdf-parse
     (pdfParse as jest.MockedFunction<typeof pdfParse>).mockResolvedValue({
       text: 'Extracted PDF text content',
@@ -80,13 +80,17 @@ describe('UploadService', () => {
       numrender: 1,
       info: {},
       metadata: {},
-      version: '1.0'
+      version: '1.0',
     });
-    
+
     // Mock mammoth
-    (mammoth.extractRawText as jest.MockedFunction<typeof mammoth.extractRawText>).mockResolvedValue({
+    (
+      mammoth.extractRawText as jest.MockedFunction<
+        typeof mammoth.extractRawText
+      >
+    ).mockResolvedValue({
       value: 'Extracted Word document content',
-      messages: []
+      messages: [],
     });
 
     const mockCandidatesService = {
@@ -138,7 +142,8 @@ describe('UploadService', () => {
     const mockWordFile: Express.Multer.File = {
       ...mockPdfFile,
       originalname: 'resume.docx',
-      mimetype: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      mimetype:
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     };
 
     beforeEach(() => {
@@ -147,7 +152,11 @@ describe('UploadService', () => {
     });
 
     it('should process PDF resume successfully', async () => {
-      const result = await service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id');
+      const result = await service.processResume(
+        mockPdfFile,
+        'Backend Engineer',
+        'test-user-id',
+      );
 
       expect(pdfParse).toHaveBeenCalledWith(mockPdfFile.buffer);
       expect(candidatesService.create).toHaveBeenCalledWith({
@@ -161,7 +170,7 @@ describe('UploadService', () => {
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
         'candidate-id-123',
         'Backend Engineer',
-        undefined
+        undefined,
       );
 
       expect(result).toEqual({
@@ -172,7 +181,11 @@ describe('UploadService', () => {
     });
 
     it('should process Word document successfully', async () => {
-      const result = await service.processResume(mockWordFile, 'Frontend Engineer', 'test-user-id');
+      const result = await service.processResume(
+        mockWordFile,
+        'Frontend Engineer',
+        'test-user-id',
+      );
 
       expect(mammoth.extractRawText).toHaveBeenCalledWith({
         buffer: mockWordFile.buffer,
@@ -195,7 +208,11 @@ describe('UploadService', () => {
       };
 
       await expect(
-        service.processResume(unsupportedFile, 'Backend Engineer', 'test-user-id')
+        service.processResume(
+          unsupportedFile,
+          'Backend Engineer',
+          'test-user-id',
+        ),
       ).rejects.toThrow('Unsupported file type');
     });
 
@@ -203,27 +220,33 @@ describe('UploadService', () => {
       candidatesService.create.mockRejectedValue(new Error('Database error'));
 
       await expect(
-        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id')
+        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id'),
       ).rejects.toThrow('Database error');
     });
 
     it('should handle PDF parsing failure', async () => {
       (pdfParse as jest.MockedFunction<typeof pdfParse>).mockRejectedValue(
-        new Error('Invalid PDF structure')
+        new Error('Invalid PDF structure'),
       );
 
       await expect(
-        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id')
+        service.processResume(mockPdfFile, 'Backend Engineer', 'test-user-id'),
       ).rejects.toThrow('Invalid PDF structure');
     });
 
     it('should handle Word document parsing failure', async () => {
-      (mammoth.extractRawText as jest.MockedFunction<typeof mammoth.extractRawText>).mockRejectedValue(
-        new Error('Invalid Word document')
-      );
+      (
+        mammoth.extractRawText as jest.MockedFunction<
+          typeof mammoth.extractRawText
+        >
+      ).mockRejectedValue(new Error('Invalid Word document'));
 
       await expect(
-        service.processResume(mockWordFile, 'Frontend Engineer', 'test-user-id')
+        service.processResume(
+          mockWordFile,
+          'Frontend Engineer',
+          'test-user-id',
+        ),
       ).rejects.toThrow('Invalid Word document');
     });
   });
@@ -233,18 +256,30 @@ describe('UploadService', () => {
     const jobRole = 'Backend Engineer';
 
     beforeEach(() => {
-      apifyService.scrapeLinkedInProfiles.mockResolvedValue([mockLinkedInProfile as any]);
-      linkedInMapper.transformMultipleProfiles.mockResolvedValue([mockLinkedInProfile]);
+      apifyService.scrapeLinkedInProfiles.mockResolvedValue([
+        mockLinkedInProfile as any,
+      ]);
+      linkedInMapper.transformMultipleProfiles.mockResolvedValue([
+        mockLinkedInProfile,
+      ]);
       candidatesService.create.mockResolvedValue(mockCandidate as any);
       queueService.addAIProcessingJob.mockResolvedValue(undefined);
     });
 
     it('should process LinkedIn profile successfully', async () => {
-      const result = await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+      const result = await service.processLinkedinProfile(
+        linkedinUrl,
+        jobRole,
+        'test-user-id',
+      );
 
-      expect(apifyService.scrapeLinkedInProfiles).toHaveBeenCalledWith([linkedinUrl]);
-      expect(linkedInMapper.transformMultipleProfiles).toHaveBeenCalledWith([mockLinkedInProfile]);
-      
+      expect(apifyService.scrapeLinkedInProfiles).toHaveBeenCalledWith([
+        linkedinUrl,
+      ]);
+      expect(linkedInMapper.transformMultipleProfiles).toHaveBeenCalledWith([
+        mockLinkedInProfile,
+      ]);
+
       expect(candidatesService.create).toHaveBeenCalledWith({
         name: 'John Doe',
         linkedinUrl,
@@ -257,12 +292,13 @@ describe('UploadService', () => {
       expect(queueService.addAIProcessingJob).toHaveBeenCalledWith(
         'candidate-id-123',
         jobRole,
-        undefined
+        undefined,
       );
 
       expect(result).toEqual({
         candidateId: 'candidate-id-123',
-        message: 'LinkedIn profile processed successfully. AI analysis started.',
+        message:
+          'LinkedIn profile processed successfully. AI analysis started.',
         status: 'pending',
       });
     });
@@ -271,11 +307,15 @@ describe('UploadService', () => {
       apifyService.scrapeLinkedInProfiles.mockResolvedValue([]);
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id'),
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
-        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+        await service.processLinkedinProfile(
+          linkedinUrl,
+          jobRole,
+          'test-user-id',
+        );
       } catch (error) {
         expect(error).toMatchObject({
           message: 'Failed to scrape LinkedIn profile',
@@ -288,11 +328,15 @@ describe('UploadService', () => {
       linkedInMapper.transformMultipleProfiles.mockResolvedValue([]);
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id'),
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
-        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+        await service.processLinkedinProfile(
+          linkedinUrl,
+          jobRole,
+          'test-user-id',
+        );
       } catch (error) {
         expect(error).toMatchObject({
           message: 'Failed to process LinkedIn profile data',
@@ -304,35 +348,39 @@ describe('UploadService', () => {
     it('should handle invalid LinkedIn URL', async () => {
       const invalidUrl = 'https://facebook.com/johndoe';
       apifyService.scrapeLinkedInProfiles.mockRejectedValue(
-        new InvalidLinkedInUrlException(invalidUrl)
+        new InvalidLinkedInUrlException(invalidUrl),
       );
 
       await expect(
-        service.processLinkedinProfile(invalidUrl, jobRole, 'test-user-id')
+        service.processLinkedinProfile(invalidUrl, jobRole, 'test-user-id'),
       ).rejects.toThrow(InvalidLinkedInUrlException);
     });
 
     it('should handle profile not found', async () => {
       apifyService.scrapeLinkedInProfiles.mockRejectedValue(
-        new ProfileNotFoundException(linkedinUrl)
+        new ProfileNotFoundException(linkedinUrl),
       );
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id'),
       ).rejects.toThrow(ProfileNotFoundException);
     });
 
     it('should handle unexpected errors', async () => {
       apifyService.scrapeLinkedInProfiles.mockRejectedValue(
-        new Error('Unexpected error')
+        new Error('Unexpected error'),
       );
 
       await expect(
-        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
+        service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id'),
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
-        await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
+        await service.processLinkedinProfile(
+          linkedinUrl,
+          jobRole,
+          'test-user-id',
+        );
       } catch (error) {
         expect(error).toMatchObject({
           message: 'Failed to process LinkedIn profile',
@@ -344,14 +392,18 @@ describe('UploadService', () => {
 
   describe('LinkedIn data formatting', () => {
     it('should format complete LinkedIn profile data', async () => {
-      apifyService.scrapeLinkedInProfiles.mockResolvedValue([mockLinkedInProfile as any]);
-      linkedInMapper.transformMultipleProfiles.mockResolvedValue([mockLinkedInProfile]);
+      apifyService.scrapeLinkedInProfiles.mockResolvedValue([
+        mockLinkedInProfile as any,
+      ]);
+      linkedInMapper.transformMultipleProfiles.mockResolvedValue([
+        mockLinkedInProfile,
+      ]);
       candidatesService.create.mockResolvedValue(mockCandidate as any);
 
       await service.processLinkedinProfile(
         'https://www.linkedin.com/in/johndoe',
         'Backend Engineer',
-        'test-user-id'
+        'test-user-id',
       );
 
       const createCall = candidatesService.create.mock.calls[0][0];
@@ -376,14 +428,18 @@ describe('UploadService', () => {
         skills: [],
       };
 
-      apifyService.scrapeLinkedInProfiles.mockResolvedValue([minimalProfile as any]);
-      linkedInMapper.transformMultipleProfiles.mockResolvedValue([minimalProfile]);
+      apifyService.scrapeLinkedInProfiles.mockResolvedValue([
+        minimalProfile as any,
+      ]);
+      linkedInMapper.transformMultipleProfiles.mockResolvedValue([
+        minimalProfile,
+      ]);
       candidatesService.create.mockResolvedValue(mockCandidate as any);
 
       await service.processLinkedinProfile(
         'https://www.linkedin.com/in/janesmith',
         'Frontend Engineer',
-        'test-user-id'
+        'test-user-id',
       );
 
       const createCall = candidatesService.create.mock.calls[0][0];
@@ -400,8 +456,12 @@ describe('UploadService', () => {
     it('should complete full upload workflow for resume', async () => {
       candidatesService.create.mockResolvedValue(mockCandidate as any);
       queueService.addAIProcessingJob.mockResolvedValue(undefined);
-      
-      const result = await service.processResume(mockPdfFile, 'Data Scientist', 'test-user-id');
+
+      const result = await service.processResume(
+        mockPdfFile,
+        'Data Scientist',
+        'test-user-id',
+      );
 
       // Verify the complete workflow
       expect(pdfParse).toHaveBeenCalledTimes(1);
@@ -412,15 +472,19 @@ describe('UploadService', () => {
     });
 
     it('should complete full upload workflow for LinkedIn profile', async () => {
-      apifyService.scrapeLinkedInProfiles.mockResolvedValue([mockLinkedInProfile as any]);
-      linkedInMapper.transformMultipleProfiles.mockResolvedValue([mockLinkedInProfile]);
+      apifyService.scrapeLinkedInProfiles.mockResolvedValue([
+        mockLinkedInProfile as any,
+      ]);
+      linkedInMapper.transformMultipleProfiles.mockResolvedValue([
+        mockLinkedInProfile,
+      ]);
       candidatesService.create.mockResolvedValue(mockCandidate as any);
       queueService.addAIProcessingJob.mockResolvedValue(undefined);
 
       const result = await service.processLinkedinProfile(
         'https://www.linkedin.com/in/johndoe',
         'Full Stack Engineer',
-        'test-user-id'
+        'test-user-id',
       );
 
       // Verify the complete workflow

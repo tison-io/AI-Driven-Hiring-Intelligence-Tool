@@ -65,7 +65,7 @@ describe('DashboardService', () => {
       // Arrange
       const userId = 'user123';
       const userRole = 'recruiter';
-      
+
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(2) // totalCandidates
         .mockResolvedValueOnce(1) // shortlistCount
@@ -96,16 +96,18 @@ describe('DashboardService', () => {
       expect(result.shortlistCount).toBe(1);
       expect(result.processingCount).toBe(0);
       expect(result.recentCandidates).toHaveLength(2);
-      
+
       // Verify recruiter query includes createdBy filter
-      expect(mockCandidateModel.countDocuments).toHaveBeenCalledWith({ createdBy: userId });
+      expect(mockCandidateModel.countDocuments).toHaveBeenCalledWith({
+        createdBy: userId,
+      });
     });
 
     it('should return metrics for admin user', async () => {
       // Arrange
       const userId = 'admin123';
       const userRole = 'admin';
-      
+
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(3) // totalCandidates
         .mockResolvedValueOnce(2) // shortlistCount
@@ -135,7 +137,7 @@ describe('DashboardService', () => {
       expect(result.averageRoleFitScore).toBe(83.33); // (85 + 75 + 90) / 3
       expect(result.shortlistCount).toBe(2);
       expect(result.processingCount).toBe(1);
-      
+
       // Verify admin query has no createdBy filter
       expect(mockCandidateModel.countDocuments).toHaveBeenCalledWith({});
     });
@@ -144,9 +146,9 @@ describe('DashboardService', () => {
       // Arrange
       const userId = 'user123';
       const userRole = 'recruiter';
-      
+
       mockCandidateModel.countDocuments.mockResolvedValue(0);
-      
+
       const mockQuery = {
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
@@ -175,18 +177,18 @@ describe('DashboardService', () => {
     it('should calculate score distribution correctly', async () => {
       // Arrange
       const candidatesWithScores = [
-        { roleFitScore: 15 },  // 0-20
-        { roleFitScore: 35 },  // 21-40
-        { roleFitScore: 55 },  // 41-60
-        { roleFitScore: 75 },  // 61-80
-        { roleFitScore: 95 },  // 81-100
-        { roleFitScore: 85 },  // 81-100
+        { roleFitScore: 15 }, // 0-20
+        { roleFitScore: 35 }, // 21-40
+        { roleFitScore: 55 }, // 41-60
+        { roleFitScore: 75 }, // 61-80
+        { roleFitScore: 95 }, // 81-100
+        { roleFitScore: 85 }, // 81-100
       ];
-      
+
       const mockQuery = {
         select: jest.fn().mockResolvedValue(candidatesWithScores),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
 
       // Act
@@ -207,7 +209,7 @@ describe('DashboardService', () => {
       const mockQuery = {
         select: jest.fn().mockResolvedValue([]),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
 
       // Act
@@ -232,11 +234,11 @@ describe('DashboardService', () => {
         { processingTime: 2000 },
         { processingTime: 1500 },
       ];
-      
+
       const mockQuery = {
         select: jest.fn().mockResolvedValue(completedCandidates),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(2) // failedCount
@@ -256,7 +258,7 @@ describe('DashboardService', () => {
       const mockQuery = {
         select: jest.fn().mockResolvedValue([]),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(0) // failedCount

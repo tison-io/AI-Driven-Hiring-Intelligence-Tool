@@ -82,17 +82,13 @@ describe('UploadController', () => {
     });
 
     it('should upload resume with job description', async () => {
-      const dtoWithDescription = { 
+      const dtoWithDescription = {
         jobRole: 'Frontend Engineer',
-        jobDescription: 'React and TypeScript required'
+        jobDescription: 'React and TypeScript required',
       };
       uploadService.processResume.mockResolvedValue(mockResponse);
 
-      await controller.uploadResume(
-        mockFile,
-        dtoWithDescription,
-        mockRequest,
-      );
+      await controller.uploadResume(mockFile, dtoWithDescription, mockRequest);
 
       expect(uploadService.processResume).toHaveBeenCalledWith(
         mockFile,
@@ -147,7 +143,7 @@ describe('UploadController', () => {
       const dtoWithDescription = {
         linkedinUrl: 'https://www.linkedin.com/in/johndoe',
         jobRole: 'Frontend Engineer',
-        jobDescription: 'React and TypeScript required'
+        jobDescription: 'React and TypeScript required',
       };
       uploadService.processLinkedinProfile.mockResolvedValue(mockResponse);
 
@@ -174,9 +170,9 @@ describe('UploadController', () => {
 
   describe('User Context', () => {
     it('should extract user ID from request', async () => {
-      const uploadResumeDto = { 
+      const uploadResumeDto = {
         jobRole: 'Backend Engineer',
-        jobDescription: 'Node.js required'
+        jobDescription: 'Node.js required',
       };
       uploadService.processResume.mockResolvedValue({
         candidateId: 'candidate-123',

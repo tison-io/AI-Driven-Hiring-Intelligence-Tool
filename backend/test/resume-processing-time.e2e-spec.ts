@@ -41,9 +41,12 @@ describe('Resume Processing Time (e2e)', () => {
     const startTime = Date.now();
 
     // Upload resume
-    const resumePath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
+    const resumePath = path.join(
+      __dirname,
+      '../../AI_Backend/Sample Resume6.pdf',
+    );
     const resumeBuffer = fs.readFileSync(resumePath);
-    
+
     const uploadResponse = await request(app.getHttpServer())
       .post('/api/candidates/upload-resume')
       .set('Authorization', `Bearer ${authToken}`)
@@ -51,7 +54,11 @@ describe('Resume Processing Time (e2e)', () => {
       .attach('file', resumeBuffer, 'resume.pdf');
 
     if (uploadResponse.status !== 201) {
-      console.error('Upload failed:', uploadResponse.status, uploadResponse.body);
+      console.error(
+        'Upload failed:',
+        uploadResponse.status,
+        uploadResponse.body,
+      );
     }
 
     expect(uploadResponse.status).toBe(201);
@@ -66,8 +73,8 @@ describe('Resume Processing Time (e2e)', () => {
     const maxAttempts = 60;
 
     while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const response = await request(app.getHttpServer())
         .get(`/api/candidates/${candidateId}`)
         .set('Authorization', `Bearer ${authToken}`);
@@ -75,7 +82,8 @@ describe('Resume Processing Time (e2e)', () => {
       candidate = response.body;
       attempts++;
 
-      if (candidate.status === 'completed' || candidate.status === 'failed') break;
+      if (candidate.status === 'completed' || candidate.status === 'failed')
+        break;
     }
 
     const totalTime = Date.now() - startTime;

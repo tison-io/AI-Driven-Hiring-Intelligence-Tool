@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Candidate, CandidateDocument } from '../candidates/entities/candidate.entity';
+import {
+  Candidate,
+  CandidateDocument,
+} from '../candidates/entities/candidate.entity';
 
 @Injectable()
 export class DashboardService {
@@ -41,49 +44,70 @@ export class DashboardService {
     // Current month metrics
     const currentProcessed = await this.candidateModel.countDocuments({
       status: 'completed',
-      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
+      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate },
     });
 
-    const currentCompletedCandidates = await this.candidateModel.find({
-      status: 'completed',
-      roleFitScore: { $exists: true, $ne: null },
-      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
-    }).select('roleFitScore');
+    const currentCompletedCandidates = await this.candidateModel
+      .find({
+        status: 'completed',
+        roleFitScore: { $exists: true, $ne: null },
+        createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate },
+      })
+      .select('roleFitScore');
 
-    const currentAvgScore = currentCompletedCandidates.length > 0
-      ? currentCompletedCandidates.reduce((sum, c) => sum + (c.roleFitScore || 0), 0) / currentCompletedCandidates.length
-      : 0;
+    const currentAvgScore =
+      currentCompletedCandidates.length > 0
+        ? currentCompletedCandidates.reduce(
+            (sum, c) => sum + (c.roleFitScore || 0),
+            0,
+          ) / currentCompletedCandidates.length
+        : 0;
 
     const currentShortlisted = await this.candidateModel.countDocuments({
       isShortlisted: true,
-      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate }
+      createdAt: { $gte: currentMonth.startDate, $lte: currentMonth.endDate },
     });
 
     // Last month metrics
     const lastProcessed = await this.candidateModel.countDocuments({
       status: 'completed',
-      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
+      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate },
     });
 
-    const lastCompletedCandidates = await this.candidateModel.find({
-      status: 'completed',
-      roleFitScore: { $exists: true, $ne: null },
-      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
-    }).select('roleFitScore');
+    const lastCompletedCandidates = await this.candidateModel
+      .find({
+        status: 'completed',
+        roleFitScore: { $exists: true, $ne: null },
+        createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate },
+      })
+      .select('roleFitScore');
 
-    const lastAvgScore = lastCompletedCandidates.length > 0
-      ? lastCompletedCandidates.reduce((sum, c) => sum + (c.roleFitScore || 0), 0) / lastCompletedCandidates.length
-      : 0;
+    const lastAvgScore =
+      lastCompletedCandidates.length > 0
+        ? lastCompletedCandidates.reduce(
+            (sum, c) => sum + (c.roleFitScore || 0),
+            0,
+          ) / lastCompletedCandidates.length
+        : 0;
 
     const lastShortlisted = await this.candidateModel.countDocuments({
       isShortlisted: true,
-      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate }
+      createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate },
     });
 
     // Calculate changes
-    const processedChange = this.calculatePercentageChange(currentProcessed, lastProcessed);
-    const scoreChange = this.calculatePercentageChange(currentAvgScore, lastAvgScore);
-    const shortlistedChange = this.calculatePercentageChange(currentShortlisted, lastShortlisted);
+    const processedChange = this.calculatePercentageChange(
+      currentProcessed,
+      lastProcessed,
+    );
+    const scoreChange = this.calculatePercentageChange(
+      currentAvgScore,
+      lastAvgScore,
+    );
+    const shortlistedChange = this.calculatePercentageChange(
+      currentShortlisted,
+      lastShortlisted,
+    );
 
     // Get system health metrics
     const systemHealth = await this.getSystemHealthMetrics();
@@ -92,48 +116,49 @@ export class DashboardService {
       totalCandidatesProcessed: {
         current: currentProcessed,
         percentageChange: processedChange,
-        trend: this.getTrend(processedChange)
+        trend: this.getTrend(processedChange),
       },
       averageRoleFitScore: {
         current: Math.round(currentAvgScore * 100) / 100,
         percentageChange: scoreChange,
-        trend: this.getTrend(scoreChange)
+        trend: this.getTrend(scoreChange),
       },
       totalShortlisted: {
         current: currentShortlisted,
         percentageChange: shortlistedChange,
-        trend: this.getTrend(shortlistedChange)
+        trend: this.getTrend(shortlistedChange),
       },
-      systemHealth
+      systemHealth,
     };
   }
 
   async getDashboardMetrics(userId: string, userRole: string) {
     const query = userRole === 'admin' ? {} : { createdBy: userId };
-    
+
     const totalCandidates = await this.candidateModel.countDocuments(query);
-    
-    const completedCandidates = await this.candidateModel.find({ 
+
+    const completedCandidates = await this.candidateModel.find({
       ...query,
       status: 'completed',
-      roleFitScore: { $exists: true, $ne: null }
+      roleFitScore: { $exists: true, $ne: null },
     });
 
-    const averageRoleFitScore = completedCandidates.length > 0
-      ? completedCandidates.reduce((sum, candidate) => sum + (candidate.roleFitScore || 0), 0) / completedCandidates.length
-      : 0;
+    const averageRoleFitScore =
+      completedCandidates.length > 0
+        ? completedCandidates.reduce(
+            (sum, candidate) => sum + (candidate.roleFitScore || 0),
+            0,
+          ) / completedCandidates.length
+        : 0;
 
     const shortlistCount = await this.candidateModel.countDocuments({
       ...query,
-      $or: [
-        { isShortlisted: true },
-        { roleFitScore: { $gte: 80 } }
-      ]
+      $or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
     });
 
     const processingCount = await this.candidateModel.countDocuments({
       ...query,
-      status: { $in: ['pending', 'processing'] }
+      status: { $in: ['pending', 'processing'] },
     });
 
     const recentCandidates = await this.candidateModel
@@ -146,10 +171,7 @@ export class DashboardService {
     const shortlistedCandidates = await this.candidateModel
       .find({
         ...query,
-        $or: [
-          { isShortlisted: true },
-          { roleFitScore: { $gte: 80 } }
-        ]
+        $or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
       })
       .sort({ createdAt: -1 })
       .limit(5)
@@ -167,9 +189,11 @@ export class DashboardService {
   }
 
   async getScoreDistribution() {
-    const candidates = await this.candidateModel.find({
-      roleFitScore: { $exists: true, $ne: null }
-    }).select('roleFitScore');
+    const candidates = await this.candidateModel
+      .find({
+        roleFitScore: { $exists: true, $ne: null },
+      })
+      .select('roleFitScore');
 
     const distribution = {
       '0-20': 0,
@@ -179,7 +203,7 @@ export class DashboardService {
       '81-100': 0,
     };
 
-    candidates.forEach(candidate => {
+    candidates.forEach((candidate) => {
       const score = candidate.roleFitScore || 0;
       if (score <= 20) distribution['0-20']++;
       else if (score <= 40) distribution['21-40']++;
@@ -192,25 +216,36 @@ export class DashboardService {
   }
 
   async getSystemHealthMetrics() {
-    const completedCandidates = await this.candidateModel.find({
-      status: 'completed',
-      processingTime: { $exists: true, $ne: null }
-    }).select('processingTime');
+    const completedCandidates = await this.candidateModel
+      .find({
+        status: 'completed',
+        processingTime: { $exists: true, $ne: null },
+      })
+      .select('processingTime');
 
-    const avgProcessingTime = completedCandidates.length > 0
-      ? completedCandidates.reduce((sum, c) => sum + (c.processingTime || 0), 0) / completedCandidates.length
-      : 0;
+    const avgProcessingTime =
+      completedCandidates.length > 0
+        ? completedCandidates.reduce(
+            (sum, c) => sum + (c.processingTime || 0),
+            0,
+          ) / completedCandidates.length
+        : 0;
 
-    const failedCount = await this.candidateModel.countDocuments({ status: 'failed' });
-    const totalProcessed = await this.candidateModel.countDocuments({ 
-      status: { $in: ['completed', 'failed'] } 
+    const failedCount = await this.candidateModel.countDocuments({
+      status: 'failed',
     });
-    const successRate = totalProcessed > 0 ? ((totalProcessed - failedCount) / totalProcessed) * 100 : 100;
+    const totalProcessed = await this.candidateModel.countDocuments({
+      status: { $in: ['completed', 'failed'] },
+    });
+    const successRate =
+      totalProcessed > 0
+        ? ((totalProcessed - failedCount) / totalProcessed) * 100
+        : 100;
 
     return {
       averageProcessingTime: Math.round(avgProcessingTime),
       successRate: Math.round(successRate * 100) / 100,
-      failedProcessingCount: failedCount
+      failedProcessingCount: failedCount,
     };
   }
 }

@@ -6,7 +6,9 @@ import { ErrorLog, ErrorLogSchema } from './entities/error-log.entity';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: ErrorLog.name, schema: ErrorLogSchema }]),
+    MongooseModule.forFeature([
+      { name: ErrorLog.name, schema: ErrorLogSchema },
+    ]),
   ],
   controllers: [ErrorLogsController],
   providers: [ErrorLogsService],

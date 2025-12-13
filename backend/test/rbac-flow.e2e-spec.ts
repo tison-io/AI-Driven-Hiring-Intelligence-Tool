@@ -30,7 +30,7 @@ describe('RBAC Flow Tests', () => {
 
   async function setupTestUsers() {
     const timestamp = Date.now();
-    
+
     // Register and login admin with unique email
     await request(app.getHttpServer())
       .post('/auth/register')
@@ -66,7 +66,8 @@ describe('RBAC Flow Tests', () => {
       });
 
     recruiterToken = recruiterLogin.body.access_token;
-    recruiterUserId = recruiterLogin.body.user._id || recruiterLogin.body.user.id;
+    recruiterUserId =
+      recruiterLogin.body.user._id || recruiterLogin.body.user.id;
 
     // Create candidate directly via service to avoid API rate limits
     const candidate = await candidatesService.create({
@@ -83,7 +84,7 @@ describe('RBAC Flow Tests', () => {
       biasCheck: 'No bias detected',
       skills: ['JavaScript', 'Node.js', 'React'],
       experienceYears: 5,
-      createdBy: recruiterUserId
+      createdBy: recruiterUserId,
     });
 
     recruiterCandidateId = candidate._id;
@@ -97,15 +98,13 @@ describe('RBAC Flow Tests', () => {
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
-    
+
     // Verify recruiter sees their candidate
-    const candidateIds = response.body.map(c => String(c._id || c.id));
+    const candidateIds = response.body.map((c) => String(c._id || c.id));
     const expectedId = String(recruiterCandidateId);
-    
+
     expect(candidateIds).toContain(expectedId);
   });
-
-
 
   it('Recruiter tries to access admin endpoint → 403 Forbidden', async () => {
     const response = await request(app.getHttpServer())
@@ -120,7 +119,7 @@ describe('RBAC Flow Tests', () => {
       '/api/candidates',
       '/api/dashboard',
       '/api/dashboard/admin',
-      '/auth/profile'
+      '/auth/profile',
     ];
 
     for (const endpoint of endpoints) {

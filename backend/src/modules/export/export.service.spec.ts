@@ -92,10 +92,18 @@ describe('ExportService', () => {
       (XLSX.write as jest.Mock).mockReturnValue(mockBuffer);
 
       // Act
-      const result = await service.exportCandidatesCSV(filters, userId, userRole);
+      const result = await service.exportCandidatesCSV(
+        filters,
+        userId,
+        userRole,
+      );
 
       // Assert
-      expect(candidatesService.findAll).toHaveBeenCalledWith(filters, userId, userRole);
+      expect(candidatesService.findAll).toHaveBeenCalledWith(
+        filters,
+        userId,
+        userRole,
+      );
       expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
         {
           name: 'John Doe',
@@ -120,7 +128,10 @@ describe('ExportService', () => {
           createdAt: new Date('2024-01-10'),
         },
       ]);
-      expect(XLSX.write).toHaveBeenCalledWith('workbook', { type: 'buffer', bookType: 'csv' });
+      expect(XLSX.write).toHaveBeenCalledWith('workbook', {
+        type: 'buffer',
+        bookType: 'csv',
+      });
       expect(result).toBe(mockBuffer);
     });
 
@@ -137,7 +148,11 @@ describe('ExportService', () => {
       (XLSX.write as jest.Mock).mockReturnValue(mockBuffer);
 
       // Act
-      const result = await service.exportCandidatesCSV(filters, userId, userRole);
+      const result = await service.exportCandidatesCSV(
+        filters,
+        userId,
+        userRole,
+      );
 
       // Assert
       expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([]);
@@ -159,10 +174,18 @@ describe('ExportService', () => {
       (XLSX.write as jest.Mock).mockReturnValue(mockBuffer);
 
       // Act
-      const result = await service.exportCandidatesXLSX(filters, userId, userRole);
+      const result = await service.exportCandidatesXLSX(
+        filters,
+        userId,
+        userRole,
+      );
 
       // Assert
-      expect(candidatesService.findAll).toHaveBeenCalledWith(filters, userId, userRole);
+      expect(candidatesService.findAll).toHaveBeenCalledWith(
+        filters,
+        userId,
+        userRole,
+      );
       expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
         {
           Name: 'John Doe',
@@ -187,32 +210,43 @@ describe('ExportService', () => {
           'Created At': new Date('2024-01-10'),
         },
       ]);
-      expect(XLSX.write).toHaveBeenCalledWith('workbook', { type: 'buffer', bookType: 'xlsx' });
+      expect(XLSX.write).toHaveBeenCalledWith('workbook', {
+        type: 'buffer',
+        bookType: 'xlsx',
+      });
       expect(result).toBe(mockBuffer);
     });
 
     it('should handle candidates with missing optional fields', async () => {
       // Arrange
-      const candidateWithMissingFields = [{
-        _id: '3',
-        name: 'Bob Wilson',
-        linkedinUrl: null,
-        experienceYears: 2,
-        skills: ['Python'],
-        roleFitScore: null,
-        confidenceScore: null,
-        jobRole: 'Data Scientist',
-        status: 'pending',
-        createdAt: null,
-      }];
+      const candidateWithMissingFields = [
+        {
+          _id: '3',
+          name: 'Bob Wilson',
+          linkedinUrl: null,
+          experienceYears: 2,
+          skills: ['Python'],
+          roleFitScore: null,
+          confidenceScore: null,
+          jobRole: 'Data Scientist',
+          status: 'pending',
+          createdAt: null,
+        },
+      ];
 
-      candidatesService.findAll.mockResolvedValue(candidateWithMissingFields as any);
+      candidatesService.findAll.mockResolvedValue(
+        candidateWithMissingFields as any,
+      );
       (XLSX.utils.json_to_sheet as jest.Mock).mockReturnValue('worksheet');
       (XLSX.utils.book_new as jest.Mock).mockReturnValue('workbook');
       (XLSX.write as jest.Mock).mockReturnValue(Buffer.from(''));
 
       // Act
-      const result = await service.exportCandidatesXLSX({}, 'user123', 'recruiter');
+      const result = await service.exportCandidatesXLSX(
+        {},
+        'user123',
+        'recruiter',
+      );
 
       // Assert
       expect(XLSX.utils.json_to_sheet).toHaveBeenCalledWith([
@@ -274,7 +308,9 @@ describe('ExportService', () => {
       candidatesService.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.generateCandidateReport(candidateId)).rejects.toThrow('Candidate not found');
+      await expect(
+        service.generateCandidateReport(candidateId),
+      ).rejects.toThrow('Candidate not found');
       expect(candidatesService.findById).toHaveBeenCalledWith(candidateId);
     });
 
@@ -288,8 +324,10 @@ describe('ExportService', () => {
         interviewQuestions: [],
         skills: [],
       };
-      
-      candidatesService.findById.mockResolvedValue(candidateWithEmptyArrays as any);
+
+      candidatesService.findById.mockResolvedValue(
+        candidateWithEmptyArrays as any,
+      );
 
       // Act
       const result = await service.generateCandidateReport('1');
@@ -307,17 +345,21 @@ describe('ExportService', () => {
       candidatesService.findAll.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(service.exportCandidatesCSV({}, 'user123', 'recruiter'))
-        .rejects.toThrow('Database error');
+      await expect(
+        service.exportCandidatesCSV({}, 'user123', 'recruiter'),
+      ).rejects.toThrow('Database error');
     });
 
     it('should handle service errors in XLSX export', async () => {
       // Arrange
-      candidatesService.findAll.mockRejectedValue(new Error('Connection failed'));
+      candidatesService.findAll.mockRejectedValue(
+        new Error('Connection failed'),
+      );
 
       // Act & Assert
-      await expect(service.exportCandidatesXLSX({}, 'user123', 'admin'))
-        .rejects.toThrow('Connection failed');
+      await expect(
+        service.exportCandidatesXLSX({}, 'user123', 'admin'),
+      ).rejects.toThrow('Connection failed');
     });
   });
 });

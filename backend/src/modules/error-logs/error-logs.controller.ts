@@ -16,6 +16,4 @@ export class ErrorLogsController {
   async findAll(@Query() filterDto: ErrorLogFilterDto) {
     return this.errorLogsService.findAll(filterDto);
   }
-
-
 }

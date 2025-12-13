@@ -123,7 +123,7 @@ describe('CloudinaryService', () => {
       await expect(
         service.uploadImage(mockFile, 'test-folder'),
       ).rejects.toThrow('Upload failed');
-      
+
       expect(endSpy).toHaveBeenCalledWith(mockFile.buffer);
     });
 
@@ -146,7 +146,7 @@ describe('CloudinaryService', () => {
       await expect(
         service.uploadImage(textFile, 'test-folder'),
       ).rejects.toThrow('Invalid file type');
-      
+
       expect(endSpy).toHaveBeenCalledWith(textFile.buffer);
     });
 

@@ -102,13 +102,13 @@ describe('ApifyService', () => {
 
     it('should throw error for empty profile URLs', async () => {
       await expect(service.scrapeLinkedInProfiles([])).rejects.toThrow(
-        HttpException
+        HttpException,
       );
     });
 
     it('should throw error for null profile URLs', async () => {
       await expect(service.scrapeLinkedInProfiles(null)).rejects.toThrow(
-        HttpException
+        HttpException,
       );
     });
   });
@@ -125,7 +125,7 @@ describe('ApifyService', () => {
 
       for (const url of validUrls) {
         await expect(
-          service.scrapeLinkedInProfiles([url])
+          service.scrapeLinkedInProfiles([url]),
         ).resolves.toBeDefined();
       }
     });
@@ -141,7 +141,7 @@ describe('ApifyService', () => {
 
       for (const url of urlsWithParams) {
         await expect(
-          service.scrapeLinkedInProfiles([url])
+          service.scrapeLinkedInProfiles([url]),
         ).resolves.toBeDefined();
       }
     });
@@ -157,7 +157,7 @@ describe('ApifyService', () => {
 
       for (const url of invalidUrls) {
         await expect(service.scrapeLinkedInProfiles([url])).rejects.toThrow(
-          InvalidLinkedInUrlException
+          InvalidLinkedInUrlException,
         );
       }
     });
@@ -179,7 +179,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(rateLimitResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(HttpException);
     }, 10000);
 
@@ -198,7 +198,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(notFoundResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(ProfileNotFoundException);
     });
 
@@ -217,7 +217,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(emptyDataResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(ProfileNotFoundException);
     });
 
@@ -236,7 +236,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(apiErrorResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(HttpException);
     }, 10000);
 
@@ -252,7 +252,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(malformedResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(HttpException);
     });
 
@@ -268,7 +268,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(of(htmlResponse));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(HttpException);
     });
   });
@@ -276,7 +276,7 @@ describe('ApifyService', () => {
   describe('Retry logic', () => {
     it('should retry on network errors with exponential backoff', async () => {
       const networkError = new Error('Network timeout');
-      
+
       const mockSuccessResponseForRetry: AxiosResponse = {
         data: {
           success: true,
@@ -325,7 +325,7 @@ describe('ApifyService', () => {
 
     it('should not retry on non-retryable errors', async () => {
       await expect(
-        service.scrapeLinkedInProfiles(['invalid-url'])
+        service.scrapeLinkedInProfiles(['invalid-url']),
       ).rejects.toThrow(InvalidLinkedInUrlException);
 
       expect(httpService.get).toHaveBeenCalledTimes(0);
@@ -336,7 +336,7 @@ describe('ApifyService', () => {
       httpService.get.mockReturnValue(throwError(() => networkError));
 
       await expect(
-        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe'])
+        service.scrapeLinkedInProfiles(['https://www.linkedin.com/in/johndoe']),
       ).rejects.toThrow(HttpException);
 
       expect(httpService.get).toHaveBeenCalledTimes(3);

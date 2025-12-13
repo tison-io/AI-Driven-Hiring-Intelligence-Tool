@@ -1,9 +1,9 @@
 import { Controller, Get, UseGuards, Request } from '@nestjs/common';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBearerAuth 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,8 +21,8 @@ export class DashboardController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.RECRUITER)
   @ApiOperation({ summary: 'Get dashboard metrics and analytics' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Dashboard metrics retrieved successfully',
     schema: {
       type: 'object',
@@ -40,24 +40,32 @@ export class DashboardController {
               jobRole: { type: 'string' },
               roleFitScore: { type: 'number' },
               status: { type: 'string' },
-              createdAt: { type: 'string' }
-            }
-          }
-        }
-      }
-    }
+              createdAt: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - insufficient permissions',
+  })
   async getDashboardMetrics(@Request() req) {
-    return this.dashboardService.getDashboardMetrics(req.user.id, req.user.role);
+    return this.dashboardService.getDashboardMetrics(
+      req.user.id,
+      req.user.role,
+    );
   }
 
   @Get('admin')
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Get admin dashboard metrics with month-over-month comparison' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiOperation({
+    summary: 'Get admin dashboard metrics with month-over-month comparison',
+  })
+  @ApiResponse({
+    status: 200,
     description: 'Admin dashboard metrics retrieved successfully',
     schema: {
       type: 'object',
@@ -67,38 +75,65 @@ export class DashboardController {
           properties: {
             current: { type: 'number', example: 150 },
             percentageChange: { type: 'number', example: 12.5 },
-            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'up' }
-          }
+            trend: {
+              type: 'string',
+              enum: ['up', 'down', 'neutral'],
+              example: 'up',
+            },
+          },
         },
         averageRoleFitScore: {
           type: 'object',
           properties: {
             current: { type: 'number', example: 75.5 },
             percentageChange: { type: 'number', example: -3.2 },
-            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'down' }
-          }
+            trend: {
+              type: 'string',
+              enum: ['up', 'down', 'neutral'],
+              example: 'down',
+            },
+          },
         },
         totalShortlisted: {
           type: 'object',
           properties: {
             current: { type: 'number', example: 45 },
             percentageChange: { type: 'number', example: 8.0 },
-            trend: { type: 'string', enum: ['up', 'down', 'neutral'], example: 'up' }
-          }
+            trend: {
+              type: 'string',
+              enum: ['up', 'down', 'neutral'],
+              example: 'up',
+            },
+          },
         },
         systemHealth: {
           type: 'object',
           properties: {
-            averageProcessingTime: { type: 'number', example: 2500, description: 'Average processing time in milliseconds' },
-            successRate: { type: 'number', example: 95.5, description: 'Success rate percentage' },
-            failedProcessingCount: { type: 'number', example: 3, description: 'Number of failed processing attempts' }
-          }
-        }
-      }
-    }
+            averageProcessingTime: {
+              type: 'number',
+              example: 2500,
+              description: 'Average processing time in milliseconds',
+            },
+            successRate: {
+              type: 'number',
+              example: 95.5,
+              description: 'Success rate percentage',
+            },
+            failedProcessingCount: {
+              type: 'number',
+              example: 3,
+              description: 'Number of failed processing attempts',
+            },
+          },
+        },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   async getAdminDashboardMetrics() {
     return this.dashboardService.getAdminDashboardMetrics();
   }
@@ -106,8 +141,8 @@ export class DashboardController {
   @Get('score-distribution')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get role fit score distribution (Admin only)' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Score distribution retrieved successfully',
     schema: {
       type: 'object',
@@ -116,12 +151,15 @@ export class DashboardController {
         '21-40': { type: 'number', example: 15 },
         '41-60': { type: 'number', example: 30 },
         '61-80': { type: 'number', example: 45 },
-        '81-100': { type: 'number', example: 25 }
-      }
-    }
+        '81-100': { type: 'number', example: 25 },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
   async getScoreDistribution() {
     return this.dashboardService.getScoreDistribution();
   }

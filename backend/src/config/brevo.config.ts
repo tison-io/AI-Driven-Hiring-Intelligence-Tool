@@ -10,7 +10,10 @@ export class BrevoConfig {
   }
 
   get fromEmail(): string {
-    return this.configService.get<string>('BREVO_FROM_EMAIL') || 'tenbitedaniel60@gmail.com';
+    return (
+      this.configService.get<string>('BREVO_FROM_EMAIL') ||
+      'tenbitedaniel60@gmail.com'
+    );
   }
 
   get fromName(): string {

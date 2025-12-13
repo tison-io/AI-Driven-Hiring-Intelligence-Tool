@@ -20,7 +20,10 @@ describe('LinkedIn Scraper Exceptions', () => {
     });
 
     it('should create exception with custom status code', () => {
-      const exception = new RapidApiException('Custom error', HttpStatus.BAD_GATEWAY);
+      const exception = new RapidApiException(
+        'Custom error',
+        HttpStatus.BAD_GATEWAY,
+      );
 
       expect(exception.getStatus()).toBe(HttpStatus.BAD_GATEWAY);
     });

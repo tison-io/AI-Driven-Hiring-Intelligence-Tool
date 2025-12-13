@@ -6,46 +6,36 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy-backend:
-    name: Deploy Backend
+  deploy:
+    name: Deploy Services
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     
     steps:
       - uses: actions/checkout@v4
       
-      - name: Deploy to Render
+      - name: Deploy Backend
+        if: success()
         run: |
-          echo "Backend deployment configured"
-          # Add your deployment script here
-          # Example for Render:
-          # curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}
-
-  deploy-frontend:
-    name: Deploy Frontend
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
+          echo "Deploying backend to production..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_BACKEND }}" || echo "Backend deploy hook not configured"
       
-      - name: Deploy to Vercel
+      - name: Deploy AI Service
+        if: success()
         run: |
-          echo "Frontend deployment configured"
-          # Vercel auto-deploys from GitHub
-          # Or use Vercel CLI:
-          # npm i -g vercel
-          # vercel --prod --token=${{ secrets.VERCEL_TOKEN }}
-
-  deploy-ai-service:
-    name: Deploy AI Service
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
+          echo "Deploying AI service to production..."
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_AI }}" || echo "AI service deploy hook not configured"
       
-      - name: Deploy to Render
+      - name: Deploy Frontend
+        if: success()
         run: |
-          echo "AI Service deployment configured"
-          # Add your deployment script here
+          echo "Deploying frontend to production..."
+          echo "Vercel auto-deploys from main branch"
+      
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "✅ Deployment triggered successfully"
+          echo "Backend: Check Render dashboard"
+          echo "AI Service: Check Render dashboard"
+          echo "Frontend: Check Vercel dashboard"

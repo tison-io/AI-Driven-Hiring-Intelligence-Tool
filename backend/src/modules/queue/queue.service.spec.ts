@@ -42,7 +42,7 @@ describe('QueueService', () => {
       const result = await service.addAIProcessingJob(
         'candidate-123',
         'Backend Engineer',
-        'Node.js experience required'
+        'Node.js experience required',
       );
 
       expect(mockQueue.add).toHaveBeenCalledWith(
@@ -58,7 +58,7 @@ describe('QueueService', () => {
             type: 'exponential',
             delay: 2000,
           },
-        }
+        },
       );
 
       expect(result).toBe(mockJobResult);
@@ -82,7 +82,7 @@ describe('QueueService', () => {
             type: 'exponential',
             delay: 2000,
           },
-        }
+        },
       );
     });
 
@@ -90,7 +90,7 @@ describe('QueueService', () => {
       mockQueue.add.mockRejectedValue(new Error('Queue connection failed'));
 
       await expect(
-        service.addAIProcessingJob('candidate-123', 'Backend Engineer')
+        service.addAIProcessingJob('candidate-123', 'Backend Engineer'),
       ).rejects.toThrow('Queue connection failed');
     });
   });
@@ -123,7 +123,7 @@ describe('QueueService', () => {
       mockQueue.getJob.mockRejectedValue(new Error('Redis connection failed'));
 
       await expect(service.getJobStatus('job-123')).rejects.toThrow(
-        'Redis connection failed'
+        'Redis connection failed',
       );
     });
   });

@@ -85,10 +85,7 @@ describe('LinkedInMapper', () => {
 
   describe('transformMultipleProfiles', () => {
     it('should transform multiple valid profiles', async () => {
-      const profiles = [
-        { fullName: 'John Doe' },
-        { fullName: 'Jane Smith' },
-      ];
+      const profiles = [{ fullName: 'John Doe' }, { fullName: 'Jane Smith' }];
 
       const result = await mapper.transformMultipleProfiles(profiles);
 
@@ -98,10 +95,7 @@ describe('LinkedInMapper', () => {
     });
 
     it('should filter out invalid profiles', async () => {
-      const profiles = [
-        { fullName: 'John Doe' },
-        { headline: 'No name' },
-      ];
+      const profiles = [{ fullName: 'John Doe' }, { headline: 'No name' }];
 
       const result = await mapper.transformMultipleProfiles(profiles);
 

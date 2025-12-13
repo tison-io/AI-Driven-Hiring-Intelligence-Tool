@@ -93,10 +93,14 @@ describe('JwtStrategy', () => {
 
     it('should handle database errors gracefully', async () => {
       // Arrange
-      usersService.findById.mockRejectedValue(new Error('Database connection error'));
+      usersService.findById.mockRejectedValue(
+        new Error('Database connection error'),
+      );
 
       // Act & Assert
-      await expect(strategy.validate(mockPayload)).rejects.toThrow('Database connection error');
+      await expect(strategy.validate(mockPayload)).rejects.toThrow(
+        'Database connection error',
+      );
       expect(usersService.findById).toHaveBeenCalledWith(mockPayload.sub);
     });
 

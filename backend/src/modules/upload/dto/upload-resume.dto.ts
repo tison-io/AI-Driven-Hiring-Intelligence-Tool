@@ -7,9 +7,10 @@ export class UploadResumeDto {
   @IsString()
   jobRole: string;
 
-  @ApiProperty({ 
-    example: 'Looking for a backend engineer with 3+ years experience in Node.js, MongoDB, and REST APIs',
-    description: 'Job description and specific requirements'
+  @ApiProperty({
+    example:
+      'Looking for a backend engineer with 3+ years experience in Node.js, MongoDB, and REST APIs',
+    description: 'Job description and specific requirements',
   })
   @IsNotEmpty()
   @IsString()

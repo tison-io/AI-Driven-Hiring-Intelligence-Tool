@@ -20,13 +20,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
 
     // Log the HTTP exception
-    this.errorLogsService.createLog({
-      userOrSystem: request.user?.['id'] || 'system',
-      action: 'http_exception',
-      target: `${request.method} ${request.url}`,
-      details: `${exception.message} (Status: ${status})`,
-      severity: status >= 500 ? 'critical' : status >= 400 ? 'error' : 'warning',
-    }).catch(() => {}); // Silent fail to prevent logging errors from breaking the response
+    this.errorLogsService
+      .createLog({
+        userOrSystem: request.user?.['id'] || 'system',
+        action: 'http_exception',
+        target: `${request.method} ${request.url}`,
+        details: `${exception.message} (Status: ${status})`,
+        severity:
+          status >= 500 ? 'critical' : status >= 400 ? 'error' : 'warning',
+      })
+      .catch(() => {}); // Silent fail to prevent logging errors from breaking the response
 
     const errorResponse = {
       error: true,

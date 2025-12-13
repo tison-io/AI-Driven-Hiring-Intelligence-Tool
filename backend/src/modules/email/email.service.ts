@@ -13,12 +13,19 @@ export class EmailService {
     this.apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
   }
 
-  async sendPasswordResetEmail(to: string, resetToken: string, userName?: string): Promise<void> {
+  async sendPasswordResetEmail(
+    to: string,
+    resetToken: string,
+    userName?: string,
+  ): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/reset-password/${resetToken}`;
     const greeting = userName ? `Hi ${userName},` : 'Hi,';
-    
+
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.sender = { name: this.brevoConfig.fromName, email: this.brevoConfig.fromEmail };
+    sendSmtpEmail.sender = {
+      name: this.brevoConfig.fromName,
+      email: this.brevoConfig.fromEmail,
+    };
     sendSmtpEmail.to = [{ email: to }];
     sendSmtpEmail.subject = 'Password Reset Request';
     sendSmtpEmail.htmlContent = `
@@ -33,11 +40,17 @@ export class EmailService {
     await this.apiInstance.sendTransacEmail(sendSmtpEmail);
   }
 
-  async sendPasswordResetConfirmation(to: string, userName?: string): Promise<void> {
+  async sendPasswordResetConfirmation(
+    to: string,
+    userName?: string,
+  ): Promise<void> {
     const greeting = userName ? `Hi ${userName},` : 'Hi,';
-    
+
     const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
-    sendSmtpEmail.sender = { name: this.brevoConfig.fromName, email: this.brevoConfig.fromEmail };
+    sendSmtpEmail.sender = {
+      name: this.brevoConfig.fromName,
+      email: this.brevoConfig.fromEmail,
+    };
     sendSmtpEmail.to = [{ email: to }];
     sendSmtpEmail.subject = 'Password Reset Successful';
     sendSmtpEmail.htmlContent = `

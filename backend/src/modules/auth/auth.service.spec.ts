@@ -128,7 +128,9 @@ describe('AuthService', () => {
       usersService.create.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(service.register(registerDto)).rejects.toThrow('Database error');
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -149,7 +151,10 @@ describe('AuthService', () => {
 
       // Assert
       expect(usersService.findByEmail).toHaveBeenCalledWith(loginDto.email);
-      expect(bcrypt.compare).toHaveBeenCalledWith(loginDto.password, mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        loginDto.password,
+        mockUser.password,
+      );
       expect(jwtService.sign).toHaveBeenCalledWith({
         email: mockUser.email,
         sub: mockUser._id,
@@ -180,7 +185,10 @@ describe('AuthService', () => {
       await expect(service.login(loginDto)).rejects.toThrow(
         new UnauthorizedException('Invalid credentials'),
       );
-      expect(bcrypt.compare).toHaveBeenCalledWith(loginDto.password, mockUser.password);
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        loginDto.password,
+        mockUser.password,
+      );
     });
   });
 
@@ -206,7 +214,10 @@ describe('AuthService', () => {
         changePasswordDto.currentPassword,
         mockUser.password,
       );
-      expect(bcrypt.hash).toHaveBeenCalledWith(changePasswordDto.newPassword, 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith(
+        changePasswordDto.newPassword,
+        10,
+      );
       expect(usersService.updatePassword).toHaveBeenCalledWith(
         userId,
         '$2b$10$newHashedPassword',
@@ -219,9 +230,9 @@ describe('AuthService', () => {
       usersService.findById.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(service.changePassword(userId, changePasswordDto)).rejects.toThrow(
-        new UnauthorizedException('User not found'),
-      );
+      await expect(
+        service.changePassword(userId, changePasswordDto),
+      ).rejects.toThrow(new UnauthorizedException('User not found'));
     });
 
     it('should throw UnauthorizedException if current password is incorrect', async () => {
@@ -230,7 +241,9 @@ describe('AuthService', () => {
       mockedBcrypt.compare.mockResolvedValue(false as never);
 
       // Act & Assert
-      await expect(service.changePassword(userId, changePasswordDto)).rejects.toThrow(
+      await expect(
+        service.changePassword(userId, changePasswordDto),
+      ).rejects.toThrow(
         new UnauthorizedException('Current password is incorrect'),
       );
       expect(usersService.updatePassword).not.toHaveBeenCalled();

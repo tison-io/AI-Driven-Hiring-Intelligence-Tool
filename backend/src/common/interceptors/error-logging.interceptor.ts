@@ -16,7 +16,7 @@ export class ErrorLoggingInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    
+
     return next.handle().pipe(
       catchError((error) => {
         this.logError(error, context, user).catch(() => {});
@@ -25,19 +25,24 @@ export class ErrorLoggingInterceptor implements NestInterceptor {
     );
   }
 
-  private async logError(error: any, context: ExecutionContext, user?: any): Promise<void> {
+  private async logError(
+    error: any,
+    context: ExecutionContext,
+    user?: any,
+  ): Promise<void> {
     const request = context.switchToHttp().getRequest();
     const handler = context.getHandler();
     const className = context.getClass().name;
     const methodName = handler.name;
-    
+
     let severity: 'info' | 'warning' | 'error' | 'critical' = 'error';
-    
+
     if (error instanceof HttpException) {
       const status = error.getStatus();
-      severity = status >= 500 ? 'critical' : status >= 400 ? 'warning' : 'error';
+      severity =
+        status >= 500 ? 'critical' : status >= 400 ? 'warning' : 'error';
     }
-    
+
     await this.errorLogsService.createLog({
       userOrSystem: user?.id ? `user:${user.id}` : 'system',
       action: `${className}.${methodName}`,

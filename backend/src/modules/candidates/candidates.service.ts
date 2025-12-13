@@ -11,14 +11,19 @@ export class CandidatesService {
     private candidateModel: Model<CandidateDocument>,
   ) {}
 
-  async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<CandidateDocument[]> {
-    const query: FilterQuery<CandidateDocument> = userRole === 'admin' ? {} : { createdBy: userId };
+  async findAll(
+    filters: CandidateFilterDto,
+    userId: string,
+    userRole: string,
+  ): Promise<CandidateDocument[]> {
+    const query: FilterQuery<CandidateDocument> =
+      userRole === 'admin' ? {} : { createdBy: userId };
 
     if (filters.search) {
       query.$or = [
         { name: { $regex: filters.search, $options: 'i' } },
         { skills: { $regex: filters.search, $options: 'i' } },
-        { jobRole: { $regex: filters.search, $options: 'i' } }
+        { jobRole: { $regex: filters.search, $options: 'i' } },
       ];
     }
 
@@ -26,7 +31,10 @@ export class CandidatesService {
       query.skills = { $regex: filters.skill, $options: 'i' };
     }
 
-    if (filters.experience_min !== undefined || filters.experience_max !== undefined) {
+    if (
+      filters.experience_min !== undefined ||
+      filters.experience_max !== undefined
+    ) {
       query.experienceYears = {};
       if (filters.experience_min !== undefined) {
         query.experienceYears.$gte = filters.experience_min;
@@ -62,8 +70,13 @@ export class CandidatesService {
     return candidate.save();
   }
 
-  async update(id: string, updateData: Partial<Candidate>): Promise<CandidateDocument | null> {
-    return this.candidateModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  async update(
+    id: string,
+    updateData: Partial<Candidate>,
+  ): Promise<CandidateDocument | null> {
+    return this.candidateModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
   }
 
   async findByUserId(userId: string): Promise<CandidateDocument[]> {
@@ -80,20 +93,20 @@ export class CandidatesService {
 
   async delete(id: string): Promise<{ success: boolean; message: string }> {
     const result = await this.candidateModel.findByIdAndDelete(id).exec();
-    
+
     if (!result) {
       throw new NotFoundException('Candidate not found');
     }
 
     return {
       success: true,
-      message: 'Candidate and all PII data deleted successfully'
+      message: 'Candidate and all PII data deleted successfully',
     };
   }
 
   async toggleShortlist(id: string): Promise<CandidateDocument> {
     const candidate = await this.candidateModel.findById(id).exec();
-    
+
     if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }

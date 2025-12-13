@@ -12,13 +12,19 @@ export class MetricWithChange {
 }
 
 export class SystemHealthDto {
-  @ApiProperty({ example: 2500, description: 'Average processing time in milliseconds' })
+  @ApiProperty({
+    example: 2500,
+    description: 'Average processing time in milliseconds',
+  })
   averageProcessingTime: number;
 
   @ApiProperty({ example: 95.5, description: 'Success rate percentage' })
   successRate: number;
 
-  @ApiProperty({ example: 3, description: 'Number of failed processing attempts' })
+  @ApiProperty({
+    example: 3,
+    description: 'Number of failed processing attempts',
+  })
   failedProcessingCount: number;
 }
 

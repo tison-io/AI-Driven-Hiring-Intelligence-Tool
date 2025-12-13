@@ -25,24 +25,35 @@ export class AuditLogsService {
     }
   }
 
-  async findAll(filterDto: AuditLogFilterDto): Promise<PaginatedAuditLogsResponseDto> {
+  async findAll(
+    filterDto: AuditLogFilterDto,
+  ): Promise<PaginatedAuditLogsResponseDto> {
     try {
-      const { page = 1, limit = 10, startDate, endDate, userOrSystem, action, target } = filterDto;
-      
+      const {
+        page = 1,
+        limit = 10,
+        startDate,
+        endDate,
+        userOrSystem,
+        action,
+        target,
+      } = filterDto;
+
       const filter: FilterQuery<AuditLogDocument> = {};
-      
+
       if (startDate || endDate) {
         filter.timestamp = {};
         if (startDate) filter.timestamp.$gte = new Date(startDate);
         if (endDate) filter.timestamp.$lte = new Date(endDate);
       }
-      
-      if (userOrSystem) filter.userOrSystem = { $regex: userOrSystem, $options: 'i' };
+
+      if (userOrSystem)
+        filter.userOrSystem = { $regex: userOrSystem, $options: 'i' };
       if (action) filter.action = { $regex: action, $options: 'i' };
       if (target) filter.target = { $regex: target, $options: 'i' };
 
       const skip = (page - 1) * limit;
-      
+
       const [data, total] = await Promise.all([
         this.auditLogModel
           .find(filter)
@@ -54,7 +65,7 @@ export class AuditLogsService {
       ]);
 
       return {
-        data: data.map(log => ({
+        data: data.map((log) => ({
           id: log._id.toString(),
           timestamp: log.timestamp,
           userOrSystem: log.userOrSystem,

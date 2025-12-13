@@ -38,16 +38,16 @@ describe('CandidatesController', () => {
     user: {
       id: 'user123',
       role: 'recruiter',
-      email: 'recruiter@test.com'
-    }
+      email: 'recruiter@test.com',
+    },
   };
 
   const mockAdminRequest = {
     user: {
       id: 'admin123',
       role: 'admin',
-      email: 'admin@test.com'
-    }
+      email: 'admin@test.com',
+    },
   };
 
   beforeEach(async () => {
@@ -67,9 +67,9 @@ describe('CandidatesController', () => {
         },
       ],
     })
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: jest.fn(() => true) })
-    .compile();
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     controller = module.get<CandidatesController>(CandidatesController);
     candidatesService = module.get(CandidatesService);
@@ -92,7 +92,7 @@ describe('CandidatesController', () => {
       expect(candidatesService.findAll).toHaveBeenCalledWith(
         filters,
         mockRequest.user.id,
-        mockRequest.user.role
+        mockRequest.user.role,
       );
       expect(result).toEqual([mockCandidate]);
     });
@@ -109,7 +109,7 @@ describe('CandidatesController', () => {
       expect(candidatesService.findAll).toHaveBeenCalledWith(
         filters,
         mockAdminRequest.user.id,
-        mockAdminRequest.user.role
+        mockAdminRequest.user.role,
       );
       expect(result).toEqual([mockCandidate]);
     });
@@ -126,7 +126,7 @@ describe('CandidatesController', () => {
       expect(candidatesService.findAll).toHaveBeenCalledWith(
         filters,
         mockRequest.user.id,
-        mockRequest.user.role
+        mockRequest.user.role,
       );
       expect(result).toEqual([]);
     });
@@ -140,7 +140,7 @@ describe('CandidatesController', () => {
         score_min: 70,
         score_max: 90,
         jobRole: 'Backend',
-        search: 'john'
+        search: 'john',
       };
       candidatesService.findAll.mockResolvedValue([mockCandidate as any]);
 
@@ -151,7 +151,7 @@ describe('CandidatesController', () => {
       expect(candidatesService.findAll).toHaveBeenCalledWith(
         filters,
         mockRequest.user.id,
-        mockRequest.user.role
+        mockRequest.user.role,
       );
       expect(result).toEqual([mockCandidate]);
     });
@@ -162,7 +162,9 @@ describe('CandidatesController', () => {
       candidatesService.findAll.mockRejectedValue(new Error('Database error'));
 
       // Act & Assert
-      await expect(controller.findAll(filters, mockRequest)).rejects.toThrow('Database error');
+      await expect(controller.findAll(filters, mockRequest)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -196,10 +198,14 @@ describe('CandidatesController', () => {
     it('should handle invalid id format', async () => {
       // Arrange
       const invalidId = 'invalid-id';
-      candidatesService.findById.mockRejectedValue(new Error('Invalid ObjectId'));
+      candidatesService.findById.mockRejectedValue(
+        new Error('Invalid ObjectId'),
+      );
 
       // Act & Assert
-      await expect(controller.findById(invalidId)).rejects.toThrow('Invalid ObjectId');
+      await expect(controller.findById(invalidId)).rejects.toThrow(
+        'Invalid ObjectId',
+      );
     });
   });
 
@@ -209,7 +215,7 @@ describe('CandidatesController', () => {
       const candidateId = '64f8a1b2c3d4e5f6789012ab';
       const deleteResponse = {
         success: true,
-        message: 'Candidate and all PII data deleted successfully'
+        message: 'Candidate and all PII data deleted successfully',
       };
       candidatesService.delete.mockResolvedValue(deleteResponse);
 
@@ -224,20 +230,28 @@ describe('CandidatesController', () => {
     it('should handle candidate not found for deletion', async () => {
       // Arrange
       const candidateId = 'nonexistent-id';
-      candidatesService.delete.mockRejectedValue(new Error('Candidate not found'));
+      candidatesService.delete.mockRejectedValue(
+        new Error('Candidate not found'),
+      );
 
       // Act & Assert
-      await expect(controller.delete(candidateId)).rejects.toThrow('Candidate not found');
+      await expect(controller.delete(candidateId)).rejects.toThrow(
+        'Candidate not found',
+      );
       expect(candidatesService.delete).toHaveBeenCalledWith(candidateId);
     });
 
     it('should handle database errors during deletion', async () => {
       // Arrange
       const candidateId = '64f8a1b2c3d4e5f6789012ab';
-      candidatesService.delete.mockRejectedValue(new Error('Database connection failed'));
+      candidatesService.delete.mockRejectedValue(
+        new Error('Database connection failed'),
+      );
 
       // Act & Assert
-      await expect(controller.delete(candidateId)).rejects.toThrow('Database connection failed');
+      await expect(controller.delete(candidateId)).rejects.toThrow(
+        'Database connection failed',
+      );
     });
   });
 
@@ -246,33 +260,47 @@ describe('CandidatesController', () => {
       // Arrange
       const candidateId = '64f8a1b2c3d4e5f6789012ab';
       const updatedCandidate = { ...mockCandidate, isShortlisted: true };
-      candidatesService.toggleShortlist.mockResolvedValue(updatedCandidate as any);
+      candidatesService.toggleShortlist.mockResolvedValue(
+        updatedCandidate as any,
+      );
 
       // Act
       const result = await controller.toggleShortlist(candidateId);
 
       // Assert
-      expect(candidatesService.toggleShortlist).toHaveBeenCalledWith(candidateId);
+      expect(candidatesService.toggleShortlist).toHaveBeenCalledWith(
+        candidateId,
+      );
       expect(result).toEqual(updatedCandidate);
     });
 
     it('should handle candidate not found for shortlist toggle', async () => {
       // Arrange
       const candidateId = 'nonexistent-id';
-      candidatesService.toggleShortlist.mockRejectedValue(new Error('Candidate not found'));
+      candidatesService.toggleShortlist.mockRejectedValue(
+        new Error('Candidate not found'),
+      );
 
       // Act & Assert
-      await expect(controller.toggleShortlist(candidateId)).rejects.toThrow('Candidate not found');
-      expect(candidatesService.toggleShortlist).toHaveBeenCalledWith(candidateId);
+      await expect(controller.toggleShortlist(candidateId)).rejects.toThrow(
+        'Candidate not found',
+      );
+      expect(candidatesService.toggleShortlist).toHaveBeenCalledWith(
+        candidateId,
+      );
     });
 
     it('should handle database errors during shortlist toggle', async () => {
       // Arrange
       const candidateId = '64f8a1b2c3d4e5f6789012ab';
-      candidatesService.toggleShortlist.mockRejectedValue(new Error('Update failed'));
+      candidatesService.toggleShortlist.mockRejectedValue(
+        new Error('Update failed'),
+      );
 
       // Act & Assert
-      await expect(controller.toggleShortlist(candidateId)).rejects.toThrow('Update failed');
+      await expect(controller.toggleShortlist(candidateId)).rejects.toThrow(
+        'Update failed',
+      );
     });
   });
 
@@ -294,8 +322,8 @@ describe('CandidatesController', () => {
       // Assert - Verify user context is properly extracted and passed
       expect(candidatesService.findAll).toHaveBeenCalledWith(
         filters,
-        mockRequest.user.id,    // User ID extracted from JWT
-        mockRequest.user.role   // User role extracted from JWT
+        mockRequest.user.id, // User ID extracted from JWT
+        mockRequest.user.role, // User role extracted from JWT
       );
     });
 
@@ -306,13 +334,23 @@ describe('CandidatesController', () => {
 
       // Act - Test with recruiter
       await controller.findAll(filters, mockRequest);
-      
+
       // Act - Test with admin
       await controller.findAll(filters, mockAdminRequest);
 
       // Assert
-      expect(candidatesService.findAll).toHaveBeenNthCalledWith(1, filters, 'user123', 'recruiter');
-      expect(candidatesService.findAll).toHaveBeenNthCalledWith(2, filters, 'admin123', 'admin');
+      expect(candidatesService.findAll).toHaveBeenNthCalledWith(
+        1,
+        filters,
+        'user123',
+        'recruiter',
+      );
+      expect(candidatesService.findAll).toHaveBeenNthCalledWith(
+        2,
+        filters,
+        'admin123',
+        'admin',
+      );
     });
   });
 });

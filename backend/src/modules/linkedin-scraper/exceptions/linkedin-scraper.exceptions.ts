@@ -17,10 +17,10 @@ export class RapidApiException extends HttpException {
 // Exception for rate limit exceeded
 export class RateLimitExceededException extends HttpException {
   constructor(resetTime?: string) {
-    const message = resetTime 
-      ? `Rate limit exceeded. Try again after ${resetTime}` 
+    const message = resetTime
+      ? `Rate limit exceeded. Try again after ${resetTime}`
       : 'Rate limit exceeded. Please try again later';
-    
+
     super(
       {
         error: 'Rate Limit Exceeded',

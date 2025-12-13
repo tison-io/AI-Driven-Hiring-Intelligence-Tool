@@ -1,5 +1,17 @@
-import { Controller, Get, Delete, UseGuards, Request, Res } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Delete,
+  UseGuards,
+  Request,
+  Res,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { PrivacyService } from './privacy.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Response } from 'express';
@@ -11,14 +23,20 @@ export class PrivacyController {
 
   @Get('policy')
   @ApiOperation({ summary: 'Get privacy policy content' })
-  @ApiResponse({ status: 200, description: 'Privacy policy retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Privacy policy retrieved successfully',
+  })
   async getPrivacyPolicy() {
     return this.privacyService.getPrivacyPolicy();
   }
 
   @Get('retention-policy')
   @ApiOperation({ summary: 'Get data retention policy' })
-  @ApiResponse({ status: 200, description: 'Data retention policy retrieved successfully' })
+  @ApiResponse({
+    status: 200,
+    description: 'Data retention policy retrieved successfully',
+  })
   async getRetentionPolicy() {
     return this.privacyService.getRetentionPolicy();
   }
@@ -31,7 +49,7 @@ export class PrivacyController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async exportUserData(@Request() req, @Res() res: Response) {
     const userData = await this.privacyService.exportUserData(req.user.id);
-    
+
     res.set({
       'Content-Type': 'application/json',
       'Content-Disposition': `attachment; filename="user-data-${req.user.id}.json"`,

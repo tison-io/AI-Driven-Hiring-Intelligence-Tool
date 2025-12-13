@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsDateString, IsIn, IsNumber, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsDateString,
+  IsIn,
+  IsNumber,
+  Min,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 
 export class ErrorLogFilterDto {

@@ -26,24 +26,35 @@ export class ErrorLogsService {
     }
   }
 
-  async findAll(filterDto: ErrorLogFilterDto): Promise<PaginatedErrorLogsResponseDto> {
+  async findAll(
+    filterDto: ErrorLogFilterDto,
+  ): Promise<PaginatedErrorLogsResponseDto> {
     try {
-      const { page = 1, limit = 10, startDate, endDate, severity, userOrSystem, action } = filterDto;
-      
+      const {
+        page = 1,
+        limit = 10,
+        startDate,
+        endDate,
+        severity,
+        userOrSystem,
+        action,
+      } = filterDto;
+
       const filter: FilterQuery<ErrorLogDocument> = {};
-      
+
       if (startDate || endDate) {
         filter.timestamp = {};
         if (startDate) filter.timestamp.$gte = new Date(startDate);
         if (endDate) filter.timestamp.$lte = new Date(endDate);
       }
-      
+
       if (severity) filter.severity = severity;
-      if (userOrSystem) filter.userOrSystem = { $regex: userOrSystem, $options: 'i' };
+      if (userOrSystem)
+        filter.userOrSystem = { $regex: userOrSystem, $options: 'i' };
       if (action) filter.action = { $regex: action, $options: 'i' };
 
       const skip = (page - 1) * limit;
-      
+
       const [data, total] = await Promise.all([
         this.errorLogModel
           .find(filter)
@@ -55,7 +66,7 @@ export class ErrorLogsService {
       ]);
 
       return {
-        data: data.map(log => ({
+        data: data.map((log) => ({
           id: log._id.toString(),
           timestamp: log.timestamp,
           userOrSystem: log.userOrSystem,
@@ -73,6 +84,4 @@ export class ErrorLogsService {
       throw new InternalServerErrorException('Failed to retrieve error logs');
     }
   }
-
-
 }

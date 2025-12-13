@@ -1,20 +1,20 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  UseInterceptors, 
-  UploadedFile, 
+import {
+  Controller,
+  Post,
+  Body,
+  UseInterceptors,
+  UploadedFile,
   UseGuards,
-  Request 
+  Request,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { 
-  ApiTags, 
-  ApiOperation, 
-  ApiResponse, 
-  ApiBearerAuth, 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
   ApiConsumes,
-  ApiBody 
+  ApiBody,
 } from '@nestjs/swagger';
 import { UploadService } from './upload.service';
 import { UploadResumeDto } from './dto/upload-resume.dto';
@@ -54,7 +54,10 @@ export class UploadController {
     },
   })
   @ApiResponse({ status: 201, description: 'Resume uploaded successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid file format or missing job role' })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid file format or missing job role',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async uploadResume(
     @UploadedFile(FileValidationPipe) file: Express.Multer.File,
@@ -62,17 +65,23 @@ export class UploadController {
     @Request() req,
   ) {
     return this.uploadService.processResume(
-      file, 
-      uploadResumeDto.jobRole, 
+      file,
+      uploadResumeDto.jobRole,
       req.user.id,
-      uploadResumeDto.jobDescription
+      uploadResumeDto.jobDescription,
     );
   }
 
   @Post('linkedin')
   @ApiOperation({ summary: 'Process LinkedIn profile URL' })
-  @ApiResponse({ status: 201, description: 'LinkedIn profile processing started' })
-  @ApiResponse({ status: 400, description: 'Invalid LinkedIn URL or missing job role' })
+  @ApiResponse({
+    status: 201,
+    description: 'LinkedIn profile processing started',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid LinkedIn URL or missing job role',
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async processLinkedin(
     @Body() linkedinProfileDto: LinkedinProfileDto,

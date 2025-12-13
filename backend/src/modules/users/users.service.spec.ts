@@ -24,10 +24,12 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     // Create a mock constructor function with proper typing
-    const mockUserModelConstructor: any = jest.fn().mockImplementation((userData) => ({
-      ...userData,
-      save: jest.fn().mockResolvedValue({ ...userData, ...mockUser }),
-    }));
+    const mockUserModelConstructor: any = jest
+      .fn()
+      .mockImplementation((userData) => ({
+        ...userData,
+        save: jest.fn().mockResolvedValue({ ...userData, ...mockUser }),
+      }));
 
     // Add static methods to the constructor
     mockUserModelConstructor.findOne = jest.fn().mockReturnValue({
@@ -108,7 +110,9 @@ describe('UsersService', () => {
       mockedBcrypt.hash.mockRejectedValue(new Error('Hashing failed') as never);
 
       // Act & Assert
-      await expect(service.create(registerDto)).rejects.toThrow('Hashing failed');
+      await expect(service.create(registerDto)).rejects.toThrow(
+        'Hashing failed',
+      );
     });
   });
 
@@ -122,7 +126,9 @@ describe('UsersService', () => {
       const result = await service.findByEmail('test@example.com');
 
       // Assert
-      expect(mockUserModel.findOne).toHaveBeenCalledWith({ email: 'test@example.com' });
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        email: 'test@example.com',
+      });
       expect(execMock).toHaveBeenCalled();
       expect(result).toEqual(mockUser);
     });
@@ -136,7 +142,9 @@ describe('UsersService', () => {
       const result = await service.findByEmail('nonexistent@example.com');
 
       // Assert
-      expect(mockUserModel.findOne).toHaveBeenCalledWith({ email: 'nonexistent@example.com' });
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        email: 'nonexistent@example.com',
+      });
       expect(result).toBeNull();
     });
 
@@ -146,7 +154,9 @@ describe('UsersService', () => {
       mockUserModel.findOne.mockReturnValue({ exec: execMock });
 
       // Act & Assert
-      await expect(service.findByEmail('test@example.com')).rejects.toThrow('Database error');
+      await expect(service.findByEmail('test@example.com')).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
@@ -193,10 +203,9 @@ describe('UsersService', () => {
       await service.updatePassword(userId, hashedPassword);
 
       // Assert
-      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(
-        userId,
-        { password: hashedPassword },
-      );
+      expect(mockUserModel.findByIdAndUpdate).toHaveBeenCalledWith(userId, {
+        password: hashedPassword,
+      });
       expect(execMock).toHaveBeenCalled();
     });
 
@@ -206,7 +215,9 @@ describe('UsersService', () => {
       mockUserModel.findByIdAndUpdate.mockReturnValue({ exec: execMock });
 
       // Act & Assert
-      await expect(service.updatePassword(userId, hashedPassword)).rejects.toThrow('Update failed');
+      await expect(
+        service.updatePassword(userId, hashedPassword),
+      ).rejects.toThrow('Update failed');
     });
   });
 
@@ -228,7 +239,9 @@ describe('UsersService', () => {
 
     it('should handle deletion errors', async () => {
       // Arrange
-      const execMock = jest.fn().mockRejectedValue(new Error('Deletion failed'));
+      const execMock = jest
+        .fn()
+        .mockRejectedValue(new Error('Deletion failed'));
       mockUserModel.findByIdAndDelete.mockReturnValue({ exec: execMock });
 
       // Act & Assert

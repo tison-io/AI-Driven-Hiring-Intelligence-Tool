@@ -14,10 +14,18 @@ try {
 export class ExportService {
   constructor(private candidatesService: CandidatesService) {}
 
-  async exportCandidatesCSV(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
-    const candidates = await this.candidatesService.findAll(filters, userId, userRole);
-    
-    const csvData = candidates.map(candidate => ({
+  async exportCandidatesCSV(
+    filters: CandidateFilterDto,
+    userId: string,
+    userRole: string,
+  ): Promise<Buffer> {
+    const candidates = await this.candidatesService.findAll(
+      filters,
+      userId,
+      userRole,
+    );
+
+    const csvData = candidates.map((candidate) => ({
       name: candidate.name,
       linkedinUrl: candidate.linkedinUrl || '',
       experienceYears: candidate.experienceYears,
@@ -32,14 +40,22 @@ export class ExportService {
     const worksheet = XLSX.utils.json_to_sheet(csvData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Candidates');
-    
+
     return XLSX.write(workbook, { type: 'buffer', bookType: 'csv' });
   }
 
-  async exportCandidatesXLSX(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
-    const candidates = await this.candidatesService.findAll(filters, userId, userRole);
-    
-    const xlsxData = candidates.map(candidate => ({
+  async exportCandidatesXLSX(
+    filters: CandidateFilterDto,
+    userId: string,
+    userRole: string,
+  ): Promise<Buffer> {
+    const candidates = await this.candidatesService.findAll(
+      filters,
+      userId,
+      userRole,
+    );
+
+    const xlsxData = candidates.map((candidate) => ({
       Name: candidate.name,
       'LinkedIn URL': candidate.linkedinUrl || '',
       'Years of Experience': candidate.experienceYears,
@@ -54,13 +70,13 @@ export class ExportService {
     const worksheet = XLSX.utils.json_to_sheet(xlsxData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Candidates');
-    
+
     return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   }
 
   async generateCandidateReport(candidateId: string): Promise<string> {
     const candidate = await this.candidatesService.findById(candidateId);
-    
+
     if (!candidate) {
       throw new NotFoundException('Candidate not found');
     }
@@ -79,19 +95,19 @@ export class ExportService {
 - **Confidence Score**: ${candidate.confidenceScore || 'Pending'}%
 
 ### Key Strengths
-${candidate.keyStrengths.map(strength => `- ${strength}`).join('\n')}
+${candidate.keyStrengths.map((strength) => `- ${strength}`).join('\n')}
 
 ### Potential Weaknesses
-${candidate.potentialWeaknesses.map(weakness => `- ${weakness}`).join('\n')}
+${candidate.potentialWeaknesses.map((weakness) => `- ${weakness}`).join('\n')}
 
 ### Missing Skills
-${candidate.missingSkills.map(skill => `- ${skill}`).join('\n')}
+${candidate.missingSkills.map((skill) => `- ${skill}`).join('\n')}
 
 ### Recommended Interview Questions
 ${candidate.interviewQuestions.map((question, index) => `${index + 1}. ${question}`).join('\n')}
 
 ### Skills
-${candidate.skills.map(skill => `- ${skill}`).join('\n')}
+${candidate.skills.map((skill) => `- ${skill}`).join('\n')}
 
 ### Bias Check
 ${candidate.biasCheck || 'No bias concerns identified'}

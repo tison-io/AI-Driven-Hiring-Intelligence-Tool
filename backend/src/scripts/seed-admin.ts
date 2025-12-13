@@ -12,7 +12,7 @@ async function seedAdmin() {
   try {
     // Check if admin already exists
     const existingAdmin = await usersService.findByEmail(adminEmail);
-    
+
     if (existingAdmin) {
       console.log('Admin user already exists');
       await app.close();
@@ -24,7 +24,6 @@ async function seedAdmin() {
     console.log('Admin user created successfully');
     console.log(`Email: ${adminEmail}`);
     console.log(`Password: ${adminPassword}`);
-    
   } catch (error) {
     console.error('Error creating admin user:', error);
   }

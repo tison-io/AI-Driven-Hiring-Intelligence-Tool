@@ -22,11 +22,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user) {
       return null;
     }
-    return { 
-      id: user._id, 
-      email: user.email, 
-      role: user.role, 
-      fullName: user.fullName 
+    return {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
     };
   }
 }

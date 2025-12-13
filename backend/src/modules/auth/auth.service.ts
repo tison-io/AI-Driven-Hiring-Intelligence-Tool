@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
@@ -27,9 +31,14 @@ export class AuthService {
     const user = await this.usersService.create(registerDto);
     const userObj = user.toObject();
     const { password, ...result } = userObj;
-    
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
+
+    const payload = {
+      email: user.email,
+      sub: user._id,
+      role: user.role,
+      profileCompleted: user.profileCompleted || false,
+    };
+
     return {
       user: result,
       access_token: this.jwtService.sign(payload),
@@ -38,15 +47,20 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
-    
+
     if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const userObj = user.toObject();
     const { password, ...result } = userObj;
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
+    const payload = {
+      email: user.email,
+      sub: user._id,
+      role: user.role,
+      profileCompleted: user.profileCompleted || false,
+    };
+
     return {
       user: result,
       access_token: this.jwtService.sign(payload),
@@ -61,14 +75,17 @@ export class AuthService {
 
     const isCurrentPasswordValid = await bcrypt.compare(
       changePasswordDto.currentPassword,
-      user.password
+      user.password,
     );
 
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedException('Current password is incorrect');
     }
 
-    const hashedNewPassword = await bcrypt.hash(changePasswordDto.newPassword, 10);
+    const hashedNewPassword = await bcrypt.hash(
+      changePasswordDto.newPassword,
+      10,
+    );
     await this.usersService.updatePassword(userId, hashedNewPassword);
 
     return { message: 'Password changed successfully' };
@@ -85,11 +102,16 @@ export class AuthService {
     return result;
   }
 
-  async completeProfile(userId: string, profileData: CompleteProfileDto, userPhoto?: string, companyLogo?: string) {
+  async completeProfile(
+    userId: string,
+    profileData: CompleteProfileDto,
+    userPhoto?: string,
+    companyLogo?: string,
+  ) {
     const updateData = {
       ...profileData,
       ...(userPhoto && { userPhoto }),
-      ...(companyLogo && { companyLogo })
+      ...(companyLogo && { companyLogo }),
     };
 
     const user = await this.usersService.completeProfile(userId, updateData);
@@ -114,16 +136,26 @@ export class AuthService {
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
     const expires = new Date(Date.now() + 10 * 60 * 1000);
 
     await this.usersService.setPasswordResetToken(email, hashedToken, expires);
-    await this.emailService.sendPasswordResetEmail(email, resetToken, user.fullName);
+    await this.emailService.sendPasswordResetEmail(
+      email,
+      resetToken,
+      user.fullName,
+    );
 
     return { message: 'If the email exists, a reset link will be sent' };
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.usersService.findByResetToken(hashedToken);
 
@@ -133,7 +165,9 @@ export class AuthService {
 
     const isSameAsOld = await bcrypt.compare(newPassword, user.password);
     if (isSameAsOld) {
-      throw new BadRequestException('New password cannot be the same as the old password');
+      throw new BadRequestException(
+        'New password cannot be the same as the old password',
+      );
     }
 
     if (user.passwordHistory?.length > 0) {
@@ -146,8 +180,15 @@ export class AuthService {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    await this.usersService.resetPassword(user._id, hashedNewPassword, user.password);
-    await this.emailService.sendPasswordResetConfirmation(user.email, user.fullName);
+    await this.usersService.resetPassword(
+      user._id,
+      hashedNewPassword,
+      user.password,
+    );
+    await this.emailService.sendPasswordResetConfirmation(
+      user.email,
+      user.fullName,
+    );
 
     return { message: 'Password reset successful' };
   }
