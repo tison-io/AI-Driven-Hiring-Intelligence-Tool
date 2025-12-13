@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as FormData from 'form-data';
+import { ExtractedCandidateData, ScoringResult, BiasCheckFlag } from './interfaces/ai-response.interface';
 
 @Injectable()
 export class AiService {
@@ -19,25 +20,20 @@ export class AiService {
       // Step 1: Extract structured data from raw text
       const extractedData = await this.extractCandidateData(rawText);
 
-
-
       // Check if resume is valid (default to true if field is missing)
       if (extractedData.is_valid_resume === false) {
-        this.logger.warn(`AI marked resume as invalid. Reason: ${extractedData.error || 'Unknown'}`);
-        return this.getMockResponse();
+        throw new HttpException(`Invalid resume: ${extractedData.error || 'Unknown'}`, HttpStatus.BAD_REQUEST);
       }
-
       // Validate we have minimum required data
       if (!extractedData.candidate_name && !extractedData.skills?.length) {
-        this.logger.warn('Insufficient data extracted, falling back to mock data');
-        return this.getMockResponse();
+        throw new HttpException('Insufficient data extracted from resume: Missing required data', HttpStatus.BAD_REQUEST);
       }
 
       // Step 2: Score candidate against job role
       const startTime = Date.now();
       const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      
+
       // Log scoring results in table format
       const breakdown = scoringResult.scoring_breakdown || {};
       this.logger.log('| Time (s)   | Score    | Conf     | Skill    | Experience   | Education    | Certs    |');
@@ -52,14 +48,11 @@ export class AiService {
       if (error instanceof HttpException) {
         throw error;
       }
-
-      // Fallback to mock data if AI service fails
-      this.logger.warn('Falling back to mock AI response');
-      return this.getMockResponse();
+      throw error;
     }
   }
 
-  private async extractCandidateData(rawText: string) {
+  private async extractCandidateData(rawText: string): Promise<ExtractedCandidateData> {
     const response = await axios.post(`${this.aiServiceUrl}/parse-text`, {
       text: rawText
     }, {
@@ -72,7 +65,7 @@ export class AiService {
     return response.data.data;
   }
 
-  private async scoreCandidateData(candidateData: any, jobRole: string, customJobDescription?: string) {
+  private async scoreCandidateData(candidateData: ExtractedCandidateData, jobRole: string, customJobDescription?: string): Promise<ScoringResult> {
     const jobDescription = customJobDescription || this.getJobDescription(jobRole);
 
     const response = await axios.post(`${this.aiServiceUrl}/score`, {
@@ -86,16 +79,20 @@ export class AiService {
     return response.data;
   }
 
-  private transformAiResponse(extractedData: any, scoringResult: any) {
-    const keyStrengths = scoringResult.key_strengths?.map((s: any) =>
+  private transformAiResponse(extractedData: ExtractedCandidateData, scoringResult: ScoringResult) {
+    const keyStrengths = scoringResult.key_strengths?.map((s) =>
       typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
     ) || [];
 
-    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w: any) =>
+    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w) =>
       typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
     ) || [];
 
     const roleFitScore = scoringResult.role_fit_score || 0;
+    const breakdown = scoringResult.scoring_breakdown || {};
+    const relevantExperience = breakdown.relevant_years_calculated !== undefined
+      ? breakdown.relevant_years_calculated
+      : (extractedData.total_years_experience || 0);
 
     return {
       name: extractedData.candidate_name || 'Anonymous',
@@ -108,10 +105,10 @@ export class AiService {
       confidenceScore: scoringResult.confidence_score || 0,
       biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
       skills: extractedData.skills || [],
-      experienceYears: extractedData.total_years_experience || 0,
-      workExperience: extractedData.work_experience?.map((job: any) => ({
+      experienceYears: relevantExperience,
+      workExperience: extractedData.work_experience?.map((job) => ({
         company: job.company || '',
-        jobTitle: job.job_title || job.jobTitle || '', 
+        jobTitle: job.job_title || job.jobTitle || '',
         startDate: job.start_date || job.startDate || '',
         endDate: job.end_date || job.endDate || '',
         description: job.description || '',
@@ -122,7 +119,7 @@ export class AiService {
     };
   }
 
-  private formatBiasCheck(biasFlag: any): string {
+  private formatBiasCheck(biasFlag?: BiasCheckFlag): string {
     if (!biasFlag) return 'No bias analysis available';
 
     if (biasFlag.detected) {
@@ -145,30 +142,13 @@ export class AiService {
     return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
   }
 
-  private getMockResponse() {
-    return {
-      name: 'John Doe',
-      roleFitScore: Math.floor(Math.random() * 40) + 60,
-      keyStrengths: ['Strong technical background', 'Good communication skills'],
-      potentialWeaknesses: ['Limited leadership experience'],
-      missingSkills: ['Docker', 'Kubernetes'],
-      interviewQuestions: ['Tell me about your experience with microservices'],
-      confidenceScore: Math.floor(Math.random() * 20) + 80,
-      biasCheck: 'AI service unavailable - mock evaluation used',
-      skills: ['JavaScript', 'Node.js', 'React'],
-      experienceYears: Math.floor(Math.random() * 10) + 2,
-      education: [],
-      certifications: []
-    };
-  }
-
   async extractSkills(rawText: string): Promise<string[]> {
     try {
       const extractedData = await this.extractCandidateData(rawText);
       return extractedData.skills || [];
     } catch (error) {
       this.logger.error('Skill extraction failed', error.stack);
-      return ['JavaScript', 'Python', 'React'].filter(() => Math.random() > 0.7);
+      throw error;
     }
   }
 }

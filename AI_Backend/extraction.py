@@ -16,7 +16,7 @@ def extract_resume_data(raw_text: str):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": SYSTEM_EXTRACTION_PROMPT},
                 {"role": "user", "content": f"Extract resume data and return as JSON:\n{raw_text}"}
