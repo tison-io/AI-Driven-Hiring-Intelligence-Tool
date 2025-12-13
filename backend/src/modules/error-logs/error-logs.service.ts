@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery } from 'mongoose';
 import { ErrorLog, ErrorLogDocument } from './entities/error-log.entity';
 import { ErrorLogFilterDto } from './dto/error-log-filter.dto';
 import { PaginatedErrorLogsResponseDto } from './dto/error-log-response.dto';
@@ -30,7 +30,7 @@ export class ErrorLogsService {
     try {
       const { page = 1, limit = 10, startDate, endDate, severity, userOrSystem, action } = filterDto;
       
-      const filter: any = {};
+      const filter: FilterQuery<ErrorLogDocument> = {};
       
       if (startDate || endDate) {
         filter.timestamp = {};

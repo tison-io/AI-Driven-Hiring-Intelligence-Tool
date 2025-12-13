@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery } from 'mongoose';
 import { AuditLog, AuditLogDocument } from './entities/audit-log.entity';
 import { AuditLogFilterDto } from './dto/audit-log-filter.dto';
 import { PaginatedAuditLogsResponseDto } from './dto/audit-log-response.dto';
@@ -29,7 +29,7 @@ export class AuditLogsService {
     try {
       const { page = 1, limit = 10, startDate, endDate, userOrSystem, action, target } = filterDto;
       
-      const filter: any = {};
+      const filter: FilterQuery<AuditLogDocument> = {};
       
       if (startDate || endDate) {
         filter.timestamp = {};

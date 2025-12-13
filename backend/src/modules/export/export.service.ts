@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CandidatesService } from '../candidates/candidates.service';
+import { CandidateFilterDto } from '../candidates/dto/candidate-filter.dto';
 import * as XLSX from 'xlsx';
 import { createObjectCsvWriter } from 'csv-writer';
 let marked: any;
@@ -13,7 +14,7 @@ try {
 export class ExportService {
   constructor(private candidatesService: CandidatesService) {}
 
-  async exportCandidatesCSV(filters: any, userId: string, userRole: string): Promise<Buffer> {
+  async exportCandidatesCSV(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
     const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
     const csvData = candidates.map(candidate => ({
@@ -35,7 +36,7 @@ export class ExportService {
     return XLSX.write(workbook, { type: 'buffer', bookType: 'csv' });
   }
 
-  async exportCandidatesXLSX(filters: any, userId: string, userRole: string): Promise<Buffer> {
+  async exportCandidatesXLSX(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
     const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
     const xlsxData = candidates.map(candidate => ({
