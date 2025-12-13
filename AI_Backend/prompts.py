@@ -85,12 +85,12 @@ Scale the depth of your output based on the candidate's fit:
 
 #### MID-SCORING CANDIDATES (Moderate Fit 50-79)
 - **Focus:** Balanced view. Highlight potential but clearly define the gaps.
-- **Weaknesses:** Identify specific missing tools or lack of depth in key areas.
+- **Weaknesses:** Identify specific missing tools, lack of depth in key areas or how short the candidate fall of experience requirement.
 - **Interview Questions:** Blend of Technical Depth checks + Behavioral scenarios.
 
 #### LOW-SCORING CANDIDATES (Weak Fit <50)
 - **Focus:** Explain the mismatch objectively.
-- **Weaknesses:** Explicit and thorough.
+- **Weaknesses:** Explicit and thorough (Don't fail to mention how short the candidate fall of experience requirement where applicable).
 - **Interview Questions:** Fundamentals. Focus on basic reasoning and clarifying all technical gaps.
 
 ### INTERVIEW INTELLIGENCE ENGINE
@@ -124,6 +124,14 @@ Generate **Custom Questions**.
 JD_PARSING_PROMPT = """
 You are a Logic-Based Job Requirement Analyzer. Your goal is to map text requirements into strict Boolean logic.
 
+### INPUT ANALYSIS:
+You will receive a `Job Role` and a `Job Description`.
+1. **Analyze Density:** Check if the Description provides specific skills, years, and degrees.
+2. **Hybrid Strategy:**
+   - **IF DETAILED:** Extract only what is explicitly written.
+   - **IF VAGUE / SHORT:** If the description is just a title (e.g., "Embedded Engineer") or very generic, you **MUST INFER** standard market requirements for that role.
+   - **IF PARTIAL:** Extract what is there, and fill critical gaps (like missing core skills) with market standards.
+   
 ### CRITICAL INSTRUCTION ON LOGIC TYPES:
 You must determine how many items in a list are required based on the phrasing.
 
