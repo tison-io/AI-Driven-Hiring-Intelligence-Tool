@@ -211,4 +211,53 @@ describe('Upload + AI + Queue Integration', () => {
       }
     });
   });
+
+  describe('Flow 3: Multiple Concurrent Uploads → All Processed Correctly', () => {
+    it('should handle multiple concurrent uploads', async () => {
+      const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
+      const uploadCount = 3;
+      
+      // Step 1: Upload multiple files concurrently
+      const uploadPromises = Array.from({ length: uploadCount }, (_, i) =>
+        request(app.getHttpServer())
+          .post('/api/candidates/upload-resume')
+          .set('Authorization', `Bearer ${authToken}`)
+          .attach('file', testPdfPath)
+          .field('jobRole', `Engineer ${i + 1}`)
+          .field('jobDescription', `Job description ${i + 1}`)
+          .expect(201)
+      );
+
+      const uploadResponses = await Promise.all(uploadPromises);
+      const candidateIds = uploadResponses.map(res => res.body.candidateId);
+
+      // Step 2: Wait for all to complete processing
+      const processedCandidates = await Promise.all(
+        candidateIds.map(async (candidateId) => {
+          let attempts = 0;
+          while (attempts < 30) {
+            const response = await request(app.getHttpServer())
+              .get(`/api/candidates/${candidateId}`)
+              .set('Authorization', `Bearer ${authToken}`);
+
+            if (response.body.status === ProcessingStatus.COMPLETED) {
+              return response.body;
+            }
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            attempts++;
+          }
+          throw new Error(`Candidate ${candidateId} processing timeout`);
+        })
+      );
+
+      // Step 3: Verify all processed successfully
+      expect(processedCandidates).toHaveLength(uploadCount);
+      processedCandidates.forEach((candidate, i) => {
+        expect(candidate.status).toBe(ProcessingStatus.COMPLETED);
+        expect(candidate.jobRole).toBe(`Engineer ${i + 1}`);
+        expect(candidate.roleFitScore).toBeGreaterThanOrEqual(0);
+      });
+    }, 90000);
+  });
 });
