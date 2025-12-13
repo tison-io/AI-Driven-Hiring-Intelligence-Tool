@@ -4,13 +4,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
 import Link from 'next/link';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { authApi } from '@/lib/api';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-interface ForgotPasswordFormData {
-  email: string;
-}
+import { ForgotPasswordFormData } from '@/types';
 
 export default function ForgotPasswordPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);

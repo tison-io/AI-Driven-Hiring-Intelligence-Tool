@@ -1,17 +1,6 @@
 import { Star, ArrowRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-
-interface ShortlistedCandidate {
-  _id: string
-  name: string
-  role: string
-  score: number
-  time: string
-}
-
-interface ShortlistedCandidatesProps {
-  candidates: ShortlistedCandidate[]
-}
+import { ShortlistedCandidatesProps } from '@/types'
 
 export default function ShortlistedCandidates({ candidates }: ShortlistedCandidatesProps) {
   const router = useRouter()

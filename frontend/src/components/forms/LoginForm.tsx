@@ -3,16 +3,12 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
+import toast from '@/lib/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-
-interface LoginFormData {
-  email: string;
-  password: string;
-}
+import { LoginFormData } from '@/types';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +58,7 @@ export default function LoginForm() {
           })}
           type="email"
           disabled={isLoading}
+          data-testid="email"
           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
         />
         {errors.email && (
@@ -84,6 +81,7 @@ export default function LoginForm() {
             })}
             type={showPassword ? 'text' : 'password'}
             disabled={isLoading}
+            data-testid="password"
             className="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
           />
           <button
@@ -108,6 +106,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={isLoading}
+        data-testid="login-button"
         className="w-full bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white p-3 rounded-lg hover:opacity-90 disabled:opacity-50 flex items-center justify-center font-medium"
       >
         {isLoading ? (

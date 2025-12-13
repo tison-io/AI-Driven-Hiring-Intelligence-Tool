@@ -1,8 +1,5 @@
 import React from 'react';
-
-interface SecuritySectionProps {
-  onChangePassword: () => void;
-}
+import { SecuritySectionProps } from '@/types';
 
 export default function SecuritySection({ onChangePassword }: SecuritySectionProps) {
   return (
@@ -18,6 +15,7 @@ export default function SecuritySection({ onChangePassword }: SecuritySectionPro
         </div>
         <button
           type="button"
+          data-testid="change-password-button"
           onClick={onChangePassword}
           className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium rounded-md transition-colors"
         >

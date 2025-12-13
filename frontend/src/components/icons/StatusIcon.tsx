@@ -1,11 +1,6 @@
 import React from 'react';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
-import { ActivityItemData } from '@/types/dashboard';
-
-interface StatusIconProps {
-  status: ActivityItemData['status'];
-  size?: number;
-}
+import { StatusIconProps } from '@/types';
 
 const StatusIcon: React.FC<StatusIconProps> = ({ status, size = 20 }) => {
   switch (status) {

@@ -4,13 +4,8 @@ import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Upload, Link as LinkIcon, Shield, X, FileText } from 'lucide-react';
 import api from '@/lib/api';
-import toast from 'react-hot-toast';
-
-interface EvaluationFormProps {
-  onSuccess?: () => void;
-  onCancel?: () => void;
-  showActions?: boolean;
-}
+import toast from '@/lib/toast';
+import { EvaluationFormProps } from '@/types';
 
 export default function EvaluationForm({ 
   onSuccess, 
@@ -98,11 +93,11 @@ export default function EvaluationForm({
         formData.append('jobRole', jobRole);
         formData.append('jobDescription', jobDescription);
 
-        await api.post('/candidates/upload-resume', formData, {
+        await api.post('/api/candidates/upload-resume', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else if (activeTab === 'linkedin') {
-        await api.post('/candidates/linkedin', {
+        await api.post('/api/candidates/linkedin', {
           linkedinUrl,
           jobRole,
           jobDescription,

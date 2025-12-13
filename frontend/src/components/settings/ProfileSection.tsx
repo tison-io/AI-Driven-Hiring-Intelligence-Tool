@@ -1,19 +1,5 @@
 import React, { useRef } from 'react';
-
-interface ProfileSectionProps {
-  formData: {
-    fullName: string;
-    jobTitle: string;
-    companyName: string;
-  };
-  userEmail?: string;
-  userPhoto?: string;
-  onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onPhotoChange: (file: File) => void;
-  onSave: () => void;
-  memberSince?: string;
-  lastLogin?: string;
-}
+import { ProfileSectionProps } from '@/types';
 
 export default function ProfileSection({
   formData,

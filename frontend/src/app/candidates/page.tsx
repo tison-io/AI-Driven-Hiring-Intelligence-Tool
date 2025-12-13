@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
 import Slider from 'rc-slider';
 import 'rc-slider/assets/index.css';
@@ -12,7 +12,7 @@ import {
 	Trash2,
 	ChevronDown,
 } from "lucide-react";
-import toast from "react-hot-toast";
+import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useCandidates } from "@/hooks/useCandidates";
@@ -21,7 +21,7 @@ import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import { candidatesApi } from "@/lib/api";
 
-const CandidatesPage = () => {
+function CandidatesContent() {
 	const searchParams = useSearchParams();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
@@ -594,6 +594,14 @@ const CandidatesPage = () => {
 				</div>
 			</Layout>
 		</ProtectedRoute>
+	);
+}
+
+const CandidatesPage = () => {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<CandidatesContent />
+		</Suspense>
 	);
 };
 

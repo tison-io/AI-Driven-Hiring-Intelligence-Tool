@@ -23,7 +23,22 @@ export default function RootLayout({
 		<html lang="en">
 			<body className={inter.className}>
 				<AuthProvider>{children}</AuthProvider>
-				<Toaster position="top-right" />
+				<Toaster 
+					position="top-right"
+					toastOptions={{
+						duration: 4000,
+						style: {
+							borderRadius: '8px',
+							background: '#fff',
+							color: '#374151',
+							fontSize: '14px',
+							fontWeight: '500',
+							padding: '12px 16px',
+							boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+							border: '1px solid #e5e7eb',
+						},
+					}}
+				/>
 			</body>
 		</html>
 	);

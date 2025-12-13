@@ -10,7 +10,7 @@ export default function EmptyState() {
           Start by uploading resumes or processing LinkedIn profiles to see candidates here.
         </p>
         <button
-          onClick={() => window.location.href = '/upload'}
+          onClick={() => window.location.href = '/evaluations/new'}
           className="px-6 py-3 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white rounded-lg hover:opacity-90 transition-all"
         >
           Upload Resume

@@ -4,6 +4,8 @@ import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { CompleteProfileDto } from './dto/complete-profile.dto';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 
@@ -22,7 +24,7 @@ export class AuthService {
       throw new UnauthorizedException('User with this email already exists');
     }
 
-    const user = await this.usersService.create(registerDto) as any;
+    const user = await this.usersService.create(registerDto);
     const userObj = user.toObject();
     const { password, ...result } = userObj;
     
@@ -51,7 +53,7 @@ export class AuthService {
     };
   }
 
-  async changePassword(userId: string, changePasswordDto: any) {
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -83,7 +85,7 @@ export class AuthService {
     return result;
   }
 
-  async completeProfile(userId: string, profileData: any, userPhoto?: string, companyLogo?: string) {
+  async completeProfile(userId: string, profileData: CompleteProfileDto, userPhoto?: string, companyLogo?: string) {
     const updateData = {
       ...profileData,
       ...(userPhoto && { userPhoto }),

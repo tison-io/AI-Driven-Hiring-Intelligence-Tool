@@ -3,12 +3,13 @@ import { plainToClass } from 'class-transformer';
 import { validate } from 'class-validator';
 import { LinkedInProfileData } from '../interfaces/linkedin-response.interface';
 import { LinkedInPublicDataDto, PublicExperienceDto, PublicEducationDto, PublicSkillDto } from '../dto/linkedin-public-data.dto';
+import { RapidApiProfileData, RawExperience, RawEducation, RawSkill } from '../interfaces/linkedin-raw-api.interface';
 
 @Injectable()
 export class LinkedInMapper {
   private readonly logger = new Logger(LinkedInMapper.name);
 
-  async transformToPublicData(profileData: any): Promise<LinkedInPublicDataDto | null> {
+  async transformToPublicData(profileData: RapidApiProfileData): Promise<LinkedInPublicDataDto | null> {
     try {
       const fullName = profileData.basic_info?.fullname || profileData.fullName;
       if (!fullName) {
@@ -40,7 +41,7 @@ export class LinkedInMapper {
     }
   }
 
-  async transformMultipleProfiles(profiles: any[]): Promise<LinkedInPublicDataDto[]> {
+  async transformMultipleProfiles(profiles: RapidApiProfileData[]): Promise<LinkedInPublicDataDto[]> {
     const results = await Promise.all(
       profiles.map(profile => this.transformToPublicData(profile))
     );
@@ -48,7 +49,7 @@ export class LinkedInMapper {
     return results.filter(result => result !== null);
   }
 
-  private mapExperiences(experiences: any[]): PublicExperienceDto[] {
+  private mapExperiences(experiences: RawExperience[]): PublicExperienceDto[] {
     return experiences
       .filter(exp => exp.title && exp.company)
       .map(exp => ({
@@ -61,7 +62,7 @@ export class LinkedInMapper {
       }));
   }
 
-  private mapEducations(educations: any[]): PublicEducationDto[] {
+  private mapEducations(educations: RawEducation[]): PublicEducationDto[] {
     return educations
       .filter(edu => edu.school || edu.schoolName)
       .map(edu => ({
@@ -73,7 +74,7 @@ export class LinkedInMapper {
       }));
   }
 
-  private mapSkills(skills: any[]): PublicSkillDto[] {
+  private mapSkills(skills: (RawSkill | string)[]): PublicSkillDto[] {
     if (!Array.isArray(skills)) return [];
     return skills
       .filter(skill => typeof skill === 'string' || skill.name)

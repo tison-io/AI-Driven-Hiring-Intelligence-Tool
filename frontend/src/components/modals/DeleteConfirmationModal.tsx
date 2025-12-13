@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, XCircle } from 'lucide-react';
-
-interface DeleteConfirmationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-}
+import { DeleteConfirmationModalProps } from '@/types';
 
 export default function DeleteConfirmationModal({
   isOpen,

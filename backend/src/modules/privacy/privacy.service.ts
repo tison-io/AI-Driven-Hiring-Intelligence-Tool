@@ -57,8 +57,8 @@ export class PrivacyService {
         id: user._id,
         email: user.email,
         role: user.role,
-        createdAt: (user as any).createdAt || new Date(),
-        updatedAt: (user as any).updatedAt || new Date()
+        createdAt: user.createdAt || new Date(),
+        updatedAt: user.updatedAt || new Date()
       },
       candidates: candidates.map(candidate => ({
         id: candidate._id,

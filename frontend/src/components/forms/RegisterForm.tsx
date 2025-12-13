@@ -5,18 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface RegisterFormData {
-  email: string;
-  password: string;
-  agreeToTerms: boolean;
-}
-
-interface RegisterFormErrors {
-  email?: string;
-  password?: string;
-  agreeToTerms?: string;
-}
+import { RegisterFormData, RegisterFormErrors } from '@/types';
 
 export default function RegisterForm() {
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -80,6 +69,7 @@ export default function RegisterForm() {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Work Email</label>
           <input
+            data-testid="email"
             type="email"
             value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -93,6 +83,7 @@ export default function RegisterForm() {
           <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
           <div className="relative">
             <input
+              data-testid="password"
               type={showPassword ? 'text' : 'password'}
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -117,6 +108,7 @@ export default function RegisterForm() {
         <div>
           <label className="flex items-start space-x-3">
             <input
+              data-testid="terms-checkbox"
               type="checkbox"
               checked={formData.agreeToTerms}
               onChange={(e) => setFormData({ ...formData, agreeToTerms: e.target.checked })}
@@ -139,6 +131,7 @@ export default function RegisterForm() {
 
         <button
           type="submit"
+          data-testid="register-button"
           disabled={isLoading}
           className="w-full py-3 px-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 transition-opacity"
         >
