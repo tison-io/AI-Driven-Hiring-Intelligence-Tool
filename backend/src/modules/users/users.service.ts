@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './entities/user.entity';
 import { RegisterDto } from '../auth/dto/register.dto';
+import { CompleteProfileDto } from '../auth/dto/complete-profile.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
 import * as bcrypt from 'bcryptjs';
 
@@ -13,7 +14,7 @@ export class UsersService {
     private userModel: Model<UserDocument>,
   ) {}
 
-  async create(registerDto: RegisterDto): Promise<User> {
+  async create(registerDto: RegisterDto): Promise<UserDocument> {
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
     
     const user = new this.userModel({
@@ -25,7 +26,7 @@ export class UsersService {
     return user.save();
   }
 
-  async createAdmin(email: string, password: string): Promise<User> {
+  async createAdmin(email: string, password: string): Promise<UserDocument> {
     const hashedPassword = await bcrypt.hash(password, 10);
     
     const user = new this.userModel({
@@ -50,11 +51,11 @@ export class UsersService {
     await this.userModel.findByIdAndUpdate(id, { password: hashedPassword }).exec();
   }
 
-  async updateProfile(id: string, updateData: any): Promise<UserDocument | null> {
+  async updateProfile(id: string, updateData: Partial<User>): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
   }
 
-  async completeProfile(id: string, profileData: any): Promise<UserDocument | null> {
+  async completeProfile(id: string, profileData: CompleteProfileDto & { userPhoto?: string; companyLogo?: string }): Promise<UserDocument | null> {
     return this.userModel.findByIdAndUpdate(
       id, 
       { ...profileData, profileCompleted: true }, 

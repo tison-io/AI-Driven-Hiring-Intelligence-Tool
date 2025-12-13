@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, FilterQuery } from 'mongoose';
 import { Candidate, CandidateDocument } from './entities/candidate.entity';
 import { CandidateFilterDto } from './dto/candidate-filter.dto';
 
@@ -12,7 +12,7 @@ export class CandidatesService {
   ) {}
 
   async findAll(filters: CandidateFilterDto, userId: string, userRole: string): Promise<CandidateDocument[]> {
-    const query: any = userRole === 'admin' ? {} : { createdBy: userId };
+    const query: FilterQuery<CandidateDocument> = userRole === 'admin' ? {} : { createdBy: userId };
 
     if (filters.search) {
       query.$or = [
