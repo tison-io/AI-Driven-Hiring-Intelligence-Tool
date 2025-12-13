@@ -6,6 +6,7 @@ import {
 	ApifyLinkedInResponse,
 	LinkedInProfileData,
 } from "./interfaces/linkedin-response.interface";
+import { RapidApiResponse } from "./interfaces/linkedin-raw-api.interface";
 import { firstValueFrom } from "rxjs";
 import { AxiosResponse } from "axios";
 import {
@@ -181,7 +182,7 @@ export class ApifyService {
 	}
 
 	// Handle API response and check for errors
-	private handleApiResponse(responseData: any, profileUrl: string): void {
+	private handleApiResponse(responseData: RapidApiResponse, profileUrl: string): void {
 		if (responseData.success === false) {
 			if (responseData.message?.includes('rate limit')) {
 				throw new RateLimitExceededException();
