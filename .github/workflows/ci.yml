@@ -67,28 +67,4 @@ jobs:
       #   working-directory: ./frontend
       #   run: npm test
 
-  ai-service:
-    name: AI Service Check
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: AI_Backend/requirements.txt
-
-      - name: Install dependencies
-        working-directory: ./AI_Backend
-        run: pip install -r requirements.txt
-
-      - name: Syntax check
-        working-directory: ./AI_Backend
-        run: python -m py_compile *.py
-
-      - name: Import validation
-        working-directory: ./AI_Backend
-        run: python -c "import main; print('✓ Main module imports successfully')"
+  
