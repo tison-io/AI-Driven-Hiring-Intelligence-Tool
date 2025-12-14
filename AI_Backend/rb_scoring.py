@@ -10,9 +10,29 @@ def clean_cert_text(text):
     return re.sub(r'[^\w\s]', '', text.lower())
 
 def parse_date(date_str):
-    if not date_str or date_str.lower() == "present": return datetime.now()
-    try: return datetime.strptime(date_str, "%Y-%m")
-    except: return None
+    if not date_str: return None
+    date_lower = date_str.lower().strip()
+    if date_lower in ["present", "current", "now", "ongoing"]:
+        return datetime.now()
+
+    formats = [
+        "%Y-%m",           
+        "%b %Y", 
+        "%B %Y",
+        "%m/%Y",
+        "%Y",
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str.strip(), fmt)
+        except:
+            continue
+    
+    if any(word in date_lower for word in ["present", "current", "now", "ongoing"]):
+        return datetime.now()
+    
+    return None
 
 def calculate_duration_years(start_str, end_str):
     start = parse_date(start_str)
@@ -55,7 +75,9 @@ def calculate_relevant_years_hybrid(candidate, semantic_analysis, role_name):
                 print(f"DEBUG: Fallback marked job '{title}' as RELEVANT.")
 
         if is_relevant:
-            total_years += calculate_duration_years(job.get("start_date"), job.get("end_date"))
+            job_years = calculate_duration_years(job.get("start_date"), job.get("end_date"))
+            print(f"DEBUG: Job '{job.get('job_title')}' ({job.get('start_date')} to {job.get('end_date')}) = {job_years:.1f} years")
+            total_years += job_years
 
     return total_years
 

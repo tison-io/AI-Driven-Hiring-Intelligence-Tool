@@ -27,7 +27,7 @@ def get_semantic_analysis(candidate_data, jd_requirements, role_name):
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": SEMANTIC_MATCH_PROMPT},
-                {"role": "user", "content": user_content}
+                {"role": "user", "content": f"Analyze semantic matches and return JSON analysis:\n{user_content}"}
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
