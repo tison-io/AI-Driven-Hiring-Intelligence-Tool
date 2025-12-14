@@ -10,7 +10,7 @@
 		"build": "nest build --config tsconfig.build.json",
 		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",
-		"start:dev": "nest start --watch",
+		"start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
 		"start:debug": "nest start --debug --watch",
 		"start:prod": "node dist/main",
 		"seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
