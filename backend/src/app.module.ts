@@ -5,6 +5,9 @@ import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
+// Controllers
+import { AppController } from './app.controller';
+
 // Configuration
 import { DatabaseConfig } from './config/database.config';
 import { RedisConfig } from './config/redis.config';
@@ -25,6 +28,7 @@ import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.int
 import { AuditLoggingInterceptor } from './common/interceptors/audit-logging.interceptor';
 
 @Module({
+  controllers: [AppController],
   imports: [
     // Configuration
     ConfigModule.forRoot({
