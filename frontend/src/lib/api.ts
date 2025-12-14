@@ -1,3 +1,4 @@
+// @ts-ignore
 import axios from 'axios';
 import { CandidateFilters } from '@/types';
 
@@ -12,20 +13,20 @@ const api = axios.create({
 
 // Request interceptor to attach Bearer token
 api.interceptors.request.use(
-  (config) => {
+  (config: any) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error: any) => Promise.reject(error)
 );
 
 // Response interceptor for 401/403 error handling
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  (response: any) => response,
+  (error: any) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
       localStorage.removeItem('token');
       window.location.href = '/auth/login';
