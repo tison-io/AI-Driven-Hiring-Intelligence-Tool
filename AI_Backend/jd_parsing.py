@@ -2,10 +2,11 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from langsmith.wrappers import wrap_openai
 from prompts import JD_PARSING_PROMPT
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 def parse_jd_requirements(job_description: str, role_name: str):
     """
