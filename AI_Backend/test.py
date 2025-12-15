@@ -4,73 +4,25 @@ import statistics
 import os
 
 API_URL = "http://localhost:8000/analyze"
-TEST_FILE_PATH = "sample pdfs/MAYA HENDERSON HR FIT.pdf"
-ROLE_NAME = "HR"
+TEST_FILE_PATH = "sample pdfs/Accounting1.pdf"
+ROLE_NAME = "Accounting"
 
 SAMPLE_JD = """
-Our client is seeking a strategic and people-focused Human Resources Business Partner to support organizational growth, talent development, and employee engagement initiatives. This fully remote role requires a strong HR generalist who can partner with leadership, coach managers, and implement HR best practices across the employee lifecycle. The ideal candidate has extensive experience in employee relations, performance management, talent acquisition, HR data analysis, and policy development.
-
-You will play a key role in shaping the culture, supporting workforce planning, resolving complex HR issues, and ensuring compliance with employment laws. This role requires excellent communication, strong interpersonal skills, and the ability to build trust at all levels of the organization. The ideal candidate thrives in a fast-paced, collaborative, and highly dynamic remote environment.
-
+This position is located in the Income Tax Unit of the Payroll and Accounts Payable Section, Division of Administration, Department of Operational Support (DOS). The Department of Operational Support was established to provide operational advisory services to operating entities across the Secretariat, including other departments, offices away from headquarters, field missions, and regional commissions. The Payroll and Accounts Payable Section processes global payroll and payments, income tax claims and provides policy advice and operational guidance, testing and implementation of enhancements to the payroll module and income tax portal of the ERP/UN Tax system. The Accounting Assistant will report to the Chief of the Income Tax Unit.
 Responsibilities
-
-Serve as a strategic partner to business leaders, providing guidance on workforce planning, organizational structure, and team development.
-
-Manage employee relations cases, including conflict resolution, coaching, and performance issues.
-
-Lead performance management processes, including goal-setting, evaluation cycles, and manager support.
-
-Support end-to-end talent acquisition and onboarding in partnership with the recruitment team.
-
-Develop and implement HR policies, processes, and compliance programs.
-
-Conduct HR data analysis and provide insights on attrition, engagement, and talent metrics.
-
-Facilitate employee engagement initiatives and culture-building programs.
-
-Provide guidance on compensation, promotions, and career development.
-
-Deliver training to managers on HR best practices and leadership fundamentals.
-
-Ensure compliance with federal, state, and local employment laws.
-
-Support diversity, equity, and inclusion (DEI) programs and initiatives.
-
-Partner with leadership on change management initiatives.
-
-Qualifications
-
-Bachelor's degree in Human Resources, Business, Psychology, or a related field.
-
-Minimum of 7 years of experience in Human Resources or HR Business Partnering.
-
-Experience working effectively in a fully remote environment.
-
-Proven expertise in employee relations, performance management, and talent development.
-
-Strong understanding of HR best practices, policies, and employment law.
-
-Experience with HRIS platforms (e.g., Workday, BambooHR, SAP SuccessFactors).
-
-Strong analytical and problem-solving skills, including HR data interpretation.
-
-Excellent communication, conflict resolution, and interpersonal skills.
-
-Experience supporting managers and senior leaders through coaching.
-
-Knowledge of recruitment, onboarding, and workforce planning processes.
-
-Experience supporting DEI initiatives and culture programs.
-
-Required Certifications
-
-SHRM-CP or SHRM-SCP
-
-Professional in Human Resources (PHR)
-
-Certified ScrumMaster (CSM)
+Within delegated authority, the Accounting Assistant will be responsible for the following duties: • Scrutinizes source documents for completeness, accuracy and validity of charges. • Investigates erroneous charges and takes appropriate corrective accounting actions. • Records and reconciles more complex accounting transactions. • Audits various accounting transactions, e.g., payroll, final payments, income tax returns, travel claims, etc., to ensure correctness of disbursements and adherence to relevant staff rules, financial regulations and rules, ST/AI issuances or practices. • Examines and records financial transactions of Offices-away-from-Headquarters/Peacekeeping Missions/other UN organisations and prepares remittances for disbursement. • Reconciles more complex bank accounts in various currencies. • Extracts details of income, expenditure, assets and liability from accounting system in order to analyze and verify accuracy and validity. • Assists with the compliance data transmission to and from the US tax authorities • Assists in the processing of payments to governments and vendors for good and services. This includes, amongst other things, calculating, inputting, and checking payments for correctness and communicating discrepancies to supervisors. • Assists in processing payments to staff members for their entitlements including salaries, claims, education grants and income tax. • Examines the validity of requests for increases in imprest levels; prepares disbursement vouchers to replenish imprest accounts. • Communicates with field offices regarding missing documentation or any other issues related to discrepancies between their accounts and those maintained at Headquarters. • Reconciles and reviews suspense accounts and ensure proper clearance procedures have been followed. • Drafts/prepares memoranda to various offices, departments and overseas offices. • Responds to queries from staff members and third parties. • Assists with the collection and analysis of data as well as preparation of data presentations and reports for information sharing, responding to queries, knowledge management, planning and decision making. • Assists with visualizations and updating information material such as web pages or brochures. • Serves as Approving Officer for disbursements up to an authorized level. • Coordinates between business area as necessary. • Provides guidance and training to colleagues as required. • Supervises other General Service staff as required and in relation to a) the client service activities of the Income Tax Unit; b) the filing requirements of income tax files • Performs other duties as may be required.
+Competencies
+• Professionalism: Knowledge of the Organization's financial rules and regulations as well as accounting policies and practices. Ability to maintain accurate records, interpret and analyze a wide variety of data. Ability to identify and resolve data discrepancies and other problems. Shows pride in work and in achievements; demonstrates professional competence and mastery of subject matter; is conscientious and efficient in meeting commitments, observing deadlines and achieving results; is motivated by professional rather than personal concerns; shows persistence when faced with difficult problems or challenges; remains calm in stressful situations. Commitment to implementing the goal of gender equality by ensuring the equal participation and full involvement of women and men in all aspects of work. Able to perform analysis, modeling and interpretation of data in support of decision making. • Planning and Organizing: Develops clear goals that are consistent with agreed strategies; identifies priority activities and assignments; adjusts priorities as required; allocates appropriate amount of time and resources for completing work; foresees risks and allows for contingencies when planning; monitors and adjusts plans and actions as necessary; uses time efficiently. • Client Orientation: Considers all those to whom services are provided to be “clients” and seeks to see things from clients’ point of view; establishes and maintains productive partnerships with clients by gaining their trust and respect; identifies clients’ needs and matches them to appropriate solutions; monitors ongoing developments inside and outside the clients’ environment to keep informed and anticipate problems; keeps clients informed of progress or setbacks in projects; meets timeline for delivery of products or services to client.
+Education
+High school diploma or equivalent is required.
+Job - Specific Qualification
+Not available.
+Work Experience
+A minimum of five years of experience in accounting, finance, audit, administrative services or related area is required. The minimum years of relevant experience is reduced to three years for candidates who possess a first-level university degree or higher. Four years of experience focused on transactional based accounting activities such as payroll, United States income tax, vendor/travel claims processing is required. Experience working with the United Nations or a large organization with decentralized systems and procedures including staff rules and regulations, entitlements, financial regulations and procedures is desirable.
+Languages
+English and French are the working languages of the United Nations Secretariat. For this job opening, English is required. 
 """
-NUM_RUNS = 5
+NUM_RUNS = 3
 MAX_LATENCY_THRESHOLD = 10.0
 
 
