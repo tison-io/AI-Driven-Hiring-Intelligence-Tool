@@ -3,14 +3,14 @@ import json
 from openai import OpenAI
 from langsmith.wrappers import wrap_openai
 from dotenv import load_dotenv
-from prompts import SEMANTIC_MATCH_PROMPT
+from prompts import SYSTEM_UNIFIED_ANALYSIS_PROMPT
 
 load_dotenv()
 client =wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
-def get_semantic_analysis(candidate_data, jd_requirements, role_name):
+def get_unified_analysis(candidate_data, jd_requirements, role_name):
     """
-    Semantically mapping the candidate to the requirements.
+    Performs a unified semantic analysis for both work experience and skills.
     """
     try:
         user_content = f"""
@@ -24,9 +24,9 @@ def get_semantic_analysis(candidate_data, jd_requirements, role_name):
         """
 
         response=client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": SEMANTIC_MATCH_PROMPT},
+                {"role": "system", "content": SYSTEM_UNIFIED_ANALYSIS_PROMPT},
                 {"role": "user", "content": f"Analyze semantic matches and return JSON analysis:\n{user_content}"}
             ],
             response_format={"type": "json_object"},
@@ -36,5 +36,8 @@ def get_semantic_analysis(candidate_data, jd_requirements, role_name):
         return json.loads(response.choices[0].message.content)
 
     except Exception as e:
-        print(f"Semantic Analysis Failed: {e}")
-        return {relevant_work_experience: [], skill_analysis: []}
+        print(f"Unified Analysis Failed: {e}")
+        return {
+            "work_experience_analysis": [],
+            "skill_analysis": []
+        }

@@ -20,7 +20,7 @@ def parse_jd_requirements(job_description: str, role_name: str):
             context += "Job Description: Not provided (Infer standard requirements)."
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": JD_PARSING_PROMPT},
                 {"role": "user", "content": f"Parse job requirements and return JSON:\n{context}"}
