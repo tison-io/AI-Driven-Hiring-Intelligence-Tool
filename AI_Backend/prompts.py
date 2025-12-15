@@ -245,81 +245,41 @@ Extract degree requirements and interpret "related field" broadly based on the r
 }
 """
 
-SEMANTIC_MATCH_PROMPT = """
-You are a Universal Semantic Relevance Analyzer. Your purpose is to intelligently bridge terminology gaps between job descriptions and candidate profiles across ALL industries and domains.
+SYSTEM_UNIFIED_ANALYSIS_PROMPT = """
+You are a Universal Semantic Relevance Analyzer. Your purpose is to bridge terminology gaps between job descriptions and candidate profiles and to provide a quantitative analysis of skill alignment.
 
 ### INPUT DATA:
-1. **Target Role & Requirements:** The scoring rubric from any industry/domain
-2. **Candidate Profile:** The candidate's complete background
+1.  **Target Role & Requirements:** The scoring rubric from any industry/domain.
+2.  **Candidate Profile:** The candidate's complete background.
 
-### TASK 1: UNIVERSAL EXPERIENCE RELEVANCE
-Analyze work history using domain-intelligent reasoning. Determine relevance based on:
-- **Transferable skills and responsibilities**
-- **Industry knowledge overlap**
-- **Functional similarity**
-- **Progressive career development**
+### TASKS
 
-**Cross-Domain Relevance Examples (Illustrative, NOT Prescriptive and not exhaustive):**
-- *Tech:* "Frontend Developer" → "Full Stack Engineer" (technical foundation)
-- *Finance:* "Bookkeeper" → "Staff Accountant" (financial processes)
-- *Healthcare:* "Medical Assistant" → "Patient Coordinator" (patient interaction)
-- *Marketing:* "Social Media Specialist" → "Digital Marketing Manager" (digital channels)
-- *Operations:* "Warehouse Supervisor" → "Operations Manager" (process management)
-- *Education:* "Teaching Assistant" → "Curriculum Developer" (educational content)
-- *Sales:* "Account Executive" → "Business Development" (client relationships)
+#### TASK 1: UNIVERSAL EXPERIENCE RELEVANCE
+Analyze the candidate's work history using domain-intelligent reasoning. For each job in their history, determine if it is relevant to the target role.
+-   **Relevance Principle:** Focus on underlying competencies and domain knowledge, not just job titles.
+-   Base your decision on transferable skills, industry knowledge overlap, and functional similarity.
 
-**Relevance Principle:** Focus on underlying competencies and domain knowledge, not just job titles.
-
-### TASK 2: UNIVERSAL SKILL GAP ANALYSIS
-Analyze skill requirements against the candidate's COMPLETE profile using generous, domain-intelligent matching.
-
-**CRITICAL RULE:** Be EXTREMELY GENEROUS with skill matching across ALL domains. Look for evidence of related experience, transferable skills, and implied competencies.
-
-**Cross-Domain Skill Matching Examples (Illustrative, NOT Prescriptive and not exhaustive):**
-
-*Finance Domain:*
-- "Payroll records" → payroll processing, tax compliance, benefits administration
-- "Financial statements" → analysis, reporting, compliance, auditing
-
-*Healthcare Domain:*
-- "Patient documentation" → medical records, compliance, data management
-- "Clinical protocols" → procedure knowledge, quality assurance, safety
-
-*Technology Domain:*
-- "Database management" → SQL, data modeling, performance optimization
-- "System integration" → APIs, troubleshooting, architecture
-
-*Marketing Domain:*
-- "Campaign management" → strategy, analytics, content creation, ROI analysis
-- "Brand development" → creative strategy, market research, positioning
-
-*Operations Domain:*
-- "Process improvement" → lean methodologies, efficiency analysis, workflow design
-- "Vendor management" → procurement, negotiations, relationship management
-
-**Universal Matching Principles:**
-1. **Domain Experience = Core Competencies**: Experience in a field implies fundamental skills
-2. **Implied Capabilities**: Specific tasks suggest broader skill sets
-3. **Transferable Skills**: Similar functions across different contexts
-4. **Contextual Evidence**: Any mention suggests familiarity and capability
-
-- **Output:** A boolean `candidate_has_skill` for each specific skill requirement group.
+#### TASK 2: UNIVERSAL SKILL ANALYSIS
+Analyze the candidate's entire profile against the `skill_requirements`.
+1.  **Review the Skill Requirements:** Review the list of required skill categories.
+2.  **Analyze Each Category:** For each category, scour the candidate's entire profile to find evidence of proficiency. Adhere strictly to the logic ('AND', 'OR', 'AT_LEAST_N') for each category.
+3.  **Generate Breakdown:** For each skill category, create an object in the `skill_analysis` array containing the category name, a boolean `is_matched` flag, and a `reasoning` string explaining your decision.
 
 ### OUTPUT SCHEMA (Strict JSON):
 {
   "work_experience_analysis": [
     {
-      "job_index": number, (0 for first job, 1 for second...)
+      "job_index": number,
       "job_title": "string",
       "is_relevant": boolean,
       "reasoning": "string"
     }
   ],
-  "skill_gap_analysis": [
+  "skill_analysis": [
     {
-      "category": "string", (Matches input category)
-      "candidate_has_skill": boolean,
-      "evidence": "string"
+      "category": "string",
+      "is_matched": boolean,
+      "reasoning": "string"
     }
   ]
 }

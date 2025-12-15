@@ -4,13 +4,71 @@ import statistics
 import os
 
 API_URL = "http://localhost:8000/analyze"
-TEST_FILE_PATH = "Nathaniel-Wangai-FlowCV-Resume-20251021 (1).pdf"
-ROLE_NAME = "Senior Software Engineer"
+TEST_FILE_PATH = "sample pdfs/MAYA HENDERSON HR FIT.pdf"
+ROLE_NAME = "HR"
 
 SAMPLE_JD = """
-We are looking for a Senior Software Engineer with 5+ years of experience.
-Must have strong skills in Python, FastAPI, and React.
-Experience with AWS and MongoDB is required.
+Our client is seeking a strategic and people-focused Human Resources Business Partner to support organizational growth, talent development, and employee engagement initiatives. This fully remote role requires a strong HR generalist who can partner with leadership, coach managers, and implement HR best practices across the employee lifecycle. The ideal candidate has extensive experience in employee relations, performance management, talent acquisition, HR data analysis, and policy development.
+
+You will play a key role in shaping the culture, supporting workforce planning, resolving complex HR issues, and ensuring compliance with employment laws. This role requires excellent communication, strong interpersonal skills, and the ability to build trust at all levels of the organization. The ideal candidate thrives in a fast-paced, collaborative, and highly dynamic remote environment.
+
+Responsibilities
+
+Serve as a strategic partner to business leaders, providing guidance on workforce planning, organizational structure, and team development.
+
+Manage employee relations cases, including conflict resolution, coaching, and performance issues.
+
+Lead performance management processes, including goal-setting, evaluation cycles, and manager support.
+
+Support end-to-end talent acquisition and onboarding in partnership with the recruitment team.
+
+Develop and implement HR policies, processes, and compliance programs.
+
+Conduct HR data analysis and provide insights on attrition, engagement, and talent metrics.
+
+Facilitate employee engagement initiatives and culture-building programs.
+
+Provide guidance on compensation, promotions, and career development.
+
+Deliver training to managers on HR best practices and leadership fundamentals.
+
+Ensure compliance with federal, state, and local employment laws.
+
+Support diversity, equity, and inclusion (DEI) programs and initiatives.
+
+Partner with leadership on change management initiatives.
+
+Qualifications
+
+Bachelor's degree in Human Resources, Business, Psychology, or a related field.
+
+Minimum of 7 years of experience in Human Resources or HR Business Partnering.
+
+Experience working effectively in a fully remote environment.
+
+Proven expertise in employee relations, performance management, and talent development.
+
+Strong understanding of HR best practices, policies, and employment law.
+
+Experience with HRIS platforms (e.g., Workday, BambooHR, SAP SuccessFactors).
+
+Strong analytical and problem-solving skills, including HR data interpretation.
+
+Excellent communication, conflict resolution, and interpersonal skills.
+
+Experience supporting managers and senior leaders through coaching.
+
+Knowledge of recruitment, onboarding, and workforce planning processes.
+
+Experience supporting DEI initiatives and culture programs.
+
+Required Certifications
+
+SHRM-CP or SHRM-SCP
+
+Professional in Human Resources (PHR)
+
+Certified ScrumMaster (CSM)
 """
 NUM_RUNS = 5
 MAX_LATENCY_THRESHOLD = 10.0

@@ -16,22 +16,22 @@ def parse_date(date_str):
         return datetime.now()
 
     formats = [
-        "%Y-%m",           
-        "%b %Y", 
+        "%Y-%m",
+        "%b %Y",
         "%B %Y",
         "%m/%Y",
         "%Y",
     ]
-    
+
     for fmt in formats:
         try:
             return datetime.strptime(date_str.strip(), fmt)
         except:
             continue
-    
+
     if any(word in date_lower for word in ["present", "current", "now", "ongoing"]):
         return datetime.now()
-    
+
     return None
 
 def calculate_duration_years(start_str, end_str):
@@ -42,7 +42,7 @@ def calculate_duration_years(start_str, end_str):
 
 def calculate_relevant_years_hybrid(candidate, semantic_analysis, role_name):
     """
-    Calculates years using AI verdicts. 
+    Calculates years using AI verdicts.
     Falls back to strict title matching if AI data is missing.
     """
     work_history = candidate.get("work_experience", [])
@@ -80,48 +80,6 @@ def calculate_relevant_years_hybrid(candidate, semantic_analysis, role_name):
             total_years += job_years
 
     return total_years
-
-def calculate_skill_match_hybrid(candidate, skill_requirements, semantic_analysis):
-    """
-    Calculates skills using AI verdicts.
-    """
-    if not skill_requirements: return 100
-    ai_skill_map = {
-        item.get("category"): item.get("candidate_has_skill", False)
-        for item in semantic_analysis.get("skill_gap_analysis", [])
-    }
-    cand_blob = normalize_text(str(candidate)) 
-    
-    group_scores = []
-
-    for group in skill_requirements:
-        category = group.get("category")
-        logic_type = group.get("logic_type", "OR")
-        count_required = group.get("count_required", 1)
-        if category in ai_skill_map and ai_skill_map[category] is True:
-            group_scores.append(100)
-            continue
-
-        target_skills = group.get("skills", [])
-        matches_found = 0
-        
-        for skill in target_skills:
-            norm_skill = normalize_text(skill)
-            if f" {norm_skill} " in f" {cand_blob} ":
-                matches_found += 1
-
-        if logic_type == "AND":
-            required = len(target_skills)
-            score = (matches_found / required) * 100 if required > 0 else 100
-        elif logic_type == "AT_LEAST_N":
-            score = min(100, (matches_found / count_required) * 100)
-        else:
-            score = 100 if matches_found >= 1 else 0
-            
-        group_scores.append(score)
-
-    if not group_scores: return 100
-    return int(sum(group_scores) / len(group_scores))
 
 def calculate_education_score(candidate_edu, req_edu):
     if not req_edu or not req_edu.get("required_level"): return 100
@@ -209,7 +167,14 @@ def calculate_math_score(candidate: dict, requirements: dict, semantic_analysis:
     elif c_years_relevant >= r_years: exp_score = 100
     else: exp_score = (c_years_relevant / r_years) * 100
 
-    skill_score = calculate_skill_match_hybrid(candidate, requirements.get("skill_requirements", []), semantic_analysis)
+    skill_analysis = semantic_analysis.get("skill_analysis", [])
+    skill_score = 100
+    if isinstance(skill_analysis, list):
+        required = len(skill_analysis)
+        if required > 0:
+            matched = sum(1 for item in skill_analysis if item.get("is_matched"))
+            skill_score = int((matched / required) * 100)
+    
     edu_score = calculate_education_score(candidate.get("education", []), requirements.get("education_requirement", {}))
 
     required_certs = requirements.get("required_certifications", [])
