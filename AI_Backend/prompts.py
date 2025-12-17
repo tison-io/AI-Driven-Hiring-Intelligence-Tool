@@ -270,7 +270,7 @@ Your primary task is to extract job requirements, responsibilities, duties, and 
 - ONLY infer missing information for:
   - `required_years`: if absent, estimate based on job market standards
   - `education_requirement`: if absent, estimate based on role level
-  - `primary_requirements`: If the jd provides no extractable qualifications and responsiblities.
+  - `primary_requirements`: If the jd provides no extractable qualifications and responsibilities.
 
 ### WHAT TO EXTRACT:
 From the JD, extract:
