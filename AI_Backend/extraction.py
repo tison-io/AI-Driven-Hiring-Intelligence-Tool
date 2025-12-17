@@ -23,7 +23,6 @@ def extract_resume_data(raw_text: str):
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
-            max_tokens=2000
         )
 
         data = json.loads(response.choices[0].message.content)

@@ -1,21 +1,18 @@
 import re
 from datetime import datetime
 
+
 def normalize_text(text):
     if not text:
         return ""
-    return (
-        text.lower()
-        .strip()
-        .replace("-", " ")
-        .replace("_", " ")
-        .replace(".", "")
-    )
+    return text.lower().strip().replace("-", " ").replace("_", " ").replace(".", "")
+
 
 def clean_cert_text(text):
     if not text:
         return ""
     return re.sub(r"[^\w\s]", "", text.lower())
+
 
 def parse_date(date_str):
     if not date_str:
@@ -27,9 +24,21 @@ def parse_date(date_str):
 
     formats = [
         "%Y-%m",
+        "%Y/%m",
+        "%m-%Y",
+        "%m/%Y",
         "%b %Y",
         "%B %Y",
-        "%m/%Y",
+        "%b-%Y",
+        "%B-%Y",
+        "%Y-%m-%d",
+        "%m/%d/%Y",
+        "%d/%m/%Y",
+        "%d-%m-%Y",
+        "%b %d, %Y",
+        "%B %d, %Y",
+        "%d %b %Y",
+        "%d %B %Y",
         "%Y",
     ]
 
@@ -41,12 +50,14 @@ def parse_date(date_str):
 
     return None
 
+
 def calculate_duration_years(start_str, end_str):
     start = parse_date(start_str)
     end = parse_date(end_str)
     if not start or not end:
         return 0.0
     return max(0.0, (end - start).days / 365.25)
+
 
 EXPERIENCE_COLLAPSE = {
     "High": "Relevant",
@@ -60,14 +71,21 @@ EXPERIENCE_WEIGHT = {
     "Irrelevant": 0.0,
 }
 
+
 def calculate_relevant_years(candidate, semantic_analysis, role_name):
     work_history = candidate.get("work_experience", [])
     if not work_history:
         return 0.0
 
+    ai_analysis = semantic_analysis.get("work_experience_analysis", [])
+
+    if not ai_analysis:
+        print("FALLBACK: AI analysis failed, using total experience")
+        return calculate_fallback_experience(work_history, role_name)
+
     ai_map = {
         item.get("job_index"): item.get("relevance_level", "None")
-        for item in semantic_analysis.get("work_experience_analysis", [])
+        for item in ai_analysis
         if item.get("job_index") is not None
     }
 
@@ -78,17 +96,27 @@ def calculate_relevant_years(candidate, semantic_analysis, role_name):
         collapsed = EXPERIENCE_COLLAPSE.get(raw_level, "Irrelevant")
         weight = EXPERIENCE_WEIGHT[collapsed]
 
-        if weight == 0.0:
-            continue
+        years = calculate_duration_years(job.get("start_date"), job.get("end_date"))
 
-        years = calculate_duration_years(
-            job.get("start_date"),
-            job.get("end_date")
-        )
-
-        total_years += years * weight
+        if weight > 0.0:
+            total_years += years * weight
+            print(
+                f"EXPERIENCE: '{job.get('job_title')}' -> {raw_level} -> {years:.1f} years"
+            )
 
     return round(total_years, 2)
+
+
+def calculate_fallback_experience(work_history, role_name):
+    """Total experience calculation when AI fails."""
+    total_years = sum(
+        calculate_duration_years(job.get("start_date"), job.get("end_date"))
+        for job in work_history
+    )
+
+    print(f"FALLBACK: Using total experience -> {total_years:.1f} years")
+    return round(total_years, 2)
+
 
 def calculate_experience_score(relevant_years, required_years):
     if required_years <= 0:
@@ -97,15 +125,16 @@ def calculate_experience_score(relevant_years, required_years):
     capped_years = min(relevant_years, required_years)
     return int((capped_years / required_years) * 100)
 
-def calculate_skill_score(skill_analysis):
-    if not skill_analysis:
+
+def calculate_skill_score(responsibility_analysis):
+    if not responsibility_analysis:
         return 100
 
-    required = len(skill_analysis)
+    required = len(responsibility_analysis)
     matched = sum(
         1
-        for item in skill_analysis
-        if item.get("match_level") in {"Strong Match", "Partial Match"}
+        for item in responsibility_analysis
+        if item.get("match_level") in {"Confirmed", "Likely", "Uncertain"}
     )
 
     if matched == 0:
@@ -133,21 +162,14 @@ def calculate_education_score(candidate_edu, req_edu):
     req_level_str = normalize_text(req_edu.get("required_level", "none"))
     req_val = next((v for k, v in levels.items() if k in req_level_str), 0)
 
-    valid_majors = [normalize_text(m) for m in req_edu.get("valid_majors", [])]
     best_score = 0
 
     for edu in candidate_edu:
-        cand_level = normalize_text(edu.get("degree_level", ""))
-        cand_major = normalize_text(edu.get("field_of_study", ""))
+        cand_level = normalize_text(edu.get("degree_level", "none"))
+        cand_val = levels.get(cand_level, 0)
 
-        if valid_majors:
-            if not any(
-                set(m.split()).intersection(cand_major.split())
-                for m in valid_majors
-            ):
-                continue
-
-        cand_val = next((v for k, v in levels.items() if k in cand_level), 0)
+        if cand_val == 0:
+            continue
 
         if cand_val >= req_val:
             score = 100
@@ -159,6 +181,7 @@ def calculate_education_score(candidate_edu, req_edu):
         best_score = max(best_score, score)
 
     return best_score
+
 
 def calculate_cert_match(candidate_certs, required_certs):
     if not required_certs:
@@ -174,10 +197,7 @@ def calculate_cert_match(candidate_certs, required_certs):
         req_clean = clean_cert_text(req)
         req_tokens = set(req_clean.split())
 
-        req_level = max(
-            (hierarchy[w] for w in req_tokens if w in hierarchy),
-            default=0
-        )
+        req_level = max((hierarchy[w] for w in req_tokens if w in hierarchy), default=0)
 
         req_subject = req_tokens - set(hierarchy.keys())
         matched = False
@@ -185,8 +205,7 @@ def calculate_cert_match(candidate_certs, required_certs):
         for cand in cand_clean:
             cand_tokens = set(cand.split())
             cand_level = max(
-                (hierarchy[w] for w in cand_tokens if w in hierarchy),
-                default=0
+                (hierarchy[w] for w in cand_tokens if w in hierarchy), default=0
             )
             cand_subject = cand_tokens - set(hierarchy.keys())
 
@@ -204,25 +223,18 @@ def calculate_cert_match(candidate_certs, required_certs):
 
     return int((matches / len(required_certs)) * 100)
 
+
 def calculate_math_score(candidate, requirements, semantic_analysis, role_name=""):
-    relevant_years = calculate_relevant_years(
-        candidate,
-        semantic_analysis,
-        role_name
-    )
+    relevant_years = calculate_relevant_years(candidate, semantic_analysis, role_name)
 
     exp_score = calculate_experience_score(
-        relevant_years,
-        requirements.get("required_years", 0)
+        relevant_years, requirements.get("required_years", 0)
     )
 
-    skill_score = calculate_skill_score(
-        semantic_analysis.get("skill_analysis", [])
-    )
+    skill_score = calculate_skill_score(semantic_analysis.get("responsibility_analysis", []))
 
     edu_score = calculate_education_score(
-        candidate.get("education", []),
-        requirements.get("education_requirement", {})
+        candidate.get("education", []), requirements.get("education_requirement", {})
     )
 
     required_certs = requirements.get("required_certifications", [])
@@ -230,8 +242,7 @@ def calculate_math_score(candidate, requirements, semantic_analysis, role_name="
 
     if has_cert_reqs:
         cert_score = calculate_cert_match(
-            candidate.get("certifications", []),
-            required_certs
+            candidate.get("certifications", []), required_certs
         )
         W_SKILL, W_EXP, W_EDU, W_CERT = 0.15, 0.40, 0.25, 0.20
     else:
@@ -239,10 +250,10 @@ def calculate_math_score(candidate, requirements, semantic_analysis, role_name="
         W_SKILL, W_EXP, W_EDU, W_CERT = 0.15, 0.55, 0.30, 0.00
 
     final_score = (
-        skill_score * W_SKILL +
-        exp_score * W_EXP +
-        edu_score * W_EDU +
-        cert_score * W_CERT
+        skill_score * W_SKILL
+        + exp_score * W_EXP
+        + edu_score * W_EDU
+        + cert_score * W_CERT
     )
 
     return {
