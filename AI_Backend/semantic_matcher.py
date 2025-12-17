@@ -68,10 +68,8 @@ CANDIDATE PROFILE:
 
     except Exception as e:
         print("\n=== SEMANTIC ANALYSIS FAILED ===")
-        print(f"Error: {e}")
-        print(f"Error Type: {type(e).__name__}")
-        print("=== FALLBACK TO EMPTY ANALYSIS ===\n")
         return {
             "work_experience_analysis": [],
-            "responsibility_analysis": []
+            "responsibility_analysis": [],
+            "education_analysis": []
         }
