@@ -44,8 +44,16 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
     else:
         comp_score = 70
 
-    bias_detected = llm_result.get("bias_check_flag", {}).get("detected", False)
-    bias_score = 70 if bias_detected else 100
+    bias_info = llm_result.get("bias_check_flag", {})
+    bias_detected = bias_info.get("detected", False)
+    bias_flags = bias_info.get("flags", [])
+
+    bias_score = 100
+    if bias_detected:
+        if any("jd-role mismatch" in flag.lower() for flag in bias_flags):
+            bias_score = 0
+        else:
+            bias_score = 70
 
     return int((comp_score * 0.6) + (bias_score * 0.4))
 

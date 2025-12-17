@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from parsing import parse_pdf, parse_docx
 from extraction import extract_resume_data
 from scoring import score_candidate
+from semantic_matcher import get_unified_analysis
+from jd_parsing import parse_jd_requirements
 
 load_dotenv()
 
@@ -15,6 +17,15 @@ class ScoreRequest(BaseModel):
     candidate_data: dict
     role_name: str
     job_description: str
+
+class SemanticTestRequest(BaseModel):
+    candidate_data: dict
+    role_name: str
+    job_description: str
+
+class JDParsingTestRequest(BaseModel):
+    job_description: str
+    role_name: str
 
 
 @app.get("/")
@@ -85,6 +96,86 @@ def calculate_score(request: ScoreRequest):
         request.candidate_data, request.role_name, request.job_description
     )
     return result
+
+@app.post("/test-semantic")
+def test_semantic_matcher(request: SemanticTestRequest):
+    """
+    Test semantic matcher in isolation with detailed debug output.
+    """
+    try:
+        jd_requirements = parse_jd_requirements(request.job_description, request.role_name)
+        semantic_result = get_unified_analysis(
+            request.candidate_data, 
+            jd_requirements, 
+            request.role_name
+        )
+        
+        return {
+            "success": True,
+            "jd_requirements": jd_requirements,
+            "semantic_analysis": semantic_result,
+            "debug_info": {
+                "candidate_jobs_count": len(request.candidate_data.get('work_experience', [])),
+                "skill_categories_count": len(jd_requirements.get('skill_requirements', [])),
+                "experience_analysis_count": len(semantic_result.get('work_experience_analysis', [])),
+                "skill_analysis_count": len(semantic_result.get('skill_analysis', []))
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
+@app.post("/test-jd-parsing")
+def test_jd_parsing(request: JDParsingTestRequest):
+    """
+    Test job description parsing in isolation with detailed debug output.
+    """
+    try:
+        print(f"\n=== JD PARSING TEST START ===")
+        print(f"Role Name: {request.role_name}")
+        print(f"JD Length: {len(request.job_description)} characters")
+        print(f"JD Preview: {request.job_description[:200]}...")
+        
+        jd_requirements = parse_jd_requirements(request.job_description, request.role_name)
+        
+        print(f"Parsed Requirements:")
+        print(f"  Required Years: {jd_requirements.get('required_years', 0)}")
+        print(f"  Responsibilities: {len(jd_requirements.get('responsibilities', []))}")
+        print(f"  Education Required: {jd_requirements.get('education_requirement', {}).get('required_level', 'None')}")
+        print(f"  Certifications: {len(jd_requirements.get('required_certifications', []))}")
+        
+        if jd_requirements.get('responsibilities'):
+            print(f"  Sample Responsibilities:")
+            for i, resp in enumerate(jd_requirements['responsibilities'][:3]):
+                print(f"    {i+1}. {resp.get('text', 'N/A')[:100]}...")
+        
+        print(f"=== JD PARSING TEST END ===\n")
+        
+        return {
+            "success": True,
+            "parsed_requirements": jd_requirements,
+            "debug_info": {
+                "input_length": len(request.job_description),
+                "responsibilities_count": len(jd_requirements.get('responsibilities', [])),
+                "has_education_req": bool(jd_requirements.get('education_requirement', {}).get('required_level')),
+                "certifications_count": len(jd_requirements.get('required_certifications', [])),
+                "required_years": jd_requirements.get('required_years', 0)
+            }
+        }
+    except Exception as e:
+        print(f"\n=== JD PARSING FAILED ===")
+        print(f"Error: {e}")
+        print(f"Error Type: {type(e).__name__}")
+        print(f"=== JD PARSING TEST END ===\n")
+        
+        return {
+            "success": False,
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
 
 @app.post("/analyze")
 async def analyze_resume(

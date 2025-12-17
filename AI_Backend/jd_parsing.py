@@ -10,7 +10,8 @@ client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 def parse_jd_requirements(job_description: str, role_name: str):
     """
-    Parses the job description to extract requirements.
+    Parses the job description to extract atomic responsibilities, 
+    education, certifications, and required experience.
     """
     try:
         context = f"Job Role: {role_name}\n"
@@ -20,7 +21,7 @@ def parse_jd_requirements(job_description: str, role_name: str):
             context += "Job Description: Not provided (Infer standard requirements)."
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": JD_PARSING_PROMPT},
                 {"role": "user", "content": f"Parse job requirements and return JSON:\n{context}"}
@@ -29,24 +30,25 @@ def parse_jd_requirements(job_description: str, role_name: str):
             temperature=0.0,
             max_tokens=1500
         )
-        
+
         result = json.loads(response.choices[0].message.content)
+
         if "required_years" not in result:
             result["required_years"] = 0
-        if "skill_requirements" not in result:
-            result["skill_requirements"] = []
-        if "required_degree" not in result:
-            result["required_degree"] = ""
+        if "responsibilities" not in result:
+            result["responsibilities"] = []
+        if "education_requirement" not in result:
+            result["education_requirement"] = {"required_level": "", "valid_majors": []}
         if "required_certifications" not in result:
             result["required_certifications"] = []
-        
+
         return result
-        
+
     except Exception as e:
         print(f"Error parsing job description: {e}")
         return {
             "required_years": 0,
-            "skill_requirements": [],
-            "required_degree": "",
+            "responsibilities": [],
+            "education_requirement": {"required_level": "", "valid_majors": []},
             "required_certifications": []
         }
