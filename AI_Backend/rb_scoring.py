@@ -142,15 +142,14 @@ def calculate_skill_score(responsibility_analysis):
 
     return int((matched / required) * 100)
 
-
-def calculate_education_score(candidate_edu, req_edu):
+def calculate_education_score(education_analysis, req_edu):
     if not req_edu or not req_edu.get("required_level"):
         return 100
-    if not candidate_edu:
+    if not education_analysis:
         return 0
 
     levels = {
-        "phd": 5,
+        "phd": 6,
         "doctorate": 5,
         "master": 4,
         "bachelor": 3,
@@ -159,17 +158,17 @@ def calculate_education_score(candidate_edu, req_edu):
         "none": 0,
     }
 
-    req_level_str = normalize_text(req_edu.get("required_level", "none"))
-    req_val = next((v for k, v in levels.items() if k in req_level_str), 0)
+    req_level = normalize_text(req_edu.get("required_level", "none"))
+    req_val = levels.get(req_level, 0)
 
     best_score = 0
 
-    for edu in candidate_edu:
+    for edu in education_analysis:
+        if not edu.get("is_relevant"):
+            continue
+
         cand_level = normalize_text(edu.get("degree_level", "none"))
         cand_val = levels.get(cand_level, 0)
-
-        if cand_val == 0:
-            continue
 
         if cand_val >= req_val:
             score = 100
@@ -181,7 +180,6 @@ def calculate_education_score(candidate_edu, req_edu):
         best_score = max(best_score, score)
 
     return best_score
-
 
 def calculate_cert_match(candidate_certs, required_certs):
     if not required_certs:
@@ -233,9 +231,10 @@ def calculate_math_score(candidate, requirements, semantic_analysis, role_name="
 
     skill_score = calculate_skill_score(semantic_analysis.get("responsibility_analysis", []))
 
-    edu_score = calculate_education_score(
-        candidate.get("education", []), requirements.get("education_requirement", {})
-    )
+    edu_score = calculate_education_score(semantic_analysis.get("education_analysis", []),
+    requirements.get("education_requirement", {})
+   )
+
 
     required_certs = requirements.get("required_certifications", [])
     has_cert_reqs = bool(required_certs)
