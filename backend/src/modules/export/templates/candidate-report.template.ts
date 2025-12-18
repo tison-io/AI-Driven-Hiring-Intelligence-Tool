@@ -266,11 +266,11 @@ export function generateReportHTML(candidate: any): string {
         <div class="info-grid">
           <div class="info-item">
             <div class="info-label">Full Name</div>
-            <div class="info-value">${candidate.name}</div>
+            <div class="info-value">${candidate.name || 'Unknown'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">Job Role</div>
-            <div class="info-value">${candidate.jobRole}</div>
+            <div class="info-value">${candidate.jobRole || 'Not specified'}</div>
           </div>
           <div class="info-item">
             <div class="info-label">LinkedIn Profile</div>
@@ -278,7 +278,7 @@ export function generateReportHTML(candidate: any): string {
           </div>
           <div class="info-item">
             <div class="info-label">Years of Experience</div>
-            <div class="info-value">${candidate.experienceYears} years</div>
+            <div class="info-value">${candidate.experienceYears ?? 'N/A'} years</div>
           </div>
         </div>
       </div>
