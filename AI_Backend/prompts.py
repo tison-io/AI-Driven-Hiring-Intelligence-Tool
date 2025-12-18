@@ -270,7 +270,7 @@ Your primary task is to extract job requirements, responsibilities, duties, and 
 - ONLY infer missing information for:
   - `required_years`: if absent, estimate based on job market standards
   - `education_requirement`: if absent, estimate based on role level
-  - `primary_requirements`: If the jd provides no extractable qualifications and responsibilities.
+  - `primary_requirements`: If the jd provides no extractable qualifications and responsiblities.
 
 ### WHAT TO EXTRACT:
 From the JD, extract:
@@ -288,6 +288,41 @@ Ignore:
 - Bullet points → One responsibility per item
 - Long sentences with multiple actions → Split ONLY if actions are clearly separable
 - Examples inside responsibilities → Keep them as part of the text
+
+### EDUCATION NORMALIZATION (MANDATORY)
+When extracting `education_requirement.required_level`, you MUST normalize the value to EXACTLY ONE of the following lowercase tokens:
+  - "phd"
+  - "doctorate"
+  - "master"
+  - "bachelor"
+  - "associate"
+  - "diploma"
+  - "none"
+Normalization mapping examples (not exhaustive):
+  - "phd"
+"PhD", "Ph.D", "DPhil", "Doctor of Philosophy", "Doctor of Science", "ScD", "DSc"
+
+  - "doctorate"
+"Doctorate", "Doctoral Degree", "Doctoral Studies", "EdD", "DBA", "JD", "MD", "EngD", "Professional Doctorate"
+
+  - "master"
+"Master's", "Masters Degree", "Graduate Degree", "MSc", "MS", "MA", "MBA", "MEng", "M.Tech", "MTech", "MPH", "MPA", "LLM", "MFA", "Postgraduate Degree"
+
+  - "bachelor"
+"Bachelor's", "Bachelors Degree", "Undergraduate Degree", "BSc", "BS", "BA", "BEng", "BE", "B.Tech", "BTech", "BBA", "BCom", "B.Ed", "LLB"
+
+  - "associate"
+"Associate Degree", "AA", "AS", "AAS", "Two-Year Degree", "Community College Degree"
+
+  - "diploma"
+"High School Diploma", "Secondary School", "Secondary Education", "Diploma", "National Diploma", "HND", "Vocational Training", "Technical Certificate"
+
+  - "none"
+Education not mentioned
+Education mentioned but level cannot be inferred
+Education explicitly stated as not required
+
+**IMPORTANT:** DO NOT output any other values.
 
 ### OUTPUT SCHEMA (STRICT JSON):
 
@@ -395,6 +430,40 @@ For each education entry in the candidate's profile:
   `is_relevant` = false
   `degree_level` = "none"
 - Provide a brief justification for the decision.
+
+### DEGREE LEVEL NORMALIZATION (STRICT)
+For every education entry, you MUST output `degree_level` using ONLY
+one of the following exact lowercase values:
+  "phd"
+  "doctorate"
+  "master"
+  "bachelor"
+  "associate"
+  "diploma"
+  "none"
+
+Mapping examples (not exhaustive):
+  - PhD / Research Doctorate
+PhD, Ph.D., DPhil, Doctor of Philosophy, Doctor of Science (DSc, ScD) → "phd"
+
+  - Doctorate / Professional / Taught Doctorate
+Doctorate, Doctoral Degree, Doctor of Education (EdD), Doctor of Business Administration (DBA), Juris Doctor (JD), Doctor of Medicine (MD), Doctor of Engineering (EngD) → "doctorate"
+
+  - Master's
+MSc, MS, MA, MBA, MEng, M.Tech, MTech, M.Ed, MPH, MPA, LLM, MFA, Postgraduate Degree → "master"
+
+  - Bachelor's
+BSc, BS, BA, BEng, BE, B.Tech, BTech, BBA, BCom, B.Ed, LLB, Undergraduate Degree → "bachelor"
+
+  - Associate
+Associate Degree, AA, AS, AAS, Community College Degree, Two-Year Degree → "associate"
+
+  - Diploma
+Diploma, High School Diploma, Secondary School Certificate, National Diploma (ND), Higher National Diploma (HND), Vocational Diploma, Technical Diploma → "diploma"
+
+### Special Rule:
+If the education is irrelevant to the TARGET ROLE NAME →
+set degree_level = "none" regardless of the actual degree
 
 ### OUTPUT FORMAT (STRICT JSON ONLY)
 {
