@@ -3,12 +3,7 @@ import { CandidatesService } from '../candidates/candidates.service';
 import { CandidateFilterDto } from '../candidates/dto/candidate-filter.dto';
 import * as XLSX from 'xlsx';
 import { createObjectCsvWriter } from 'csv-writer';
-let marked: any;
-try {
-  marked = require('marked').marked;
-} catch {
-  marked = (text: string) => text;
-}
+import { generateReportHTML } from './templates/candidate-report.template';
 
 @Injectable()
 export class ExportService {
@@ -65,41 +60,6 @@ export class ExportService {
       throw new NotFoundException('Candidate not found');
     }
 
-    const markdownReport = `
-# Hiring Intelligence Report
-
-## Candidate Information
-- **Name**: ${candidate.name}
-- **Job Role**: ${candidate.jobRole}
-- **LinkedIn**: ${candidate.linkedinUrl || 'Not provided'}
-- **Experience**: ${candidate.experienceYears} years
-
-## AI Evaluation Results
-- **Role Fit Score**: ${candidate.roleFitScore || 'Pending'}/100
-- **Confidence Score**: ${candidate.confidenceScore || 'Pending'}%
-
-### Key Strengths
-${candidate.keyStrengths.map(strength => `- ${strength}`).join('\n')}
-
-### Potential Weaknesses
-${candidate.potentialWeaknesses.map(weakness => `- ${weakness}`).join('\n')}
-
-### Missing Skills
-${candidate.missingSkills.map(skill => `- ${skill}`).join('\n')}
-
-### Recommended Interview Questions
-${candidate.interviewQuestions.map((question, index) => `${index + 1}. ${question}`).join('\n')}
-
-### Skills
-${candidate.skills.map(skill => `- ${skill}`).join('\n')}
-
-### Bias Check
-${candidate.biasCheck || 'No bias concerns identified'}
-
----
-*Report generated on ${new Date().toISOString()}*
-    `;
-
-    return marked(markdownReport);
+    return generateReportHTML(candidate);
   }
 }
