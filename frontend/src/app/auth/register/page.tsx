@@ -6,8 +6,8 @@ export default function RegisterPage() {
   return (
     <PublicRoute>
       <div className="min-h-screen flex">
-        {/* Left Side */}
-        <div className="flex-1 bg-gradient-to-b from-[#0A1628] to-[#1A2B42] flex flex-col items-center justify-center px-12">
+        {/* Left Side - Hidden on mobile */}
+        <div className="hidden lg:flex flex-1 bg-gradient-to-b from-[#0A1628] to-[#1A2B42] flex-col items-center justify-center px-12">
           <Image
             src="/images/logo.png"
             alt="Hiring Intelligence"
@@ -23,8 +23,8 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        {/* Right Side */}
-        <div className="flex-1 bg-white flex items-center justify-center px-12">
+        {/* Right Side - Full width on mobile */}
+        <div className="flex-1 lg:flex-1 bg-white flex items-center justify-center px-6 lg:px-12">
           <div className="w-full max-w-md">
             <RegisterForm />
           </div>
