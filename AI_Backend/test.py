@@ -4,12 +4,88 @@ import statistics
 import os
 
 API_URL = "http://localhost:8000/analyze"
-TEST_FILE_PATH = "sample pdfs/Underqualified.docx"
-ROLE_NAME = "Accounting"
+TEST_FILE_PATH = "sample pdfs/Overqualified..pdf"
+ROLE_NAME = "Lead AWS Engineer with Python and MLOps"
 
 SAMPLE_JD = """
-our client is seeking a highly skilled and motivated Senior Software Engineer to join their agile development team. This is a fully remote position, empowering you to build innovative software solutions from the convenience of your home office. You will be responsible for designing, developing, testing, and deploying robust and scalable software applications across the full stack. The ideal candidate will possess a strong understanding of software development principles, data structures, algorithms, and best practices in both front-end and back-end development. You will leverage your expertise in programming languages and frameworks to create high-quality code, contribute to architectural decisions, and mentor junior engineers. Your responsibilities will include collaborating with product managers and designers to translate requirements into technical solutions, writing clean and maintainable code, conducting code reviews, and participating in agile ceremonies. This role requires excellent problem-solving skills, a passion for technology, and the ability to work independently and effectively in a remote environment. Our client is committed to building cutting-edge software and seeks individuals who are eager to contribute to impactful projects and drive technical excellence. Responsibilities: Design, develop, and maintain scalable and robust software applications. Write clean, efficient, and well-documented code across the full technology stack. Collaborate with cross-functional teams to define, design, and ship new features. Participate in code reviews, providing constructive feedback to peers. Identify and resolve software defects and performance issues. Contribute to architectural design discussions and technical decision-making. Develop and maintain unit tests and integration tests to ensure code quality. Stay up-to-date with emerging software development trends and technologies. Mentor junior software engineers and foster a culture of learning. Optimize application performance and ensure system reliability. Qualifications: Bachelor's degree in Computer Science, Engineering, or a related field. Minimum of 7 years of experience in software development. Proven experience working effectively in a fully remote capacity. Proficiency in one or more modern programming languages (e.g., Python, Java, JavaScript, C#). Experience with front-end frameworks (e.g., React, Angular, Vue.js). Experience with back-end frameworks and technologies (e.g., Node.js, Django, Spring Boot, .NET). Strong understanding of database systems (e.g., SQL, NoSQL). Familiarity with cloud platforms (e.g., AWS, Azure, GCP). Excellent problem-solving, analytical, and debugging skills. Strong communication and interpersonal skills. Experience with Agile development methodologies. Our client provides a collaborative and supportive remote work environment, encouraging professional growth and innovation.
-Also the candidate should have certifications in Certified ScrumMaster (CSM), Oracle Certified Professional: Java SE 11 Developer, and AWS Certified Solutions Architect – Associate.
+At Quest Global, it's not just what we do but how and why we do it that makes us different. With over 25 years as an engineering services provider, we believe in the power of doing things differently to make the impossible possible. Spanning 18 countries and speaking 51 languages, our 21,000+ extraordinary employees are driven by the desire to make the world a better place. We bring together technologies and industries, alongside the contributions of diverse individuals who are empowered by an intentional workplace culture, to solve problems better and faster.
+Job Requirements
+Job Title: Lead AWS Engineer with Python and MLOps
+
+At Quest Global, it's not just what we do but how and why we do it that makes us different. With over 25 years as an engineering services provider, we believe in the power of doing things differently to make the impossible possible. Our people are driven by the desire to make the world a better place—to make a positive difference that contributes to a brighter future. We bring together technologies and industries, alongside the contributions of diverse individuals who are empowered by an intentional workplace culture, to solve problems better and faster.
+ 
+Key Responsibilities
+• Need to play both individual and lead role in all aspect.  
+We are known for our extraordinary people who make the impossible possible every day. Questians are driven by hunger, humility, and aspiration. We believe that our company culture is the key to our ability to make a true difference in every industry we reach. Our teams regularly invest time and dedicated effort into internal culture work, ensuring that all voices are heard.
+We wholeheartedly believe in the diversity of thought that comes with fostering a culture rooted in respect, where everyone belongs, is valued, and feels inspired to share their ideas. We know embracing our unique differences makes us better, and that solving the worlds hardest engineering problems requires diverse ideas, perspectives, and backgrounds. We shine the brightest when we tap into the many dimensions that thrive across over 21,000 difference-makers in our workplace.
+
+
+
+Work Experience
+Mandate Skills: AWS, Python, MLOps, Docker or Kubernetes, SQL/NoSQL/Vector Database, LLM AND Prompt Engineering
+
+Optional Skills: CI/CD, LangChain or AgentGPT or any AI Agent Framework, ML Frameworks: PyTorch or TensorFlow or scikit-learn
+
+ Detailed JD Info:
+
+We are looking for a highly skilled Senior AI/ML Engineer with a strong background in designing, deploying, and operationalizing AI/ML services in production environments. You will be a key contributor in building and maintaining robust, scalable systems that support machine learning workflows, including Large Language Models (LLMs) and AI agent frameworks. This position requires deep expertise in MLOps, distributed systems, cloud infrastructure (particularly AWS), and modern software development practices. You’ll collaborate with cross-functional teams, drive outcomes by “thinking backward” from business objectives, and deliver impactful results under specific timelines.
+
+ 
+
+Key Responsibilities
+
+Design & Implement AI/ML Solutions
+Architect and develop end-to-end ML solutions from data ingestion to model deployment, including LLM-based applications.
+Evaluate and select appropriate frameworks, libraries, and tools to meet both short-term project goals and long-term scalability.
+LLM & Prompt Engineering
+Develop and optimize prompts for Large Language Models (e.g., Openai/Claude/Llama) to improve the quality and relevance of outputs.
+Conduct experiments to evaluate LLM performance and apply prompt engineering best practices to ensure high-impact results.
+AI Agent Frameworks
+Incorporate AI agent frameworks (e.g., LangChain, AgentGPT, or similar) to enable autonomous or semi-autonomous decision-making within applications.
+Integrate AI agents with existing systems, ensuring robust communication and secure data handling.
+MLOps & Production Operations
+Set up and optimize CI/CD pipelines for ML models, ensuring continuous integration, testing, and deployment.
+Monitor, troubleshoot, and refine production ML systems for performance, cost-efficiency, and reliability.
+Cloud Development (AWS)
+Leverage AWS services (e.g., EC2, S3, Lambda, SageMaker, EKS) to design and maintain scalable, secure, and cost-efficient ML infrastructure.
+Implement best practices for cloud resource allocation, scaling, and maintenance.
+Software Engineering & Distributed Systems
+Write clean, maintainable, and well-documented code in Python and other modern languages (e.g., Go or Rust).
+Develop and maintain distributed systems, focusing on reliability, fault tolerance, and performance.
+Work with databases (SQL/NoSQL) to handle large-scale data processing and storage.
+Front-End Integration
+Collaborate on front-end projects using React/Next.js to build user interfaces or internal tools that interact with AI/ML services.
+Cross-Team Collaboration
+Work closely with product managers, data scientists, DevOps engineers, and other stakeholders to define requirements and deliver high-impact solutions.
+Communicate technical decisions effectively, balancing trade-offs between short-term needs and long-term product vision.
+Autonomy & Time Management
+Operate with minimal supervision, proactively identifying issues and taking ownership to drive solutions.
+Manage multiple priorities in a fast-paced environment, and effectively escalate blockers to ensure timely delivery.
+Continuous Learning & Adaptability
+Stay updated with emerging AI/ML technologies, LLM advancements, and best practices, sharing insights with the team.
+Adapt quickly to new domains, frameworks, and technologies as project needs evolve.
+ 
+
+Qualifications & Requirements
+
+Experience: 5+ years of professional software engineering experience, including distributed systems and databases.
+Education: Bachelor's or Master's degree in Computer Science, Engineering, or a related field (or equivalent industry experience).
+Technical Skills:
+Required:
+AWS (or other major cloud provider) with hands-on experience in deploying, monitoring, and scaling production services.
+Python (preferred) and proficiency in at least one other modern programming language (e.g., Go, Java, Rust).
+Strong understanding of MLOps concepts, CI/CD pipelines, containerization (Docker), and orchestration (Kubernetes).
+Experience with SQL/NoSQL/Vector databases and data processing frameworks.
+Demonstrated knowledge of LLMs and prompt engineering.
+Familiarity with AI agent frameworks such as LangChain, AgentGPT, or similar.
+Experience with open-source ML tools and libraries (PyTorch, TensorFlow, scikit-learn, etc.).
+Nice to Have:
+Front-end development skills (React, Next.js) or familiarity with web frameworks.
+Soft Skills:
+Excellent interpersonal and communication skills, with the ability to collaborate across diverse teams.
+Strong problem-solving aptitude and a results-oriented mindset.
+Proven time management skills, ability to prioritize tasks, and meet tight deadlines.
+Self-starter who seeks out solutions independently but knows when to escalate for help.
 """
 NUM_RUNS = 2
 MAX_LATENCY_THRESHOLD = 10.0
@@ -64,10 +140,14 @@ def run_stress_test():
                     edu = breakdown.get("education_fit", "N/A")
                     cert = breakdown.get("certifications", "N/A")
 
-                    if isinstance(skill, (int, float)): skill_scores.append(skill)
-                    if isinstance(exp, (int, float)): exp_scores.append(exp)
-                    if isinstance(edu, (int, float)): edu_scores.append(edu)
-                    if isinstance(cert, (int, float)): cert_scores.append(cert)
+                    if isinstance(skill, (int, float)):
+                        skill_scores.append(skill)
+                    if isinstance(exp, (int, float)):
+                        exp_scores.append(exp)
+                    if isinstance(edu, (int, float)):
+                        edu_scores.append(edu)
+                    if isinstance(cert, (int, float)):
+                        cert_scores.append(cert)
 
                     time_status = "OK" if duration <= MAX_LATENCY_THRESHOLD else "SLOW"
                     print(
@@ -104,10 +184,22 @@ def run_stress_test():
     print(f" Overall Score Spread: {spread:.2f} points (Target: < 5)")
     print("-" * 65)
     print(" Breakdown Score Analysis (Avg | Spread):")
-    if skill_scores: print(f"  - Skill Match:      {statistics.mean(skill_scores):.2f} | {(max(skill_scores) - min(skill_scores)):.2f}")
-    if exp_scores: print(f"  - Exp. Relevance:   {statistics.mean(exp_scores):.2f} | {(max(exp_scores) - min(exp_scores)):.2f}")
-    if edu_scores: print(f"  - Education Fit:    {statistics.mean(edu_scores):.2f} | {(max(edu_scores) - min(edu_scores)):.2f}")
-    if cert_scores: print(f"  - Certifications:   {statistics.mean(cert_scores):.2f} | {(max(cert_scores) - min(cert_scores)):.2f}")
+    if skill_scores:
+        print(
+            f"  - Skill Match:      {statistics.mean(skill_scores):.2f} | {(max(skill_scores) - min(skill_scores)):.2f}"
+        )
+    if exp_scores:
+        print(
+            f"  - Exp. Relevance:   {statistics.mean(exp_scores):.2f} | {(max(exp_scores) - min(exp_scores)):.2f}"
+        )
+    if edu_scores:
+        print(
+            f"  - Education Fit:    {statistics.mean(edu_scores):.2f} | {(max(edu_scores) - min(edu_scores)):.2f}"
+        )
+    if cert_scores:
+        print(
+            f"  - Certifications:   {statistics.mean(cert_scores):.2f} | {(max(cert_scores) - min(cert_scores)):.2f}"
+        )
     print("-" * 65)
 
     latency_pass = avg_time <= MAX_LATENCY_THRESHOLD if times else False

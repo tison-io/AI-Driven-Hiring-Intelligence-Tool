@@ -155,14 +155,14 @@ You are NOT summarizing. You are ENUMERATING and VALIDATING each requirement.
    - Evaluate requirements from the `responsibilities` list instead.
    - Education and certification rules still apply.
 
-### CERTIFICATION ANALYSIS (STRICT)
+### CERTIFICATION ANALYSIS (STRICT):
 For each certification in `required_certifications`, output exactly one value:
 - "ok" → candidate has the same, equivalent, or higher-level certification
 - "not" → missing or lower-level
 
 Order must match the JD exactly.
 
-### STRENGTH & WEAKNESS GENERATION (MANDATORY ENUMERATION)
+### STRENGTH & WEAKNESS GENERATION (MANDATORY ENUMERATION):
 For EACH job requirement:
 IF MET:
 - Add ONE entry to `key_strengths`
@@ -173,19 +173,49 @@ IF NOT MET:
 - Explicitly name the unmet requirement
 - If missing entirely, state “No evidence found in resume”
 
-DO NOT collapse multiple requirements into one strength or weakness.
 DO NOT reuse the same evidence for multiple requirements unless explicitly justified.
 
-### MISSING SKILLS (STRICT)
+### STRENGTH SYNTHESIS RULE (CRITICAL): 
+When generating `key_strengths`:
+1. The `strength` field MUST be an AI-synthesized capability statement.
+   - It must describe the candidate's demonstrated capability or competency.
+   - It MUST NOT be a direct copy or minor rewording of any resume bullet.
+2. The `source_quote` field MUST be a direct, verbatim excerpt from the candidate's resume
+   that provides evidence for the strength.
+3. The `strength` text and the `source_quote` text MUST NOT be identical.
+4. If responsibilities are used as the evaluation source:
+   - Convert the responsibility into a capability (what the candidate is good at),
+     NOT an action statement.
+
+### WEAKNESS SYNTHESIS RULE (CRITICAL)
+When generating `potential_weaknesses`:
+1. The `weakness` field MUST be an AI-synthesized gap statement.
+   - It must describe *what is missing, limited, or underrepresented* relative to the job requirements.
+   - **PHRASING:** Do NOT start with generic phrases like "No evidence found in resume for...". Instead, use direct phrasing such as "Limited exposure to [X]", "Lacks experience in [X]", or "Missing proficiency in [X]".
+   - It MUST NOT be a direct copy or minor rewording of any job description text.
+2. The `source_quote` field MUST reference:
+   - Either a resume excerpt showing absence or limitation, OR
+   - A short statement such as "No evidence found in candidate profile" if the requirement is entirely unmet.
+3. The `weakness` text and the `source_quote` text MUST NOT be identical.
+4. If responsibilities are used as evaluation criteria:
+   - Frame weaknesses as *capability gaps*, not missing task execution.
+   - Do NOT restate the responsibility verbatim as a weakness.
+5. Do NOT invent missing experience.
+   - Only declare a weakness if the requirement is explicitly present in the Job Description
+     and evidence is absent or clearly insufficient in the candidate profile.
+
+### MISSING SKILLS (STRICT):
 List ONLY skills that:
 - Are explicitly required in the JD
 - Are completely absent from the candidate profile
 
+**FORMATTING:** - Output MUST be concise keywords or short noun phrases (e.g., "Python", "MLOps", "SQL", "LLMs"). 
+- Do NOT output full sentences or long descriptions.
+
 Do NOT infer or guess.
 
-### INTERVIEW INTELLIGENCE ENGINE (SCALING RULES)
+### INTERVIEW INTELLIGENCE ENGINE (SCALING RULES):
 Generate interview questions based on coverage gaps and risk areas.
-
 MANDATORY RULES:
 1. You MUST include questions from ALL FOUR categories:
    - Technical
