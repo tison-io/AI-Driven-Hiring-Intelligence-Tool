@@ -134,7 +134,7 @@ def calculate_skill_score(responsibility_analysis):
     matched = sum(
         1
         for item in responsibility_analysis
-        if item.get("match_level") in {"Confirmed", "Likely", "Uncertain"}
+        if item.get("match_level") in {"Confirmed", "Likely"}
     )
 
     if matched == 0:
@@ -243,10 +243,10 @@ def calculate_math_score(candidate, requirements, semantic_analysis, role_name="
         cert_score = calculate_cert_match(
             candidate.get("certifications", []), required_certs
         )
-        W_SKILL, W_EXP, W_EDU, W_CERT = 0.15, 0.40, 0.25, 0.20
+        W_SKILL, W_EXP, W_EDU, W_CERT = 0.40, 0.30, 0.15, 0.15
     else:
         cert_score = 100
-        W_SKILL, W_EXP, W_EDU, W_CERT = 0.15, 0.55, 0.30, 0.00
+        W_SKILL, W_EXP, W_EDU, W_CERT = 0.55, 0.30, 0.15, 0.00
 
     final_score = (
         skill_score * W_SKILL
