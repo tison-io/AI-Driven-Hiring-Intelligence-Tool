@@ -62,7 +62,7 @@ def calculate_duration_years(start_str, end_str):
 EXPERIENCE_COLLAPSE = {
     "High": "Relevant",
     "Partial": "Relevant",
-    "Low": "Irrelevant",
+    "Low": "Relevant",
     "None": "Irrelevant",
 }
 

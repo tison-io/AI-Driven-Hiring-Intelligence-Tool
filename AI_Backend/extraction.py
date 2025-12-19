@@ -2,10 +2,11 @@ import os
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+from langsmith.wrappers import wrap_openai
 from prompts import SYSTEM_EXTRACTION_PROMPT
 
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 def extract_resume_data(raw_text: str):
     """
