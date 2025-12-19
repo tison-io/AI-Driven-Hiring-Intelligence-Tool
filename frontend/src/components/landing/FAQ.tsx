@@ -42,12 +42,12 @@ const FAQ = () => {
             <div className='space-y-4'>
                 {faqs.map((faq, index) => (
                     <div key={index} className='border border-gray-200 rounded-lg overflow-hidden hover:border-gray-300 transition-colors'>
-                        <button className='flex justify-between items-center w-full p-5 text-left bg-white hover:bg-gray-50 transition-colors focus:outline-none' onClick={() => toggleFAQ(index)}>
-                            <h3 className='text-lg font-semibold pr-4'>{faq.question}</h3>
-                            <ChevronDown className={`w-6 h-6 flex-shrink-0 transition-transform duration-200 ${openIndex === index ? 'transform rotate-180' : ''}`} />
+                        <button className='flex justify-between items-center w-full p-3 sm:p-5 text-left bg-white hover:bg-gray-50 transition-colors focus:outline-none' onClick={() => toggleFAQ(index)}>
+                            <h3 className='text-base sm:text-lg font-semibold pr-3 sm:pr-4'>{faq.question}</h3>
+                            <ChevronDown className={`w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0 transition-transform duration-200 ${openIndex === index ? 'transform rotate-180' : ''}`} />
                         </button>
                         <div className={`overflow-hidden transition-all duration-200 ${openIndex === index ? 'max-h-96' : 'max-h-0'}`}>
-                            <p className='p-5 pt-0 text-gray-600'>{faq.answer}</p>
+                            <p className='p-3 sm:p-5 pt-0 text-sm sm:text-base text-gray-600'>{faq.answer}</p>
                         </div>
                     </div>
                 ))}
