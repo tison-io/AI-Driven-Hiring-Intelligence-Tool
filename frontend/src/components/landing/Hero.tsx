@@ -44,7 +44,7 @@ const Hero = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-row gap-4">
               <Link
                 href="/auth/register"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
@@ -56,7 +56,7 @@ const Hero = () => {
               <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
                 <Link
                   href="/auth/login"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-transparent rounded-lg text-white font-semibold hover:bg-white/10 transition-all duration-200"
+                  className="inline-flex items-center justify-center px-8 py-4 bg-[#0D1737] rounded-lg text-white font-semibold transition-all duration-200"
                 >
                   Log In
                 </Link>
