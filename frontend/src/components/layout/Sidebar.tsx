@@ -57,14 +57,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Header */}
         <div className="p-6 border-b border-gray-800">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img 
                 src={Logo.src}
                 alt="TalentScan AI" 
                 className="w-8 h-8 object-cover"
               />
               <h1 className="text-white text-lg font-semibold">TalentScan AI</h1>
-            </div>
+            </Link>
             {/* Mobile Close Button */}
             <button
               onClick={onClose}
