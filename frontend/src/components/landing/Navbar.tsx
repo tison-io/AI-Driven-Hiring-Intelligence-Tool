@@ -2,13 +2,26 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Menu, X, Zap, Lightbulb, ShieldCheck, HelpCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Menu, X, Zap, Lightbulb, ShieldCheck, HelpCircle, LogOut } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import Logo from '../../../public/images/talentScanLogo.svg'
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { user, logout } = useAuth()
+  const router = useRouter()
+  const isLoggedIn = !!user
 
   const closeMenu = () => setIsMenuOpen(false)
+
+  const dashboardRoute = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
+
+  const handleLogout = async () => {
+    await logout()
+    closeMenu()
+    router.push('/')
+  }
 
   const navItems = [
     { label: 'Features', href: '#features', icon: Zap },
@@ -46,20 +59,31 @@ const Navbar = () => {
 
             {/* Right: Buttons (Desktop) */}
             <div className="hidden md:flex items-center gap-4">
-              <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
+              {isLoggedIn ? (
                 <Link
-                  href="/auth/login"
-                  className="block px-6 py-2 bg-white rounded-lg text-black font-semibold"
+                  href={dashboardRoute}
+                  className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity"
                 >
-                  Login
+                  Go to Dashboard
                 </Link>
-              </div>
-              <Link
-                href="/auth/register"
-                className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity"
-              >
-                Get Started
-              </Link>
+              ) : (
+                <>
+                  <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
+                    <Link
+                      href="/auth/login"
+                      className="block px-6 py-2 bg-white rounded-lg text-black font-semibold"
+                    >
+                      Login
+                    </Link>
+                  </div>
+                  <Link
+                    href="/auth/register"
+                    className="px-6 py-2 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              )}
             </div>
 
             {/* Hamburger Menu Button (Mobile) */}
@@ -130,22 +154,43 @@ const Navbar = () => {
 
           {/* Auth Buttons */}
           <div className="mt-6 space-y-3">
-            <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
-              <Link
-                href="/auth/login"
-                onClick={closeMenu}
-                className="block px-6 py-3 bg-[#0a1628] rounded-lg text-white font-semibold text-center"
-              >
-                Login
-              </Link>
-            </div>
-            <Link
-              href="/auth/register"
-              onClick={closeMenu}
-              className="block px-6 py-3 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity text-center"
-            >
-              Get Started
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href={dashboardRoute}
+                  onClick={closeMenu}
+                  className="block px-6 py-3 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity text-center"
+                >
+                  Go to Dashboard
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="font-semibold">Logout</span>
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
+                  <Link
+                    href="/auth/login"
+                    onClick={closeMenu}
+                    className="block px-6 py-3 bg-[#0a1628] rounded-lg text-white font-semibold text-center"
+                  >
+                    Login
+                  </Link>
+                </div>
+                <Link
+                  href="/auth/register"
+                  onClick={closeMenu}
+                  className="block px-6 py-3 rounded-lg bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold hover:opacity-90 transition-opacity text-center"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </nav>
       </div>
