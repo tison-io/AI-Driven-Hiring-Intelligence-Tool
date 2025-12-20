@@ -1,10 +1,16 @@
+'use client'
 import React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Sparkles, ChevronRight } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 import Navbar from './Navbar'
 
 const Hero = () => {
+  const { user } = useAuth()
+  const isLoggedIn = !!user
+  const dashboardRoute = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard'
+
   return (
     <section className="relative w-full bg-[#0D1737] px-4 sm:px-6 lg:px-8">
       {/* Subtle Gradient Overlay */}
@@ -44,23 +50,35 @@ const Hero = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/auth/register"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
-              >
-                Get Started for Free
-                <ChevronRight className="w-5 h-5" />
-              </Link>
-
-              <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
+            <div className="flex flex-row gap-4">
+              {isLoggedIn ? (
                 <Link
-                  href="/auth/login"
-                  className="inline-flex items-center justify-center px-8 py-4 bg-transparent rounded-lg text-white font-semibold hover:bg-white/10 transition-all duration-200"
+                  href={dashboardRoute}
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
                 >
-                  Log In
+                  Go to Dashboard
+                  <ChevronRight className="w-5 h-5" />
                 </Link>
-              </div>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/register"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-all duration-200 shadow-lg hover:shadow-xl"
+                  >
+                    Get Started for Free
+                    <ChevronRight className="w-5 h-5" />
+                  </Link>
+
+                  <div className="p-[2px] bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] rounded-lg hover:opacity-90 transition-opacity">
+                    <Link
+                      href="/auth/login"
+                      className="inline-flex items-center justify-center px-8 py-4 bg-[#0D1737] rounded-lg text-white font-semibold transition-all duration-200"
+                    >
+                      Log In
+                    </Link>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -68,7 +86,7 @@ const Hero = () => {
           <div className="hidden lg:block relative">
             <div className="relative w-full h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="images/scanHero.svg"
+                src="/images/scanHero.svg"
                 alt="Team meeting discussing recruitment"
                 fill
                 className="object-cover"
