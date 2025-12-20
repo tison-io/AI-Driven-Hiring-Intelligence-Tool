@@ -2,10 +2,11 @@
 
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Upload, Link as LinkIcon, Shield, X, FileText } from 'lucide-react';
+import { Upload, Link as LinkIcon, Shield, X, FileText, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
 import toast from '@/lib/toast';
 import { EvaluationFormProps } from '@/types';
+import { FEATURES } from '@/config/features';
 
 export default function EvaluationForm({ 
   onSuccess, 
@@ -20,6 +21,7 @@ export default function EvaluationForm({
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isLinkedInModalOpen, setIsLinkedInModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -61,6 +63,23 @@ export default function EvaluationForm({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const handleLinkedInClick = () => {
+    if (!FEATURES.LINKEDIN_INTEGRATION) {
+      setIsLinkedInModalOpen(true);
+    } else {
+      setActiveTab('linkedin');
+    }
+  };
+
+  const switchToUpload = () => {
+    setIsLinkedInModalOpen(false);
+    setActiveTab('upload');
+  };
+
+  const closeLinkedInModal = () => {
+    setIsLinkedInModalOpen(false);
   };
 
   const handleRunAnalysis = async () => {
@@ -178,7 +197,7 @@ export default function EvaluationForm({
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('linkedin')}
+              onClick={handleLinkedInClick}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 activeTab === 'linkedin'
                   ? 'bg-gray-100 text-gray-900'
@@ -275,6 +294,53 @@ export default function EvaluationForm({
           <strong>Bias & Privacy Disclaimer:</strong> Analysis based solely on professional criteria. PII is processed securely.
         </p>
       </aside>
+
+      {/* LinkedIn Unavailable Modal */}
+      {isLinkedInModalOpen && (
+        <div className="fixed inset-0 z-[99999]" style={{ position: 'fixed', top: '0px', left: '0px', right: '0px', bottom: '0px', width: '100vw', height: '100vh', margin: 0, padding: 0 }}>
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 w-full h-full bg-black/50" 
+            onClick={closeLinkedInModal}
+          />
+          
+          {/* Modal */}
+          <div className="absolute inset-0 w-full h-full flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 relative z-10">
+              {/* Icon */}
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-6 h-6 text-amber-600" />
+              </div>
+              
+              {/* Title */}
+              <h3 className="text-xl font-bold text-gray-900 text-center mb-2">
+                Feature Temporarily Unavailable
+              </h3>
+              
+              {/* Message */}
+              <p className="text-gray-600 text-center mb-6">
+                We're temporarily unable to process LinkedIn profiles. Please upload a resume instead.
+              </p>
+              
+              {/* Actions */}
+              <div className="flex gap-3">
+                <button 
+                  onClick={closeLinkedInModal}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={switchToUpload}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 transition-opacity"
+                >
+                  Use Resume Upload
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       {showActions && (
