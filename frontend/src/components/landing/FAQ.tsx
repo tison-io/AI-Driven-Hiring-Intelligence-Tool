@@ -35,7 +35,7 @@ const FAQ = () => {
         setOpenIndex(openIndex === index ? null : index)
     }
   return (
-    <section className='bg-white py-16 px-4 sm:px-6 lg:px-8'>
+    <section id="faq" className='bg-white py-16 px-4 sm:px-6 lg:px-8'>
         <div className='max-w-3xl mx-auto'>
             <h2 className='text-3xl sm:text-4xl font-bold text-center mb-8'>Frequently Asked Questions</h2>
             <p className='text-lg text-gray-600 text-center mb-12'>Everything you need to know about TalentScan AI</p>

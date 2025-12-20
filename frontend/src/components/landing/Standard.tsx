@@ -25,7 +25,7 @@ const features = [
 
 const Standard = () => {
   return (
-    <section className="bg-white py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
+    <section id="features" className="bg-white py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Heading */}
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 text-center mb-4">
@@ -37,16 +37,39 @@ const Standard = () => {
           One platform to evaluate resumes, LinkedIn profiles, and job fit—instantly and impartially.
         </p>
 
-        {/* Image Placeholders Container */}
-        <div className="relative mb-24 flex items-center justify-center min-h-[500px] sm:min-h-[600px] lg:min-h-[700px]">
+        {/* Mobile Image Container */}
+        <div className="sm:hidden relative mb-8 flex items-center justify-center min-h-[300px]">
+          {/* Background gradient blur */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 blur-3xl" />
+          
+          <div
+            className="relative left-1/2 w-full max-w-[300px] z-20"
+            style={{
+              transform: "translateX(-75%) rotate(6deg)",
+            }}
+          >
+            <div className="relative rounded-lg overflow-hidden shadow-2xl">
+              <Image
+                src="/images/lap22.svg"
+                alt="Candidate Analysis"
+                width={800}
+                height={500}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Tablet Image Container */}
+        <div className="hidden sm:flex lg:hidden relative mb-16 items-center justify-center min-h-[500px]">
           {/* Background gradient blur */}
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 blur-3xl" />
 
-          {/* First device (back) - rotated more */}
+          {/* First device */}
           <div
-            className="absolute top-0 sm:top-8 left-1/2 w-full max-w-[280px] sm:max-w-[400px] lg:max-w-[500px] z-10"
+            className="absolute top-0 sm:top-8 left-1/2 w-full max-w-[250px] z-10"
             style={{
-              transform: "translateX(-100%) translateY(10%) rotate(-8deg)",
+              transform: "translateX(-90%) translateY(10%) rotate(-8deg)",
               perspective: "1000px",
             }}
           >
@@ -61,15 +84,59 @@ const Standard = () => {
             </div>
           </div>
 
-          {/* Second device (front) - rotated less */}
+          {/* Second device */}
           <div
-            className="relative top-16 sm:top-24 left-1/2 w-full max-w-[300px] sm:max-w-[450px] lg:max-w-[550px] z-20"
+            className="relative top-24 left-1/2 w-full max-w-[350px] z-20"
+            style={{
+              transform: "translateX(-70%) translateY(20%) rotate(6deg)",
+              perspective: "1000px",
+            }}
+          >
+            <div className="relative rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
+              <Image
+                src="/images/lap22.svg"
+                alt="Candidate Analysis"
+                width={800}
+                height={500}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Image Container */}
+        <div className="hidden lg:flex relative mb-24 items-center justify-center min-h-[700px]">
+          {/* Background gradient blur */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-indigo-500/5 blur-3xl" />
+
+          {/* First device */}
+          <div
+            className="absolute top-0 lg:top-8 left-1/2 w-full max-w-[500px] z-10"
+            style={{
+              transform: "translateX(-100%) translateY(10%) rotate(-8deg)",
+              perspective: "1000px",
+            }}
+          >
+            <div className="relative rounded-xl overflow-hidden shadow-2xl">
+              <Image
+                src="/images/lap11.svg"
+                alt="Dashboard Preview"
+                width={800}
+                height={500}
+                className="w-full h-auto"
+              />
+            </div>
+          </div>
+
+          {/* Second device */}
+          <div
+            className="relative top-24 left-1/2 w-full max-w-[550px] z-20"
             style={{
               transform: "translateX(-80%) translateY(20%) rotate(6deg)",
               perspective: "1000px",
             }}
           >
-            <div className="relative rounded-lg sm:rounded-xl overflow-hidden shadow-2xl">
+            <div className="relative rounded-xl overflow-hidden shadow-2xl">
               <Image
                 src="/images/lap22.svg"
                 alt="Candidate Analysis"
