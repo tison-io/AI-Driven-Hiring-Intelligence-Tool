@@ -275,7 +275,7 @@ Your primary task is to extract job requirements, responsibilities, duties, and 
 
 ### CRITICAL INSTRUCTIONS (MANDATORY):
 1. DO NOT merge, paraphrase, summarize, or generalize responsibilities or qualifications.
-2. DO NOT invent responsibilities or qualifications that are not explicitly stated.
+2. DO NOT invent responsibilities or qualifications that are not explicitly stated, unless triggered by the FAIL-SAFE PROTOCOL below.
 3. Each extracted item MUST remain an atomic, standalone evaluatable unit.
 4. Preserve original wording as closely as possible (minor punctuation cleanup allowed).
 
@@ -284,25 +284,33 @@ Your primary task is to extract job requirements, responsibilities, duties, and 
    - Explicit skills
    - Tools, frameworks, or technologies
    - Specific role-related capabilities
-   -Anything stating what is explicitly required from the candidate (Qualifications / Skills / Requirements / Competencies).
+   - Anything stating what is explicitly required from the candidate (Qualifications / Skills / Requirements / Competencies).
    - **examples:**
-       -Familiarity with cloud platforms (e.g., AWS, Azure, GCP). 
-       -Excellent problem-solving, analytical, and debugging skills. 
-       -Strong communication and interpersonal skills. 
-       -Experience with Agile development methodologies. 
+       - Familiarity with cloud platforms (e.g., AWS, Azure, GCP).
+       - Excellent problem-solving, analytical, and debugging skills.
+       - Strong communication and interpersonal skills.
+       - Experience with Agile development methodologies.
 
 2. **Do NOT include:**
    - Years of experience (handled separately as `required_years`)
    - Education level (handled separately as `education_requirement`)
 3. If the JD contains **no explicit skills, certifications, or role-specific capabilities**, extract **responsibilities instead** as the main evaluatable criteria.
 4. Responsibilities MUST be extracted if primary requirements are empty.
-5. **IMPORTANT:** Where primary requirements are found, DO NOT extract duties, tasks, or role actions even if present in the JD.. `responsibilities` MUST be an EMPTY ARRAY → [].
+5. **IMPORTANT:** Where primary requirements are found, DO NOT extract duties, tasks, or role actions even if present in the JD. `responsibilities` MUST be an EMPTY ARRAY → [].
 
-### INFERENCE RULE:
-- ONLY infer missing information for:
-  - `required_years`: if absent, estimate based on job market standards
-  - `education_requirement`: if absent, estimate based on role level
-  - `primary_requirements`: If the jd provides no extractable qualifications and responsiblities.
+### FAIL-SAFE INFERENCE PROTOCOL (CRITICAL):
+**TRIGGER:** This logic applies IF AND ONLY IF, after attempting extraction, BOTH `primary_requirements` AND `responsibilities` are empty.
+
+**ACTION:**
+1. Analyze the **Job Title** or implied Role from the JD.
+2. **INFER** 7 core, industry-standard technical skills or competencies required for this specific role in the current job market.
+3. Populate these inferred skills into the `primary_requirements` list.
+4. **DO NOT** return an empty result. A vague JD must result in standard market requirements.
+
+### INFERENCE RULE (GENERAL):
+- `required_years`: if absent, estimate based on job market standards.
+- `education_requirement`: if absent, estimate based on role level.
+- `primary_requirements`: **(See Fail-Safe Protocol above)**.
 
 ### WHAT TO EXTRACT:
 From the JD, extract:
@@ -357,7 +365,6 @@ Education explicitly stated as not required
 **IMPORTANT:** DO NOT output any other values.
 
 ### OUTPUT SCHEMA (STRICT JSON):
-
 {
   "required_years": number,
   "primary_requirements": [
@@ -458,9 +465,9 @@ Analyze each educational entry from the candidate's profile against the job's ed
 For each education entry in the candidate's profile:
 - Compare the `field_of_study` against the `education_requirement` from the JD and the `TARGET ROLE NAME`.
 - Assign a boolean `is_relevant` flag.
-- If the field of study is irrelevant to the TARGET ROLE NAME, set:
-  `is_relevant` = false
+- If the field of study taken by the candidate is irrelevant to the TARGET ROLE NAME, set:
   `degree_level` = "none"
+    `is_relevant` = false
 - Provide a brief justification for the decision.
 
 ### DEGREE LEVEL NORMALIZATION (STRICT)

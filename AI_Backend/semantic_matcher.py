@@ -8,6 +8,7 @@ from prompts import SYSTEM_UNIFIED_ANALYSIS_PROMPT
 load_dotenv()
 client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
+
 def get_unified_analysis(candidate_data, jd_requirements, role_name):
     """
     Performs a unified semantic analysis for both work experience and JD responsibilities.
@@ -16,7 +17,7 @@ def get_unified_analysis(candidate_data, jd_requirements, role_name):
     try:
         primary_reqs = jd_requirements.get("primary_requirements", [])
         responsibilities = jd_requirements.get("responsibilities", [])
-        
+
         items_to_analyze = primary_reqs if primary_reqs else responsibilities
         education_req = jd_requirements.get("education_requirement", {})
 
@@ -33,14 +34,17 @@ CANDIDATE PROFILE:
 {json.dumps(candidate_data)}
 """
 
-        prompt = f"Analyze semantic matches and return JSON analysis:\n{user_content}"
+        if not items_to_analyze:
+            prompt = f"The provided JD responsibilities are missing or vague. Infer standard industry requirements for a '{role_name}' role. Analyze semantic matches against these inferred requirements and return JSON analysis:\n{user_content}"
+        else:
+            prompt = f"Analyze semantic matches and return JSON analysis. Base your decision strictly on the provided text evidence:\n{user_content}"
 
         print("Calling OpenAI API...")
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": SYSTEM_UNIFIED_ANALYSIS_PROMPT},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": prompt},
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
@@ -53,12 +57,14 @@ CANDIDATE PROFILE:
 
         result = json.loads(response_text)
 
-        exp_analysis = result.get('work_experience_analysis', [])
+        exp_analysis = result.get("work_experience_analysis", [])
         print(f"Experience Analysis: {len(exp_analysis)} jobs analyzed")
         for item in exp_analysis:
-            print(f"  Job {item.get('job_index')}: {item.get('job_title')} -> {item.get('relevance_level')}")
+            print(
+                f"  Job {item.get('job_index')}: {item.get('job_title')} -> {item.get('relevance_level')}"
+            )
 
-        responsibility_analysis = result.get('responsibility_analysis', [])
+        responsibility_analysis = result.get("responsibility_analysis", [])
         print(f"Responsibility Analysis: {len(responsibility_analysis)} items analyzed")
         for item in responsibility_analysis:
             print(f"  ID {item.get('responsibility_id')}: {item.get('match_level')}")
@@ -71,5 +77,5 @@ CANDIDATE PROFILE:
         return {
             "work_experience_analysis": [],
             "responsibility_analysis": [],
-            "education_analysis": []
+            "education_analysis": [],
         }
