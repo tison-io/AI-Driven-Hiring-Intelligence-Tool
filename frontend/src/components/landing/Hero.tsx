@@ -68,7 +68,7 @@ const Hero = () => {
           <div className="hidden lg:block relative">
             <div className="relative w-full h-[400px] lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
               <Image
-                src="images/scanHero.svg"
+                src="/images/scanHero.svg"
                 alt="Team meeting discussing recruitment"
                 fill
                 className="object-cover"
