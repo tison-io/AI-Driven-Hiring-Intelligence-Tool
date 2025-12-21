@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
 from pydantic import BaseModel
 import os
@@ -88,12 +89,16 @@ def parse_text(request: TextRequest):
 
 
 @app.post("/score")
-def calculate_score(request: ScoreRequest):
+async def calculate_score(request: ScoreRequest):
     """
     Analyzes the candidate's JSON against a job description.
     """
-    result = score_candidate(
-        request.candidate_data, request.job_description, request.role_name
+    jd_rules = await asyncio.to_thread(
+        parse_jd_requirements, request.role_name, request.job_description
+    )
+
+    result = await asyncio.to_thread(
+        score_candidate, request.candidate_data, jd_rules, request.role_name
     )
     return result
 
@@ -179,37 +184,55 @@ def test_jd_parsing(request: JDParsingTestRequest):
 
 @app.post("/analyze")
 async def analyze_resume(
-    file: UploadFile = File(...),
+    file: UploadFile | None = File(None),
+    raw_text: str | None = Form(None),
     role_name: str = Form(...),
-    job_description: str = Form(None),
+    job_description: str | None = Form(None),
 ):
     """
     End-to-end endpoint to parse, extract, and score a resume against a job role.
+    Accepts either a file or raw text.
     """
+    filename = "text_input"
+    final_raw_text = ""
 
-    filename = file.filename.lower()
-    file_content = await file.read()
-
-    raw_text = ""
-    if filename.endswith(".pdf"):
-        raw_text = parse_pdf(file_content)
-    elif filename.endswith(".docx"):
-        raw_text = parse_docx(file_content)
+    if file:
+        filename = file.filename.lower()
+        file_content = await file.read()
+        if filename.endswith(".pdf"):
+            final_raw_text = parse_pdf(file_content)
+        elif filename.endswith(".docx"):
+            final_raw_text = parse_docx(file_content)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported file format. Please upload a PDF or DOCX.",
+            )
+    elif raw_text:
+        final_raw_text = raw_text
     else:
         raise HTTPException(
             status_code=400,
-            detail=" Unsupported file format. Please upload a PDF or DOCX.",
+            detail="No resume file or raw text provided.",
         )
 
-    if not raw_text:
-        raise HTTPException(status_code=400, detail="Failed to extract text from file.")
+    if not final_raw_text:
+        raise HTTPException(status_code=400, detail="Failed to extract text from file or text is empty.")
 
-    candidate_profile = extract_resume_data(raw_text)
+    candidate_task = asyncio.to_thread(extract_resume_data, final_raw_text)
+    jd_task = asyncio.to_thread(
+        parse_jd_requirements, role_name, job_description or ""
+    )
+    
+    results = await asyncio.gather(candidate_task, jd_task)
+    
+    candidate_profile = results[0]
+    jd_rules = results[1]
 
-    evaluation = score_candidate(candidate_profile, job_description or "", role_name)
+    evaluation = score_candidate(candidate_profile, jd_rules, role_name)
 
     return {
-        "filename": file.filename,
+        "filename": filename,
         "candidate_profile": candidate_profile,
         "evaluation": evaluation,
     }
