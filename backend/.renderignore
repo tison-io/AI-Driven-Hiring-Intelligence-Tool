@@ -1,0 +1,4 @@
+# .renderignore
+# Empty file or minimal exclusions
+.DS_Store
+.git/
