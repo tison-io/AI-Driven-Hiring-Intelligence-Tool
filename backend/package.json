@@ -6,13 +6,15 @@
 	"private": true,
 	"license": "UNLICENSED",
 	"scripts": {
-		"prebuild": "npx rimraf dist",
-		"build": "nest build --config tsconfig.build.json",
+		"prebuild": "pwd && npx rimraf dist",
+    	"build": "pwd && nest build --config tsconfig.build.json && echo 'Build output:' && ls -la",
+   	 	"start:prod": "pwd && ls -la && ls -la dist/ 2>/dev/null || echo 'dist not found' && node dist/main"
+  
 		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",
 		"start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
 		"start:debug": "nest start --debug --watch",
-		"start:prod": "node dist/main",
+		
 		"seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"test": "jest",
