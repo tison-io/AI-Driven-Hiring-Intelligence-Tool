@@ -29,8 +29,8 @@ export class AiProcessor {
         throw new NotFoundException('Candidate not found');
       }
 
-      // Call AI service
-      const aiResults = await this.aiService.analyzeResume(
+      // Call AI service (placeholder)
+      const aiResults = await this.aiService.evaluateCandidate(
         candidate.rawText,
         jobRole,
         jobDescription

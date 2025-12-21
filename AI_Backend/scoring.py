@@ -58,8 +58,9 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
     return int((comp_score * 0.6) + (bias_score * 0.4))
 
 
-def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
+def score_candidate(candidate_data: dict, job_description: str, role_name: str):
     try:
+        jd_rules = parse_jd_requirements(role_name, job_description)
         candidate_data = ensure_consistent_skills(candidate_data)
         print("DEBUG: Running Unified Analysis...")
         unified_analysis = get_unified_analysis(candidate_data, jd_rules, role_name)
@@ -78,7 +79,6 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
         candidate_str = json.dumps(candidate_data)
         math_str = json.dumps(math_result)
         rules_str = json.dumps(jd_rules)
-        analysis_str = json.dumps(unified_analysis)
 
         prompt_content = f"""
         TARGET ROLE: {role_name}
@@ -92,9 +92,6 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
         MATH BREAKDOWN:
         {math_str}
 
-        SEMANTIC ANALYSIS:
-        {analysis_str}
-
         CANDIDATE PROFILE (JSON):
         \"\"\"
         {candidate_str}
@@ -104,9 +101,6 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
         1. The Score is {final_score}. Do NOT adjust it.
         2. Explain WHY the score is {final_score} based on the Breakdown.
         3. If Score < 100, identify the specific missing skills or certifications.
-        4. List ALL strengths and weaknesses exhaustively.
-           - CRITICAL: Check 'flat_skills_list', 'certifications', and 'SEMANTIC ANALYSIS' before declaring a gap.
-        5. Generate at least 10 interview questions.
         """
 
         response = client.chat.completions.create(
