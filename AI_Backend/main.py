@@ -103,7 +103,7 @@ def test_semantic_matcher(request: SemanticTestRequest):
     Test semantic matcher in isolation with detailed debug output.
     """
     try:
-        jd_requirements = parse_jd_requirements(request.job_description, request.role_name)
+        jd_requirements = parse_jd_requirements(request.role_name, request.job_description)
         semantic_result = get_unified_analysis(
             request.candidate_data, 
             jd_requirements, 
@@ -139,7 +139,7 @@ def test_jd_parsing(request: JDParsingTestRequest):
         print(f"JD Length: {len(request.job_description)} characters")
         print(f"JD Preview: {request.job_description[:200]}...")
         
-        jd_requirements = parse_jd_requirements(request.job_description, request.role_name)
+        jd_requirements = parse_jd_requirements(request.role_name, request.job_description)
         
         print(f"Parsed Requirements:")
         print(f"  Required Years: {jd_requirements.get('required_years', 0)}")
