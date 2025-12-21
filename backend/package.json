@@ -8,8 +8,7 @@
 	"scripts": {
 		"prebuild": "pwd && npx rimraf dist",
     	"build": "pwd && nest build --config tsconfig.build.json && echo 'Build output:' && ls -la",
-   	 	"start:prod": "pwd && ls -la && ls -la dist/ 2>/dev/null || echo 'dist not found' && node dist/main"
-  
+   	 	"start:prod": "pwd && ls -la && ls -la dist/ 2>/dev/null || echo 'dist not found' && node dist/main",
 		"format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
 		"start": "nest start",
 		"start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
