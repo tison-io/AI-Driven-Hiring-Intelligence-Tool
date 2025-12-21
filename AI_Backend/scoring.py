@@ -60,7 +60,7 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
 
 def score_candidate(candidate_data: dict, job_description: str, role_name: str):
     try:
-        jd_rules = parse_jd_requirements(job_description, role_name)
+        jd_rules = parse_jd_requirements(role_name, job_description)
         candidate_data = ensure_consistent_skills(candidate_data)
         print("DEBUG: Running Unified Analysis...")
         unified_analysis = get_unified_analysis(candidate_data, jd_rules, role_name)
