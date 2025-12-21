@@ -32,7 +32,13 @@ export class AiService {
         timeout: 60000, // 60 seconds timeout for combined processing
       });
 
-      const { candidate_profile: extractedData, evaluation: scoringResult } = response.data;
+      const responseData = response.data ?? {};
+      const extractedData = responseData.candidate_profile;
+      const scoringResult = responseData.evaluation;
+
+      if (!extractedData || !scoringResult) {
+        throw new HttpException('Invalid response from AI service: missing required fields', HttpStatus.BAD_GATEWAY);
+      }
 
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
 
