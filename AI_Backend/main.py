@@ -89,12 +89,16 @@ def parse_text(request: TextRequest):
 
 
 @app.post("/score")
-def calculate_score(request: ScoreRequest):
+async def calculate_score(request: ScoreRequest):
     """
     Analyzes the candidate's JSON against a job description.
     """
-    result = score_candidate(
-        request.candidate_data, request.job_description, request.role_name
+    jd_rules = await asyncio.to_thread(
+        parse_jd_requirements, request.role_name, request.job_description
+    )
+
+    result = await asyncio.to_thread(
+        score_candidate, request.candidate_data, jd_rules, request.role_name
     )
     return result
 
