@@ -8,7 +8,7 @@ from prompts import JD_PARSING_PROMPT
 load_dotenv()
 client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
-def parse_jd_requirements(job_description: str, role_name: str):
+def parse_jd_requirements(role_name: str, job_description: str):
     """
     Parses the job description to extract atomic responsibilities, 
     education, certifications, and required experience.
@@ -28,7 +28,6 @@ def parse_jd_requirements(job_description: str, role_name: str):
             ],
             response_format={"type": "json_object"},
             temperature=0.0,
-            max_tokens=1500
         )
 
         result = json.loads(response.choices[0].message.content)

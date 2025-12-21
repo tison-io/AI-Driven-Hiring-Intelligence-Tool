@@ -93,7 +93,7 @@ def calculate_score(request: ScoreRequest):
     Analyzes the candidate's JSON against a job description.
     """
     result = score_candidate(
-        request.candidate_data, request.role_name, request.job_description
+        request.candidate_data, request.job_description, request.role_name
     )
     return result
 

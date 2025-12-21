@@ -70,8 +70,8 @@ export class AiService {
 
     const response = await axios.post(`${this.aiServiceUrl}/score`, {
       candidate_data: candidateData,
-      job_description: jobDescription,
-      role_name: jobRole
+      role_name: jobRole,
+      job_description: jobDescription
     }, {
       timeout: 30000
     });
