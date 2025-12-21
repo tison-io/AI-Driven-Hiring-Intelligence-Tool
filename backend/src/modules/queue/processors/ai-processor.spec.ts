@@ -49,7 +49,7 @@ describe('AiProcessor', () => {
     };
 
     const mockAiService = {
-      evaluateCandidate: jest.fn(),
+      analyzeResume: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -81,7 +81,7 @@ describe('AiProcessor', () => {
     beforeEach(() => {
       candidatesService.findById.mockResolvedValue(mockCandidate as any);
       candidatesService.update.mockResolvedValue(undefined);
-      aiService.evaluateCandidate.mockResolvedValue(mockAiResults);
+      aiService.analyzeResume.mockResolvedValue(mockAiResults);
     });
 
     it('should process candidate successfully', async () => {
@@ -98,7 +98,7 @@ describe('AiProcessor', () => {
       expect(candidatesService.findById).toHaveBeenCalledWith('candidate-123');
 
       // Verify AI service call
-      expect(aiService.evaluateCandidate).toHaveBeenCalledWith(
+      expect(aiService.analyzeResume).toHaveBeenCalledWith(
         mockCandidate.rawText,
         'Backend Engineer',
         'Node.js experience required'
@@ -123,7 +123,7 @@ describe('AiProcessor', () => {
 
       await processor.handleAIProcessing(job);
 
-      expect(aiService.evaluateCandidate).toHaveBeenCalledWith(
+      expect(aiService.analyzeResume).toHaveBeenCalledWith(
         mockCandidate.rawText,
         'Backend Engineer',
         undefined
@@ -145,7 +145,7 @@ describe('AiProcessor', () => {
     });
 
     it('should handle AI service failures', async () => {
-      aiService.evaluateCandidate.mockRejectedValue(
+      aiService.analyzeResume.mockRejectedValue(
         new Error('AI service unavailable')
       );
       const job = createMockJob(jobData);
@@ -194,7 +194,7 @@ describe('AiProcessor', () => {
       });
 
       candidatesService.findById.mockResolvedValue(mockCandidate as any);
-      aiService.evaluateCandidate.mockResolvedValue(mockAiResults);
+      aiService.analyzeResume.mockResolvedValue(mockAiResults);
 
       await processor.handleAIProcessing(job);
 
@@ -209,7 +209,7 @@ describe('AiProcessor', () => {
       });
 
       candidatesService.findById.mockResolvedValue(mockCandidate as any);
-      aiService.evaluateCandidate.mockResolvedValue(mockAiResults);
+      aiService.analyzeResume.mockResolvedValue(mockAiResults);
 
       await processor.handleAIProcessing(job);
 
@@ -227,7 +227,7 @@ describe('AiProcessor', () => {
       });
 
       candidatesService.findById.mockResolvedValue(mockCandidate as any);
-      aiService.evaluateCandidate.mockRejectedValue(new Error('AI failed'));
+      aiService.analyzeResume.mockRejectedValue(new Error('AI failed'));
 
       try {
         await processor.handleAIProcessing(job);
@@ -254,7 +254,7 @@ describe('AiProcessor', () => {
       };
 
       candidatesService.findById.mockResolvedValue(resumeCandidate as any);
-      aiService.evaluateCandidate.mockResolvedValue(mockAiResults);
+      aiService.analyzeResume.mockResolvedValue(mockAiResults);
 
       const job = createMockJob({
         candidateId: 'candidate-123',
@@ -263,7 +263,7 @@ describe('AiProcessor', () => {
 
       await processor.handleAIProcessing(job);
 
-      expect(aiService.evaluateCandidate).toHaveBeenCalledWith(
+      expect(aiService.analyzeResume).toHaveBeenCalledWith(
         resumeCandidate.rawText,
         'Frontend Engineer',
         undefined
@@ -277,7 +277,7 @@ describe('AiProcessor', () => {
       };
 
       candidatesService.findById.mockResolvedValue(linkedinCandidate as any);
-      aiService.evaluateCandidate.mockResolvedValue(mockAiResults);
+      aiService.analyzeResume.mockResolvedValue(mockAiResults);
 
       const job = createMockJob({
         candidateId: 'candidate-456',
@@ -287,7 +287,7 @@ describe('AiProcessor', () => {
 
       await processor.handleAIProcessing(job);
 
-      expect(aiService.evaluateCandidate).toHaveBeenCalledWith(
+      expect(aiService.analyzeResume).toHaveBeenCalledWith(
         linkedinCandidate.rawText,
         'Full Stack Engineer',
         'React and Node.js required'
