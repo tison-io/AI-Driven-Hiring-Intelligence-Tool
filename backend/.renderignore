@@ -1,4 +1,15 @@
 # .renderignore
-# Empty file or minimal exclusions
-.DS_Store
-.git/
+# Include dist folder in deployment
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!nest-cli.json
+!src/
+!dist/
+!test/
+!.env.example
+!README.md
+!*.sh
+!.renderignore
