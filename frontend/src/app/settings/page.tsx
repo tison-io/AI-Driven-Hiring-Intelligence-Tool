@@ -127,7 +127,7 @@ export default function AccountSettings() {
     try {
       setLoading(true);
       setError('');
-      await api.delete('/api/privacy/delete-data');
+      await api.delete('/privacy/delete-data');
       setIsDeleteModalOpen(false);
       // Logout and redirect after successful deletion
       localStorage.removeItem('token');
