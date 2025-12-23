@@ -15,36 +15,41 @@ export class AiService {
 
   async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
     try {
-      this.logger.log('Starting AI evaluation for candidate');
-
-      // Step 1: Extract structured data from raw text
-      const extractedData = await this.extractCandidateData(rawText);
-
-      // Check if resume is valid (default to true if field is missing)
-      if (extractedData.is_valid_resume === false) {
-        throw new HttpException(`Invalid resume: ${extractedData.error || 'Unknown'}`, HttpStatus.BAD_REQUEST);
-      }
-      // Validate we have minimum required data
-      if (!extractedData.candidate_name && !extractedData.skills?.length) {
-        throw new HttpException('Insufficient data extracted from resume: Missing required data', HttpStatus.BAD_REQUEST);
-      }
-
-      // Step 2: Score candidate against job role
+      this.logger.log('Starting parallel AI evaluation via /analyze');
       const startTime = Date.now();
-      const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
+
+      // 1. Prepare the Form Data
+      const formData = new FormData();
+      formData.append('raw_text', rawText); // 'raw_text' matches main.py
+      formData.append('role_name', jobRole);
+      
+      // Use custom JD or fetch default
+      const finalJD = jobDescription || this.getJobDescription(jobRole);
+      formData.append('job_description', finalJD);
+
+      // 2. Make the Single Call
+      const response = await axios.post(
+        `${this.aiServiceUrl}/analyze`, 
+        formData, 
+        {
+          headers: {
+            ...formData.getHeaders(), // Crucial for form boundaries
+          },
+          timeout: 60000 // Increased timeout for the combined long operation
+        }
+      );
+
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      this.logger.log(`AI Processing complete in ${processingTime}s`);
 
-      // Log scoring results in table format
-      const breakdown = scoringResult.scoring_breakdown || {};
-      this.logger.log('| Time (s)   | Score    | Conf     | Skill    | Experience   | Education    | Certs    |');
-      this.logger.log(`| ${processingTime.padStart(10)} | ${String(scoringResult.role_fit_score || 0).padStart(8)} | ${String(scoringResult.confidence_score || 0).padStart(8)} | ${String(breakdown.skill_match || 0).padStart(8)} | ${String(breakdown.experience_relevance || 0).padStart(12)} | ${String(breakdown.education_fit || 0).padStart(12)} | ${String(breakdown.certifications || 0).padStart(8)} |`);
+      // 3. Unpack and Transform
+      // The backend keys 'candidate_profile' and 'evaluation' map to our arguments
+      const { candidate_profile, evaluation } = response.data;
 
-      // Step 3: Transform to backend format
-      return this.transformAiResponse(extractedData, scoringResult);
+      return this.transformAiResponse(candidate_profile, evaluation);
 
     } catch (error) {
       this.logger.error('AI evaluation failed', error.stack);
-
       if (error instanceof HttpException) {
         throw error;
       }
