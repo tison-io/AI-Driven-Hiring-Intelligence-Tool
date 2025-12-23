@@ -54,25 +54,36 @@ export class AiProcessor {
 
       this.logger.log(`Stage 2: Generating Interview Questions...`);
 
-      const stage2Result = await this.aiService.evaluateCandidateDetailed(
-        stage1Result.stage2Payload
-      );
+      // Defensively check for Stage 2 payload before proceeding
+      if (!stage1Result.stage2Payload) {
+        this.logger.warn(`Stage 2 payload not found for candidate ${candidateId}. Skipping detailed analysis.`);
+        const processingTime = Date.now() - startTime;
+        await this.candidatesService.update(candidateId, {
+          status: ProcessingStatus.COMPLETED,
+          processingTime,
+        });
+        this.logger.log(`Process complete for candidate ${candidateId} without Stage 2 analysis.`);
+      } else {
+        const stage2Result = await this.aiService.evaluateCandidateDetailed(
+          stage1Result.stage2Payload
+        );
 
-      const processingTime = Date.now() - startTime;
+        const processingTime = Date.now() - startTime;
 
-      await this.candidatesService.update(candidateId, {
-        keyStrengths: stage2Result.keyStrengths,
-        potentialWeaknesses: stage2Result.potentialWeaknesses,
-        missingSkills: stage2Result.missingSkills,
-        interviewQuestions: stage2Result.interviewQuestions,
-        confidenceScore: stage2Result.confidenceScore,
-        biasCheck: stage2Result.biasCheck,
+        await this.candidatesService.update(candidateId, {
+          keyStrengths: stage2Result.keyStrengths,
+          potentialWeaknesses: stage2Result.potentialWeaknesses,
+          missingSkills: stage2Result.missingSkills,
+          interviewQuestions: stage2Result.interviewQuestions,
+          confidenceScore: stage2Result.confidenceScore,
+          biasCheck: stage2Result.biasCheck,
 
-        status: ProcessingStatus.COMPLETED,
-        processingTime,
-      });
+          status: ProcessingStatus.COMPLETED,
+          processingTime,
+        });
 
-      this.logger.log(`Stage 2 Saved. Process Complete.`);
+        this.logger.log(`Stage 2 Saved. Process Complete.`);
+      }
 
       return { success: true, candidateId };
 
