@@ -1,7 +1,7 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
-import * as FormData from 'form-data';
+import FormData from 'form-data';
 import { ExtractedCandidateData, ScoringResult, BiasCheckFlag } from './interfaces/ai-response.interface';
 
 @Injectable()
@@ -13,99 +13,119 @@ export class AiService {
     this.aiServiceUrl = this.configService.get('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
-  async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
+  /**
+   * STAGE 1: FAST EVALUATION
+   * Returns: Score, Profile Data, and a Payload token for Stage 2.
+   * Time: ~3 seconds.
+   */
+  async evaluateCandidateFast(rawText: string, jobRole: string, jobDescription?: string) {
     try {
-      this.logger.log('Starting AI evaluation for candidate');
-
-      // Step 1: Extract structured data from raw text
-      const extractedData = await this.extractCandidateData(rawText);
-
-      // Check if resume is valid (default to true if field is missing)
-      if (extractedData.is_valid_resume === false) {
-        throw new HttpException(`Invalid resume: ${extractedData.error || 'Unknown'}`, HttpStatus.BAD_REQUEST);
-      }
-      // Validate we have minimum required data
-      if (!extractedData.candidate_name && !extractedData.skills?.length) {
-        throw new HttpException('Insufficient data extracted from resume: Missing required data', HttpStatus.BAD_REQUEST);
-      }
-
-      // Step 2: Score candidate against job role
+      this.logger.log('Starting Stage 1: Fast Analysis via /analyze/fast');
       const startTime = Date.now();
-      const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
+
+      const formData = new FormData();
+      formData.append('raw_text', rawText);
+      formData.append('role_name', jobRole);
+      const finalJD = jobDescription || this.getJobDescription(jobRole);
+      formData.append('job_description', finalJD);
+
+      const response = await axios.post(
+        `${this.aiServiceUrl}/analyze/fast`,
+        formData,
+        {
+          headers: { ...formData.getHeaders() },
+          timeout: 30000
+        }
+      );
+
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      this.logger.log(`Stage 1 complete in ${processingTime}s`);
 
-      // Log scoring results in table format
-      const breakdown = scoringResult.scoring_breakdown || {};
-      this.logger.log('| Time (s)   | Score    | Conf     | Skill    | Experience   | Education    | Certs    |');
-      this.logger.log(`| ${processingTime.padStart(10)} | ${String(scoringResult.role_fit_score || 0).padStart(8)} | ${String(scoringResult.confidence_score || 0).padStart(8)} | ${String(breakdown.skill_match || 0).padStart(8)} | ${String(breakdown.experience_relevance || 0).padStart(12)} | ${String(breakdown.education_fit || 0).padStart(12)} | ${String(breakdown.certifications || 0).padStart(8)} |`);
+      const { role_fit_score, scoring_breakdown, payload_for_stage_2 } = response.data;
 
-      // Step 3: Transform to backend format
-      return this.transformAiResponse(extractedData, scoringResult);
+      // Extract candidate data from the payload to show the profile immediately
+      const candidateData = payload_for_stage_2.stage_1_result.candidate_data;
+
+      // Transform partial result for Frontend (Score + Profile)
+      const frontendData = this.transformStage1Response(candidateData, role_fit_score, scoring_breakdown);
+
+      return {
+        ...frontendData,
+        stage2Payload: payload_for_stage_2 // Frontend must send this back for Stage 2
+      };
 
     } catch (error) {
-      this.logger.error('AI evaluation failed', error.stack);
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw error;
+      this.handleError(error, 'Stage 1 (Fast) evaluation failed');
     }
   }
 
-  private async extractCandidateData(rawText: string): Promise<ExtractedCandidateData> {
-    const response = await axios.post(`${this.aiServiceUrl}/parse-text`, {
-      text: rawText
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000
-    });
+  /**
+   * STAGE 2: DETAILED ANALYSIS
+   * Input: The 'stage2Payload' returned from Stage 1.
+   * Returns: Interview Questions, Strengths, Weaknesses.
+   * Time: ~10 seconds.
+   */
+  async evaluateCandidateDetailed(stage2Payload: any) {
+    try {
+      this.logger.log('Starting Stage 2: Detailed Analysis via /analyze/detailed');
+      const startTime = Date.now();
 
-    return response.data.data;
+      const response = await axios.post(
+        `${this.aiServiceUrl}/analyze/detailed`,
+        stage2Payload, // Send the payload exactly as received
+        {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 60000
+        }
+      );
+
+      const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      this.logger.log(`Stage 2 complete in ${processingTime}s`);
+
+      // Transform the qualitative data
+      return this.transformStage2Response(response.data);
+
+    } catch (error) {
+      this.handleError(error, 'Stage 2 (Detailed) evaluation failed');
+    }
   }
 
-  private async scoreCandidateData(candidateData: ExtractedCandidateData, jobRole: string, customJobDescription?: string): Promise<ScoringResult> {
-    const jobDescription = customJobDescription || this.getJobDescription(jobRole);
+  // --- LEGACY / MONOLITHIC METHOD (Optional Backup) ---
+  async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
+    try {
+      this.logger.log('Starting Legacy Monolithic Evaluation via /analyze');
+      const formData = new FormData();
+      formData.append('raw_text', rawText);
+      formData.append('role_name', jobRole);
+      formData.append('job_description', jobDescription || this.getJobDescription(jobRole));
 
-    const response = await axios.post(`${this.aiServiceUrl}/score`, {
-      candidate_data: candidateData,
-      role_name: jobRole,
-      job_description: jobDescription
-    }, {
-      timeout: 30000
-    });
+      const response = await axios.post(`${this.aiServiceUrl}/analyze`, formData, {
+        headers: { ...formData.getHeaders() },
+        timeout: 60000
+      });
 
-    return response.data;
+      const { candidate_profile, evaluation } = response.data;
+      return this.transformAiResponse(candidate_profile, evaluation);
+
+    } catch (error) {
+      this.handleError(error, 'Legacy AI evaluation failed');
+    }
   }
 
-  private transformAiResponse(extractedData: ExtractedCandidateData, scoringResult: ScoringResult) {
-    const keyStrengths = scoringResult.key_strengths?.map((s) =>
-      typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
-    ) || [];
+  // --- TRANSFORMERS ---
 
-    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w) =>
-      typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
-    ) || [];
-
-    const roleFitScore = scoringResult.role_fit_score || 0;
-    const breakdown = scoringResult.scoring_breakdown || {};
+  private transformStage1Response(extractedData: ExtractedCandidateData, score: number, breakdown: any) {
     const relevantExperience = breakdown.relevant_years_calculated !== undefined
       ? breakdown.relevant_years_calculated
       : (extractedData.total_years_experience || 0);
 
     return {
       name: extractedData.candidate_name || 'Anonymous',
-      roleFitScore,
-      isShortlisted: roleFitScore >= 80,
-      keyStrengths,
-      potentialWeaknesses,
-      missingSkills: scoringResult.missing_skills || [],
-      interviewQuestions: scoringResult.recommended_interview_questions || [],
-      confidenceScore: scoringResult.confidence_score || 0,
-      biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
+      roleFitScore: score,
+      isShortlisted: score >= 80,
       skills: extractedData.skills || [],
       experienceYears: relevantExperience,
+      scoringBreakdown: breakdown, // Pass raw breakdown for charts
       workExperience: extractedData.work_experience?.map((job) => ({
         company: job.company || '',
         jobTitle: job.job_title || job.jobTitle || '',
@@ -119,18 +139,43 @@ export class AiService {
     };
   }
 
+  private transformStage2Response(scoringResult: ScoringResult) {
+    const keyStrengths = scoringResult.key_strengths?.map((s) =>
+      typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
+    ) || [];
+
+    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w) =>
+      typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
+    ) || [];
+
+    return {
+      keyStrengths,
+      potentialWeaknesses,
+      missingSkills: scoringResult.missing_skills || [],
+      interviewQuestions: scoringResult.recommended_interview_questions || [],
+      confidenceScore: scoringResult.confidence_score || 0,
+      biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
+    };
+  }
+
+  // --- HELPERS ---
+
+  private transformAiResponse(extractedData: ExtractedCandidateData, scoringResult: ScoringResult) {
+    // Merges both stages for legacy calls
+    const stage1 = this.transformStage1Response(extractedData, scoringResult.role_fit_score, scoringResult.scoring_breakdown);
+    const stage2 = this.transformStage2Response(scoringResult);
+    return { ...stage1, ...stage2 };
+  }
+
   private formatBiasCheck(biasFlag?: BiasCheckFlag): string {
     if (!biasFlag) return 'No bias analysis available';
-
     if (biasFlag.detected) {
       return `Potential bias detected: ${biasFlag.flags?.join(', ') || 'Unknown bias factors'}`;
     }
-
     return 'No significant bias detected in evaluation';
   }
 
   private getJobDescription(jobRole: string): string {
-    // Basic job descriptions - in production, fetch from database
     const jobDescriptions = {
       'Backend Engineer': 'Develop server-side applications using Node.js, Python, or Java. Experience with databases, APIs, and cloud services required.',
       'Frontend Developer': 'Build user interfaces using React, Vue, or Angular. Strong HTML, CSS, JavaScript skills required.',
@@ -138,17 +183,14 @@ export class AiService {
       'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
       'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.'
     };
-
     return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
   }
 
-  async extractSkills(rawText: string): Promise<string[]> {
-    try {
-      const extractedData = await this.extractCandidateData(rawText);
-      return extractedData.skills || [];
-    } catch (error) {
-      this.logger.error('Skill extraction failed', error.stack);
+  private handleError(error: any, context: string) {
+    this.logger.error(context, error.stack);
+    if (error instanceof HttpException) {
       throw error;
     }
+    throw new HttpException(error.message || 'Internal AI Service Error', HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }

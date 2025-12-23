@@ -32,6 +32,12 @@ describe('AiProcessor', () => {
     workExperience: [],
     education: [],
     certifications: [],
+    scoringBreakdown: {
+      skill_match: 85,
+      experience_relevance: 90,
+      education_fit: 80,
+      certifications: 75
+    }
   };
 
   const createMockJob = (data: any): jest.Mocked<Job> => ({

@@ -1,23 +1,30 @@
 import asyncio
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, File, UploadFile, Form, Body
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
 from parsing import parse_pdf, parse_docx
 from extraction import extract_resume_data
-from scoring import score_candidate
-from semantic_matcher import get_unified_analysis
+from scoring import score_candidate, score_stage_1_math, score_stage_2_qualitative
 from jd_parsing import parse_jd_requirements
 
 load_dotenv()
 
 app = FastAPI(title="TalentScan AI Backend")
 
-
 class ScoreRequest(BaseModel):
     candidate_data: dict
     role_name: str
     job_description: str
+
+class Stage2Request(BaseModel):
+    """
+    Input for the second stage. 
+    It requires the output from Stage 1 to avoid re-calculating.
+    """
+    stage_1_result: dict
+    jd_rules: dict
+    role_name: str
 
 class SemanticTestRequest(BaseModel):
     candidate_data: dict
@@ -28,40 +35,33 @@ class JDParsingTestRequest(BaseModel):
     job_description: str
     role_name: str
 
-
-@app.get("/")
-def health_check():
-    return {"status": "AI Backend is running"}
-
-
 class TextRequest(BaseModel):
     text: str
 
 
+@app.get("/")
+async def health_check():
+    return {"status": "AI Backend is running"}
+
 @app.post("/parse")
 async def parse_resume(file: UploadFile = File(...)):
-    """
-    Accepts a PDF or DOCX file and returns the extracted text.
-    """
     filename = file.filename.lower()
-
     file_content = await file.read()
 
-    extracted_text = ""
     if filename.endswith(".pdf"):
-        extracted_text = parse_pdf(file_content)
+        extracted_text = await asyncio.to_thread(parse_pdf, file_content)
     elif filename.endswith(".docx"):
-        extracted_text = parse_docx(file_content)
+        extracted_text = await asyncio.to_thread(parse_docx, file_content)
     else:
         raise HTTPException(
             status_code=400,
-            detail=" Unsupported file format. Please upload a PDF or DOCX.",
+            detail="Unsupported file format. Please upload a PDF or DOCX.",
         )
 
     if not extracted_text:
-        raise HTTPException(status_code=400, detail="Failed to extract text from file.")
+        raise HTTPException(status_code=400, detail="Failed to extract text.")
 
-    structures_data = extract_resume_data(extracted_text)
+    structures_data = await asyncio.to_thread(extract_resume_data, extracted_text)
 
     return {
         "filename": file.filename,
@@ -72,14 +72,11 @@ async def parse_resume(file: UploadFile = File(...)):
 
 
 @app.post("/parse-text")
-def parse_text(request: TextRequest):
-    """
-    Accepts raw text and returns structured data.
-    """
+async def parse_text(request: TextRequest):
     if not request.text:
         raise HTTPException(status_code=400, detail="No text provided.")
 
-    structures_data = extract_resume_data(request.text)
+    structures_data = await asyncio.to_thread(extract_resume_data, request.text)
 
     return {
         "processed": True,
@@ -87,100 +84,114 @@ def parse_text(request: TextRequest):
         "data": structures_data,
     }
 
+@app.post("/analyze/fast")
+async def analyze_fast(
+    file: UploadFile | None = File(None),
+    raw_text: str | None = Form(None),
+    role_name: str = Form(...),
+    job_description: str | None = Form(None),
+):
+    """
+    STAGE 1: FAST ANALYSIS (Math Only)
+    Returns: Score, Breakdown, and Parsed Data.
+    Time: ~2-4 seconds.
+    """
+    final_raw_text = ""
+
+    if file:
+        file_content = await file.read()
+        filename = file.filename.lower()
+        if filename.endswith(".pdf"):
+            final_raw_text = await asyncio.to_thread(parse_pdf, file_content)
+        elif filename.endswith(".docx"):
+            final_raw_text = await asyncio.to_thread(parse_docx, file_content)
+    elif raw_text:
+        final_raw_text = raw_text
+
+    if not final_raw_text:
+        raise HTTPException(status_code=400, detail="No valid text provided.")
+
+    candidate_task = asyncio.to_thread(extract_resume_data, final_raw_text)
+    jd_task = asyncio.to_thread(parse_jd_requirements, role_name, job_description or "")
+
+    results = await asyncio.gather(candidate_task, jd_task)
+    candidate_profile = results[0]
+    jd_rules = results[1]
+
+    stage_1_result = await score_stage_1_math(candidate_profile, jd_rules, role_name)
+
+    return {
+        "stage": "fast_math",
+        "role_fit_score": stage_1_result["base_score"],
+        "scoring_breakdown": stage_1_result["math_result"]["breakdown"],
+        "payload_for_stage_2": {
+            "stage_1_result": stage_1_result,
+            "jd_rules": jd_rules,
+            "role_name": role_name
+        }
+    }
+
+
+@app.post("/analyze/detailed")
+async def analyze_detailed(request: Stage2Request):
+    """
+    STAGE 2: DEEP DIVE (LLM Analysis)
+    Input: The 'payload_for_stage_2' returned by /analyze/fast.
+    Returns: Interview Questions, Strengths, Weaknesses.
+    Time: ~10-15 seconds.
+    """
+    final_result = await score_stage_2_qualitative(
+        request.stage_1_result, 
+        request.jd_rules, 
+        request.role_name
+    )
+    
+    return final_result
 
 @app.post("/score")
 async def calculate_score(request: ScoreRequest):
-    """
-    Analyzes the candidate's JSON against a job description.
-    """
     jd_rules = await asyncio.to_thread(
         parse_jd_requirements, request.role_name, request.job_description
     )
-
-    result = await asyncio.to_thread(
-        score_candidate, request.candidate_data, jd_rules, request.role_name
-    )
+    result = await score_candidate(request.candidate_data, jd_rules, request.role_name)
     return result
 
+
 @app.post("/test-semantic")
-def test_semantic_matcher(request: SemanticTestRequest):
-    """
-    Test semantic matcher in isolation with detailed debug output.
-    """
+async def test_semantic_matcher(request: SemanticTestRequest):
     try:
-        jd_requirements = parse_jd_requirements(request.role_name, request.job_description)
-        semantic_result = get_unified_analysis(
-            request.candidate_data, 
-            jd_requirements, 
-            request.role_name
+        jd_requirements = await asyncio.to_thread(
+            parse_jd_requirements, request.role_name, request.job_description
         )
-        
+        semantic_result = await get_unified_analysis(
+            request.candidate_data, jd_requirements, request.role_name
+        )
         return {
             "success": True,
             "jd_requirements": jd_requirements,
             "semantic_analysis": semantic_result,
             "debug_info": {
-                "candidate_jobs_count": len(request.candidate_data.get('work_experience', [])),
-                "skill_categories_count": len(jd_requirements.get('skill_requirements', [])),
-                "experience_analysis_count": len(semantic_result.get('work_experience_analysis', [])),
-                "skill_analysis_count": len(semantic_result.get('skill_analysis', []))
-            }
+                "candidate_jobs_count": len(request.candidate_data.get("work_experience", [])),
+                "skill_categories_count": len(jd_requirements.get("skill_requirements", [])),
+            },
         }
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "error_type": type(e).__name__
-        }
+        return {"success": False, "error": str(e)}
+
 
 @app.post("/test-jd-parsing")
-def test_jd_parsing(request: JDParsingTestRequest):
-    """
-    Test job description parsing in isolation with detailed debug output.
-    """
+async def test_jd_parsing(request: JDParsingTestRequest):
     try:
-        print(f"\n=== JD PARSING TEST START ===")
-        print(f"Role Name: {request.role_name}")
-        print(f"JD Length: {len(request.job_description)} characters")
-        print(f"JD Preview: {request.job_description[:200]}...")
-        
-        jd_requirements = parse_jd_requirements(request.role_name, request.job_description)
-        
-        print(f"Parsed Requirements:")
-        print(f"  Required Years: {jd_requirements.get('required_years', 0)}")
-        print(f"  Responsibilities: {len(jd_requirements.get('responsibilities', []))}")
-        print(f"  Education Required: {jd_requirements.get('education_requirement', {}).get('required_level', 'None')}")
-        print(f"  Certifications: {len(jd_requirements.get('required_certifications', []))}")
-        
-        if jd_requirements.get('responsibilities'):
-            print(f"  Sample Responsibilities:")
-            for i, resp in enumerate(jd_requirements['responsibilities'][:3]):
-                print(f"    {i+1}. {resp.get('text', 'N/A')[:100]}...")
-        
-        print(f"=== JD PARSING TEST END ===\n")
-        
+        jd_requirements = await asyncio.to_thread(
+            parse_jd_requirements, request.role_name, request.job_description
+        )
         return {
             "success": True,
             "parsed_requirements": jd_requirements,
-            "debug_info": {
-                "input_length": len(request.job_description),
-                "responsibilities_count": len(jd_requirements.get('responsibilities', [])),
-                "has_education_req": bool(jd_requirements.get('education_requirement', {}).get('required_level')),
-                "certifications_count": len(jd_requirements.get('required_certifications', [])),
-                "required_years": jd_requirements.get('required_years', 0)
-            }
         }
     except Exception as e:
-        print(f"\n=== JD PARSING FAILED ===")
-        print(f"Error: {e}")
-        print(f"Error Type: {type(e).__name__}")
-        print(f"=== JD PARSING TEST END ===\n")
-        
-        return {
-            "success": False,
-            "error": str(e),
-            "error_type": type(e).__name__
-        }
+        return {"success": False, "error": str(e)}
+
 
 @app.post("/analyze")
 async def analyze_resume(
@@ -190,49 +201,33 @@ async def analyze_resume(
     job_description: str | None = Form(None),
 ):
     """
-    End-to-end endpoint to parse, extract, and score a resume against a job role.
-    Accepts either a file or raw text.
+    Legacy monolithic endpoint. Runs both stages sequentially.
     """
-    filename = "text_input"
     final_raw_text = ""
-
     if file:
-        filename = file.filename.lower()
         file_content = await file.read()
+        filename = file.filename.lower()
         if filename.endswith(".pdf"):
-            final_raw_text = parse_pdf(file_content)
+            final_raw_text = await asyncio.to_thread(parse_pdf, file_content)
         elif filename.endswith(".docx"):
-            final_raw_text = parse_docx(file_content)
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail="Unsupported file format. Please upload a PDF or DOCX.",
-            )
+            final_raw_text = await asyncio.to_thread(parse_docx, file_content)
     elif raw_text:
         final_raw_text = raw_text
-    else:
-        raise HTTPException(
-            status_code=400,
-            detail="No resume file or raw text provided.",
-        )
 
     if not final_raw_text:
-        raise HTTPException(status_code=400, detail="Failed to extract text from file or text is empty.")
+        raise HTTPException(status_code=400, detail="No text provided.")
 
     candidate_task = asyncio.to_thread(extract_resume_data, final_raw_text)
-    jd_task = asyncio.to_thread(
-        parse_jd_requirements, role_name, job_description or ""
-    )
-    
+    jd_task = asyncio.to_thread(parse_jd_requirements, role_name, job_description or "")
+
     results = await asyncio.gather(candidate_task, jd_task)
-    
     candidate_profile = results[0]
     jd_rules = results[1]
 
-    evaluation = score_candidate(candidate_profile, jd_rules, role_name)
+    evaluation = await score_candidate(candidate_profile, jd_rules, role_name)
 
     return {
-        "filename": filename,
+        "filename": "file",
         "candidate_profile": candidate_profile,
         "evaluation": evaluation,
     }
@@ -240,5 +235,4 @@ async def analyze_resume(
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
