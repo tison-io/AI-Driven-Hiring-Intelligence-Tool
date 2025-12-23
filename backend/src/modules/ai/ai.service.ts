@@ -44,10 +44,14 @@ export class AiService {
       const { role_fit_score, scoring_breakdown, payload_for_stage_2 } = response.data;
 
       // Extract candidate data from the payload to show the profile immediately
-      const candidateData = payload_for_stage_2.stage_1_result.candidate_data;
+      const candidateData = payload_for_stage_2?.stage_1_result?.candidate_data;
+
+      if (!candidateData) {
+        this.logger.warn('Candidate data not found in Stage 1 payload. Some profile details may be missing.');
+      }
 
       // Transform partial result for Frontend (Score + Profile)
-      const frontendData = this.transformStage1Response(candidateData, role_fit_score, scoring_breakdown);
+      const frontendData = this.transformStage1Response(candidateData || {}, role_fit_score, scoring_breakdown);
 
       return {
         ...frontendData,
