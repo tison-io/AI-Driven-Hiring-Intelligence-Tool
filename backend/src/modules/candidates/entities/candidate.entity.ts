@@ -39,6 +39,11 @@ export class Candidate {
   @Prop({ min: 0, max: 100 })
   roleFitScore?: number;
 
+  // --- ADDED THIS FIELD ---
+  @Prop({ type: Object }) 
+  scoringBreakdown?: any; 
+  // -----------------------
+
   @Prop({ type: [String], default: [] })
   keyStrengths: string[];
 

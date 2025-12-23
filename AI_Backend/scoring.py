@@ -1,6 +1,6 @@
 import os
 import json
-from openai import OpenAI
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 from langsmith.wrappers import wrap_openai
 
@@ -10,7 +10,7 @@ from semantic_matcher import get_unified_analysis
 from rb_scoring import calculate_math_score, normalize_text
 
 load_dotenv()
-client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
+client = wrap_openai(AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 
 def ensure_consistent_skills(candidate_data: dict) -> dict:
@@ -57,17 +57,43 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
 
     return int((comp_score * 0.6) + (bias_score * 0.4))
 
-
-def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
+async def score_stage_1_math(candidate_data: dict, jd_rules: dict, role_name: str) -> dict:
+    """
+    Executes the deterministic, logic-based scoring (Semantic + Math).
+    No LLM calls here.
+    """
     try:
         candidate_data = ensure_consistent_skills(candidate_data)
-        print("DEBUG: Running Unified Analysis...")
-        unified_analysis = get_unified_analysis(candidate_data, jd_rules, role_name)
+        print("DEBUG: Running Unified Analysis (Stage 1)...")
+
+        unified_analysis = await get_unified_analysis(
+            candidate_data, jd_rules, role_name
+        )
+
         math_result = calculate_math_score(
             candidate_data, jd_rules, unified_analysis, role_name
         )
 
-        final_score = math_result["base_score"]
+        return {
+            "candidate_data": candidate_data,
+            "unified_analysis": unified_analysis,
+            "math_result": math_result,
+            "base_score": math_result["base_score"]
+        }
+    except Exception as e:
+        print(f"Stage 1 Error: {e}")
+        raise e
+
+async def score_stage_2_qualitative(stage_1_result: dict, jd_rules: dict, role_name: str) -> dict:
+    """
+    Executes the LLM analysis based on Stage 1 data.
+    """
+    try:
+        final_score = stage_1_result["base_score"]
+        math_result = stage_1_result["math_result"]
+        unified_analysis = stage_1_result["unified_analysis"]
+        candidate_data = stage_1_result["candidate_data"]
+
         years = candidate_data.get("total_years_experience", 0) or 0
         if years <= 2:
             exp_context = "Junior (0-2 years)"
@@ -75,6 +101,7 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
             exp_context = "Mid-Level (3-6 years)"
         else:
             exp_context = "Senior/Lead (7+ years)"
+
         candidate_str = json.dumps(candidate_data)
         math_str = json.dumps(math_result)
         rules_str = json.dumps(jd_rules)
@@ -105,12 +132,12 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
         2. Explain WHY the score is {final_score} based on the Breakdown.
         3. If Score < 100, identify the specific missing skills or certifications.
         4. List ALL strengths and weaknesses exhaustively.
-           - CRITICAL: Check 'flat_skills_list', 'certifications', and 'SEMANTIC ANALYSIS' before declaring a gap.
+            - CRITICAL: Check 'flat_skills_list', 'certifications', and 'SEMANTIC ANALYSIS' before declaring a gap.
         5. Generate at least 10 interview questions.
         """
 
-        response = client.chat.completions.create(
-            model="gpt-4o",
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": SYSTEM_SCORING_PROMPT},
                 {"role": "user", "content": prompt_content},
@@ -141,6 +168,26 @@ def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
         }
 
         return result
+
+    except Exception as e:
+        print(f"Stage 2 Error: {e}")
+        return {
+            "role_fit_score": stage_1_result.get("base_score", 0),
+            "error": str(e),
+            "scoring_breakdown": stage_1_result.get("math_result", {}).get("breakdown", {})
+        }
+
+
+async def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
+    """
+    Main Orchestrator calling Stage 1 then Stage 2.
+    """
+    try:
+        stage_1_results = await score_stage_1_math(candidate_data, jd_rules, role_name)
+        
+        final_result = await score_stage_2_qualitative(stage_1_results, jd_rules, role_name)
+        
+        return final_result
 
     except Exception as e:
         print(f"Scoring Error: {e}")
