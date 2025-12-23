@@ -4,7 +4,7 @@ import { QueueService } from "../queue/queue.service";
 import { ApifyService } from "../linkedin-scraper/linkedinScraper.service";
 import { LinkedInMapper } from "../linkedin-scraper/mappers/linkedin-mapper";
 import { ProcessingStatus } from "../../common/enums/processing-status.enum";
-import * as pdfParse from "pdf-parse";
+import pdfParse from "pdf-parse";
 import * as mammoth from "mammoth";
 
 @Injectable()
