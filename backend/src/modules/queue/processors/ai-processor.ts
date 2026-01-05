@@ -54,7 +54,6 @@ export class AiProcessor {
 
       this.logger.log(`Stage 2: Generating Interview Questions...`);
 
-      // Defensively check for Stage 2 payload before proceeding
       if (!stage1Result.stage2Payload) {
         this.logger.warn(`Stage 2 payload not found for candidate ${candidateId}. Skipping detailed analysis.`);
         const processingTime = Date.now() - startTime;

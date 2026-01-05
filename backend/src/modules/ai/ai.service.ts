@@ -13,11 +13,6 @@ export class AiService {
     this.aiServiceUrl = this.configService.get('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
-  /**
-   * STAGE 1: FAST EVALUATION
-   * Returns: Score, Profile Data, and a Payload token for Stage 2.
-   * Time: ~3 seconds.
-   */
   async evaluateCandidateFast(rawText: string, jobRole: string, jobDescription?: string) {
     try {
       this.logger.log('Starting Stage 1: Fast Analysis via /analyze/fast');
@@ -63,12 +58,6 @@ export class AiService {
     }
   }
 
-  /**
-   * STAGE 2: DETAILED ANALYSIS
-   * Input: The 'stage2Payload' returned from Stage 1.
-   * Returns: Interview Questions, Strengths, Weaknesses.
-   * Time: ~10 seconds.
-   */
   async evaluateCandidateDetailed(stage2Payload: any) {
     try {
       this.logger.log('Starting Stage 2: Detailed Analysis via /analyze/detailed');
@@ -76,7 +65,7 @@ export class AiService {
 
       const response = await axios.post(
         `${this.aiServiceUrl}/analyze/detailed`,
-        stage2Payload, // Send the payload exactly as received
+        stage2Payload,
         {
           headers: { 'Content-Type': 'application/json' },
           timeout: 60000
@@ -86,7 +75,6 @@ export class AiService {
       const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
       this.logger.log(`Stage 2 complete in ${processingTime}s`);
 
-      // Transform the qualitative data
       return this.transformStage2Response(response.data);
 
     } catch (error) {
@@ -94,7 +82,6 @@ export class AiService {
     }
   }
 
-  // --- LEGACY / MONOLITHIC METHOD (Optional Backup) ---
   async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
     try {
       this.logger.log('Starting Legacy Monolithic Evaluation via /analyze');
@@ -116,8 +103,6 @@ export class AiService {
     }
   }
 
-  // --- TRANSFORMERS ---
-
   private transformStage1Response(extractedData: ExtractedCandidateData, score: number, breakdown: any) {
     const relevantExperience = breakdown.relevant_years_calculated !== undefined
       ? breakdown.relevant_years_calculated
@@ -129,7 +114,7 @@ export class AiService {
       isShortlisted: score >= 80,
       skills: extractedData.skills || [],
       experienceYears: relevantExperience,
-      scoringBreakdown: breakdown, // Pass raw breakdown for charts
+      scoringBreakdown: breakdown,
       workExperience: extractedData.work_experience?.map((job) => ({
         company: job.company || '',
         jobTitle: job.job_title || job.jobTitle || '',
@@ -162,10 +147,7 @@ export class AiService {
     };
   }
 
-  // --- HELPERS ---
-
   private transformAiResponse(extractedData: ExtractedCandidateData, scoringResult: ScoringResult) {
-    // Merges both stages for legacy calls
     const stage1 = this.transformStage1Response(extractedData, scoringResult.role_fit_score, scoringResult.scoring_breakdown);
     const stage2 = this.transformStage2Response(scoringResult);
     return { ...stage1, ...stage2 };
