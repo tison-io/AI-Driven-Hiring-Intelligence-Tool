@@ -13,7 +13,6 @@ async def get_unified_analysis(candidate_data, jd_requirements, role_name):
     """
     Performs a unified semantic analysis for both work experience and JD responsibilities.
     Handles experience relevance and responsibility match analysis.
-    Optimized for Speed: Uses gpt-4o-mini and returns Data-Only JSON.
     """
     try:
         primary_reqs = jd_requirements.get("primary_requirements", [])

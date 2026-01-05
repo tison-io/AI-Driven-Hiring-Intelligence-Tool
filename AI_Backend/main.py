@@ -92,9 +92,8 @@ async def analyze_fast(
     job_description: str | None = Form(None),
 ):
     """
-    STAGE 1: FAST ANALYSIS (Math Only)
+    STAGE 1: Math Only
     Returns: Score, Breakdown, and Parsed Data.
-    Time: ~2-4 seconds.
     """
     final_raw_text = ""
 
@@ -135,10 +134,9 @@ async def analyze_fast(
 @app.post("/analyze/detailed")
 async def analyze_detailed(request: Stage2Request):
     """
-    STAGE 2: DEEP DIVE (LLM Analysis)
+    STAGE 2: LLM Analysis.
     Input: The 'payload_for_stage_2' returned by /analyze/fast.
     Returns: Interview Questions, Strengths, Weaknesses.
-    Time: ~10-15 seconds.
     """
     final_result = await score_stage_2_qualitative(
         request.stage_1_result, 

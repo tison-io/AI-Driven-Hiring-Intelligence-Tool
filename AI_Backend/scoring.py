@@ -14,7 +14,7 @@ client = wrap_openai(AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 
 def ensure_consistent_skills(candidate_data: dict) -> dict:
-    """Normalization helper."""
+    """Normalizes and deduplicates skills."""
     existing_skills = candidate_data.get("skills", [])
     normalized_skills = []
     for skill in existing_skills:
@@ -60,7 +60,6 @@ def calculate_confidence_score(candidate_data: dict, llm_result: dict) -> int:
 async def score_stage_1_math(candidate_data: dict, jd_rules: dict, role_name: str) -> dict:
     """
     Executes the deterministic, logic-based scoring (Semantic + Math).
-    No LLM calls here.
     """
     try:
         candidate_data = ensure_consistent_skills(candidate_data)
@@ -130,10 +129,10 @@ async def score_stage_2_qualitative(stage_1_result: dict, jd_rules: dict, role_n
         INSTRUCTIONS:
         1. The Score is {final_score}. Do NOT adjust it.
         2. Explain WHY the score is {final_score} based on the Breakdown.
-        3. If Score < 100, identify the specific missing skills or certifications.
+        3. If Score < 100, identify the specific missing skills or certifications, or any potential gaps.
         4. List ALL strengths and weaknesses exhaustively.
             - CRITICAL: Check 'flat_skills_list', 'certifications', and 'SEMANTIC ANALYSIS' before declaring a gap.
-        5. Generate at least 10 interview questions.
+        5. Generate at least 7 interview questions.
         """
 
         response = await client.chat.completions.create(
@@ -180,7 +179,7 @@ async def score_stage_2_qualitative(stage_1_result: dict, jd_rules: dict, role_n
 
 async def score_candidate(candidate_data: dict, jd_rules: dict, role_name: str):
     """
-    Main Orchestrator calling Stage 1 then Stage 2.
+    Orchestrates the entire scoring process.
     """
     try:
         stage_1_results = await score_stage_1_math(candidate_data, jd_rules, role_name)

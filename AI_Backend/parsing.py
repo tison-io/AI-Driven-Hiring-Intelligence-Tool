@@ -12,7 +12,7 @@ def clean_text(text: str) -> str:
     return text
 
 def parse_pdf(file_bytes: bytes) -> str:
-    """Extrcts text from a PDF file using pypdf
+    """Extracts text from a PDF file using pypdf
     """
     try:
         reader = PdfReader(io.BytesIO(file_bytes))

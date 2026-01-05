@@ -10,7 +10,7 @@ client = wrap_openai(OpenAI(api_key=os.getenv("OPENAI_API_KEY")))
 
 def parse_jd_requirements(role_name: str, job_description: str):
     """
-    Parses the job description to extract atomic responsibilities, 
+    Parses the job description to extract responsibilities, 
     education, certifications, and required experience.
     """
     try:
