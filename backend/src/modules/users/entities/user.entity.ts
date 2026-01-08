@@ -13,8 +13,14 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   password: string;
+
+  @Prop({ enum: ['local', 'google'], default: 'local' })
+  authProvider: string;
+
+  @Prop()
+  googleId?: string;
 
   @Prop({ enum: UserRole, default: UserRole.RECRUITER })
   role: UserRole;

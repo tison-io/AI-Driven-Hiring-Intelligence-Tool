@@ -14,13 +14,15 @@ export class UsersService {
     private userModel: Model<UserDocument>,
   ) {}
 
-  async create(registerDto: RegisterDto): Promise<UserDocument> {
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+  async create(registerDto: RegisterDto | any): Promise<UserDocument> {
+    const hashedPassword = registerDto.password 
+      ? await bcrypt.hash(registerDto.password, 10)
+      : undefined;
     
     const user = new this.userModel({
       ...registerDto,
-      password: hashedPassword,
-      role: UserRole.RECRUITER,
+      ...(hashedPassword && { password: hashedPassword }),
+      role: registerDto.role || UserRole.RECRUITER,
     });
     
     return user.save();

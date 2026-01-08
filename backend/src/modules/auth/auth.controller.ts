@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +13,7 @@ import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -127,5 +129,40 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto
   ) {
     return this.authService.resetPassword(token, resetPasswordDto.newPassword);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen. After authorization, Google redirects to /auth/google/callback'
+  })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth consent screen' })
+  async googleAuth() {}
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Google OAuth callback',
+    description: 'Handles Google OAuth callback. Creates/logs in user and redirects to frontend with JWT token in URL'
+  })
+  @ApiResponse({ 
+    status: 302, 
+    description: 'Redirects to frontend with token. URL format: {FRONTEND_URL}/dashboard?token={jwt} or {FRONTEND_URL}/complete-profile?token={jwt}',
+    schema: {
+      example: {
+        redirectUrl: 'http://localhost:3001/complete-profile?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    const { access_token, user } = await this.authService.googleLogin(req);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const redirectUrl = user.profileCompleted 
+      ? `${frontendUrl}/dashboard?token=${access_token}`
+      : `${frontendUrl}/complete-profile?token=${access_token}`;
+    
+    return res.redirect(redirectUrl);
   }
 }

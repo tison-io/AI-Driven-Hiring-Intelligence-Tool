@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CandidatesService } from '../candidates/candidates.service';
 import { CandidateFilterDto } from '../candidates/dto/candidate-filter.dto';
-import * as XLSX from 'xlsx';
-import { createObjectCsvWriter } from 'csv-writer';
+import * as ExcelJS from 'exceljs';
 let marked: any;
 try {
   marked = require('marked').marked;
@@ -17,45 +16,71 @@ export class ExportService {
   async exportCandidatesCSV(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
     const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
-    const csvData = candidates.map(candidate => ({
-      name: candidate.name,
-      linkedinUrl: candidate.linkedinUrl || '',
-      experienceYears: candidate.experienceYears,
-      skills: candidate.skills.join(', '),
-      roleFitScore: candidate.roleFitScore || 0,
-      confidenceScore: candidate.confidenceScore || 0,
-      jobRole: candidate.jobRole,
-      status: candidate.status,
-      createdAt: candidate.createdAt || new Date(),
-    }));
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Candidates');
 
-    const worksheet = XLSX.utils.json_to_sheet(csvData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Candidates');
-    
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'csv' });
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'LinkedIn URL', key: 'linkedinUrl', width: 40 },
+      { header: 'Experience Years', key: 'experienceYears', width: 15 },
+      { header: 'Skills', key: 'skills', width: 50 },
+      { header: 'Role Fit Score', key: 'roleFitScore', width: 15 },
+      { header: 'Confidence Score', key: 'confidenceScore', width: 15 },
+      { header: 'Job Role', key: 'jobRole', width: 30 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    candidates.forEach(candidate => {
+      worksheet.addRow({
+        name: candidate.name,
+        linkedinUrl: candidate.linkedinUrl || '',
+        experienceYears: candidate.experienceYears,
+        skills: candidate.skills.join(', '),
+        roleFitScore: candidate.roleFitScore || 0,
+        confidenceScore: candidate.confidenceScore || 0,
+        jobRole: candidate.jobRole,
+        status: candidate.status,
+        createdAt: candidate.createdAt || new Date(),
+      });
+    });
+
+    return Buffer.from(await workbook.csv.writeBuffer());
   }
 
   async exportCandidatesXLSX(filters: CandidateFilterDto, userId: string, userRole: string): Promise<Buffer> {
     const candidates = await this.candidatesService.findAll(filters, userId, userRole);
     
-    const xlsxData = candidates.map(candidate => ({
-      Name: candidate.name,
-      'LinkedIn URL': candidate.linkedinUrl || '',
-      'Years of Experience': candidate.experienceYears,
-      Skills: candidate.skills.join(', '),
-      'Role Fit Score': candidate.roleFitScore || 0,
-      'Confidence Score': candidate.confidenceScore || 0,
-      'Job Role': candidate.jobRole,
-      Status: candidate.status,
-      'Created At': candidate.createdAt || new Date(),
-    }));
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Candidates');
 
-    const worksheet = XLSX.utils.json_to_sheet(xlsxData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Candidates');
-    
-    return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'LinkedIn URL', key: 'linkedinUrl', width: 40 },
+      { header: 'Years of Experience', key: 'experienceYears', width: 20 },
+      { header: 'Skills', key: 'skills', width: 50 },
+      { header: 'Role Fit Score', key: 'roleFitScore', width: 15 },
+      { header: 'Confidence Score', key: 'confidenceScore', width: 18 },
+      { header: 'Job Role', key: 'jobRole', width: 30 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Created At', key: 'createdAt', width: 20 },
+    ];
+
+    candidates.forEach(candidate => {
+      worksheet.addRow({
+        name: candidate.name,
+        linkedinUrl: candidate.linkedinUrl || '',
+        experienceYears: candidate.experienceYears,
+        skills: candidate.skills.join(', '),
+        roleFitScore: candidate.roleFitScore || 0,
+        confidenceScore: candidate.confidenceScore || 0,
+        jobRole: candidate.jobRole,
+        status: candidate.status,
+        createdAt: candidate.createdAt || new Date(),
+      });
+    });
+
+    return Buffer.from(await workbook.xlsx.writeBuffer());
   }
 
   async generateCandidateReport(candidateId: string): Promise<string> {

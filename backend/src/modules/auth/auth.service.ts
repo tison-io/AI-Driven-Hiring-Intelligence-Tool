@@ -151,4 +151,39 @@ export class AuthService {
 
     return { message: 'Password reset successful' };
   }
+
+  async googleLogin(req: any) {
+    const { email, fullName, userPhoto, googleId } = req.user;
+    
+    let user = await this.usersService.findByEmail(email);
+    
+    if (!user) {
+      user = await this.usersService.create({
+        email,
+        fullName,
+        userPhoto,
+        googleId,
+        authProvider: 'google',
+        role: 'recruiter',
+        profileCompleted: false,
+      });
+    }
+
+    const payload = { 
+      email: user.email, 
+      sub: user._id, 
+      role: user.role, 
+      profileCompleted: user.profileCompleted || false 
+    };
+    
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        email: user.email,
+        fullName: user.fullName,
+        role: user.role,
+        profileCompleted: user.profileCompleted,
+      },
+    };
+  }
 }
