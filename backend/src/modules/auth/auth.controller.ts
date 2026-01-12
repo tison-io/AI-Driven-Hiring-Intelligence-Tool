@@ -69,8 +69,14 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Session validation result' })
   async validateSession(@Request() req) {
     if (req.session?.userId) {
-      const user = await this.authService.getProfile(req.session.userId);
-      return { authenticated: true, user };
+      try {
+        const user = await this.authService.getProfile(req.session.userId);
+        return { authenticated: true, user };
+      } catch {
+        // User may have been deleted; invalidate stale session
+        req.session.destroy(() => {});
+        return { authenticated: false };
+      }
     }
     return { authenticated: false };
   }
