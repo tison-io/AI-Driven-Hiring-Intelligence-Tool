@@ -110,4 +110,21 @@ export class UsersService {
     await this.userModel.findByIdAndUpdate(user._id, { passwordResetAttempts: 0 }).exec();
     return true;
   }
+
+  async createOAuthUser(oauthData: {
+    email: string;
+    password: string;
+    fullName: string;
+    userPhoto?: string;
+    googleId: string;
+    authProvider: string;
+  }): Promise<UserDocument> {
+    const user = new this.userModel({
+      ...oauthData,
+      role: UserRole.RECRUITER,
+      profileCompleted: false,
+    });
+    
+    return user.save();
+  }
 }

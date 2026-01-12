@@ -13,7 +13,7 @@ export class User {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ required: true })
+  @Prop({ required: false })
   password: string;
 
   @Prop({ enum: UserRole, default: UserRole.RECRUITER })
@@ -36,6 +36,12 @@ export class User {
 
   @Prop({ default: false })
   profileCompleted?: boolean;
+
+  @Prop()
+  googleId?: string;
+
+  @Prop({ enum: ['manual', 'google', 'hybrid'], default: 'manual' })
+  authProvider?: string;
 
   @Prop()
   passwordResetToken?: string;

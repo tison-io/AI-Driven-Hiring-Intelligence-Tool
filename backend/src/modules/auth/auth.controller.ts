@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +13,7 @@ import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -44,8 +46,42 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req) {
-    return { message: 'Logged out successfully' };
+  async logout(@Request() req, @Res() res: Response) {
+    // Destroy session if it exists
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Logout failed' });
+        }
+        res.clearCookie('connect.sid');
+        return res.json({ message: 'Logged out successfully' });
+      });
+    } else {
+      return res.json({ message: 'Logged out successfully' });
+    }
+  }
+
+  @Get('session/validate')
+  @ApiOperation({ 
+    summary: 'Validate session',
+    description: 'Checks if user has valid session and returns user data'
+  })
+  @ApiResponse({ status: 200, description: 'Session validation result' })
+  async validateSession(@Request() req) {
+    if (req.session?.userId) {
+      try {
+        const user = await this.authService.getProfile(req.session.userId);
+        return { authenticated: true, user };
+      } catch (error) {
+        // User may have been deleted; invalidate stale session
+        req.session.destroy((err) => {
+          if (err) console.error('Failed to destroy stale session:', err);
+        });
+        // Consider checking error type before destroying session
+        return { authenticated: false };
+      }
+    }
+    return { authenticated: false };
   }
 
   @Get('profile')
@@ -127,5 +163,54 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto
   ) {
     return this.authService.resetPassword(token, resetPasswordDto.newPassword);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen'
+  })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  async googleAuth() {
+    // Guard handles the redirect to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Google OAuth callback',
+    description: 'Handles Google OAuth callback, creates session, and redirects to frontend'
+  })
+  @ApiResponse({ 
+    status: 302, 
+    description: 'Creates session and redirects to frontend dashboard or profile completion'
+  })
+  @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    try {
+      const googleUser = req.user;
+      const user = await this.authService.googleLogin(googleUser);
+      
+      req.session.userId = user._id.toString();
+      req.session.email = user.email;
+      req.session.role = user.role;
+      req.session.profileCompleted = user.profileCompleted;
+      
+      // Ensure session is saved before redirect
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+      
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const redirectUrl = user.profileCompleted 
+        ? `${frontendUrl}/dashboard`
+        : `${frontendUrl}/complete-profile`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+    }
   }
 }
