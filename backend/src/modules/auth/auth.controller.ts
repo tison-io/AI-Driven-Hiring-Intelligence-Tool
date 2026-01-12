@@ -185,23 +185,29 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
-    const googleUser = req.user;
-    
-    // Create or update user and get user data
-    const user = await this.authService.googleLogin(googleUser);
-    
-    // Store user info in session
-    req.session.userId = user._id.toString();
-    req.session.email = user.email;
-    req.session.role = user.role;
-    req.session.profileCompleted = user.profileCompleted;
-    
-    // Redirect to frontend based on profile completion status
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-    const redirectUrl = user.profileCompleted 
-      ? `${frontendUrl}/dashboard`
-      : `${frontendUrl}/complete-profile`;
-    
-    return res.redirect(redirectUrl);
+    try {
+      const googleUser = req.user;
+      const user = await this.authService.googleLogin(googleUser);
+      
+      req.session.userId = user._id.toString();
+      req.session.email = user.email;
+      req.session.role = user.role;
+      req.session.profileCompleted = user.profileCompleted;
+      
+      // Ensure session is saved before redirect
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => (err ? reject(err) : resolve()));
+      });
+      
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const redirectUrl = user.profileCompleted 
+        ? `${frontendUrl}/dashboard`
+        : `${frontendUrl}/complete-profile`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+    }
   }
 }
