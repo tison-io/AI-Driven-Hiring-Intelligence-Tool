@@ -151,4 +151,46 @@ export class AuthService {
 
     return { message: 'Password reset successful' };
   }
+
+  async googleLogin(googleUser: {
+    email: string;
+    fullName: string;
+    userPhoto?: string;
+    googleId: string;
+  }) {
+    const { email, fullName, userPhoto, googleId } = googleUser;
+    
+    // Check if user exists
+    let user = await this.usersService.findByEmail(email);
+    
+    if (user) {
+      // Existing user - link Google account if not already linked
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.authProvider = user.password ? 'hybrid' : 'google';
+      }
+      
+      // Update profile photo if not set
+      if (userPhoto && !user.userPhoto) {
+        user.userPhoto = userPhoto;
+      }
+      
+      await user.save();
+    } else {
+      // New user - create with OAuth data
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      user = await this.usersService.createOAuthUser({
+        email,
+        password: hashedPassword,
+        fullName,
+        userPhoto,
+        googleId,
+        authProvider: 'google',
+      });
+    }
+    
+    return user;
+  }
 }

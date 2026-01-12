@@ -1,7 +1,8 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +13,7 @@ import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -127,5 +129,48 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto
   ) {
     return this.authService.resetPassword(token, resetPasswordDto.newPassword);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen'
+  })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  async googleAuth() {
+    // Guard handles the redirect to Google
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Google OAuth callback',
+    description: 'Handles Google OAuth callback, creates session, and redirects to frontend'
+  })
+  @ApiResponse({ 
+    status: 302, 
+    description: 'Creates session and redirects to frontend dashboard or profile completion'
+  })
+  @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    const googleUser = req.user;
+    
+    // Create or update user and get user data
+    const user = await this.authService.googleLogin(googleUser);
+    
+    // Store user info in session
+    req.session.userId = user._id.toString();
+    req.session.email = user.email;
+    req.session.role = user.role;
+    req.session.profileCompleted = user.profileCompleted;
+    
+    // Redirect to frontend based on profile completion status
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const redirectUrl = user.profileCompleted 
+      ? `${frontendUrl}/dashboard`
+      : `${frontendUrl}/complete-profile`;
+    
+    return res.redirect(redirectUrl);
   }
 }
