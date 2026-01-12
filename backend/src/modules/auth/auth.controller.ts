@@ -72,9 +72,12 @@ export class AuthController {
       try {
         const user = await this.authService.getProfile(req.session.userId);
         return { authenticated: true, user };
-      } catch {
+      } catch (error) {
         // User may have been deleted; invalidate stale session
-        req.session.destroy(() => {});
+        req.session.destroy((err) => {
+          if (err) console.error('Failed to destroy stale session:', err);
+        });
+        // Consider checking error type before destroying session
         return { authenticated: false };
       }
     }
