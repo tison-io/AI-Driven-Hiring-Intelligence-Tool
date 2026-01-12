@@ -39,7 +39,18 @@ export class AuthService {
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     
-    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Prevent OAuth-only users from using password login
+    if (user.authProvider === 'google' && !user.password) {
+      throw new UnauthorizedException(
+        'This account uses Google sign-in. Please use the "Sign in with Google" button.'
+      );
+    }
+
+    if (!(await bcrypt.compare(loginDto.password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -57,6 +68,13 @@ export class AuthService {
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    // Prevent OAuth-only users from changing password
+    if (user.authProvider === 'google' && !user.password) {
+      throw new BadRequestException(
+        'Your account uses Google sign-in. Password management is handled by Google.'
+      );
     }
 
     const isCurrentPasswordValid = await bcrypt.compare(

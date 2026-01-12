@@ -46,8 +46,33 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req) {
-    return { message: 'Logged out successfully' };
+  async logout(@Request() req, @Res() res: Response) {
+    // Destroy session if it exists
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          return res.status(500).json({ message: 'Logout failed' });
+        }
+        res.clearCookie('connect.sid');
+        return res.json({ message: 'Logged out successfully' });
+      });
+    } else {
+      return res.json({ message: 'Logged out successfully' });
+    }
+  }
+
+  @Get('session/validate')
+  @ApiOperation({ 
+    summary: 'Validate session',
+    description: 'Checks if user has valid session and returns user data'
+  })
+  @ApiResponse({ status: 200, description: 'Session validation result' })
+  async validateSession(@Request() req) {
+    if (req.session?.userId) {
+      const user = await this.authService.getProfile(req.session.userId);
+      return { authenticated: true, user };
+    }
+    return { authenticated: false };
   }
 
   @Get('profile')
