@@ -46,6 +46,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     
@@ -61,7 +62,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@Res({ passthrough: true }) res: Response) {
     // Clear JWT cookie
-    res.clearCookie('access_token');
+    res.clearCookie('access_token', { path: '/' });
     return { message: 'Logged out successfully' };
   }
 
@@ -216,6 +217,7 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
+        path: '/',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
       
