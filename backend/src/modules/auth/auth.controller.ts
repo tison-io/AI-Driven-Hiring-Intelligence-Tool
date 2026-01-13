@@ -74,9 +74,15 @@ export class AuthController {
         return { authenticated: true, user };
       } catch (error) {
         // User may have been deleted; invalidate stale session
-        req.session.destroy((err) => {
-          if (err) console.error('Failed to destroy stale session:', err);
-        });
+             await new Promise<void>((resolve) => {
+                 req.session.destroy((err) => {
+                   if (err) {
+                      console.error('Failed to destroy stale session:', err);
+                   }
+                   resolve();
+                 });
+              });
+          
         // Consider checking error type before destroying session
         return { authenticated: false };
       }
