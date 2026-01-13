@@ -2,7 +2,6 @@
 
 import { createContext, useState, useEffect, useContext, useRef } from 'react';
 import api from '../lib/api';
-import { tokenStorage } from '../lib/auth';
 import { User, AuthContextType, AuthProviderProps } from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,50 +15,38 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     if (isInitialized.current) return;
     
-    const token = tokenStorage.get();
-    if (token && tokenStorage.isValid(token)) {
-      // Fetch full profile on mount
-      api.get('/auth/profile')
-        .then(response => {
-          if (response.data) setUser(response.data);
-          else {
-            const userData = tokenStorage.parseUser(token);
-            if (userData) setUser(userData);
-          }
-        })
-        .catch(() => {
-          const userData = tokenStorage.parseUser(token);
-          if (userData) setUser(userData);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
-    isInitialized.current = true;
+    // Check authentication on mount
+    const checkAuth = async () => {
+      try {
+        // Cookie is sent automatically - just fetch profile
+        const response = await api.get('/auth/profile');
+        if (response.data) {
+          setUser(response.data);
+        }
+      } catch (error) {
+        // Not authenticated or cookie expired
+        setUser(null);
+      } finally {
+        setLoading(false);
+        isInitialized.current = true;
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
       setError(null);
+      setLoading(true);
+      
+      // Backend sets JWT cookie automatically
       const response = await api.post('/auth/login', { email, password });
-      const { access_token } = response.data;
-      tokenStorage.set(access_token);
       
-      // Fetch full profile data
-      try {
-        const profileResponse = await api.get('/auth/profile');
-        setUser(profileResponse.data);
-        return profileResponse.data;
-      } catch (profileError) {
-        // Fallback to token parsing if profile fetch fails
-      }
-      
-      const userData = tokenStorage.parseUser(access_token);
-      if (userData) {
-        setUser(userData);
-        return userData;
-      }
-      return null;
+      // Fetch full profile (cookie is already set)
+      const profileResponse = await api.get('/auth/profile');
+      setUser(profileResponse.data);
+      return profileResponse.data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       throw err;
@@ -71,43 +58,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const register = async (email: string, password: string) => {
     try {
       setError(null);
+      setLoading(true);
       await api.post('/auth/register', { email, password });
       
+      // Auto-login after registration
       await login(email, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
+      throw err;
     } finally {
       setLoading(false);
     }
   };
 
   const logout = async () => {
-    const token = tokenStorage.get();
-    
-    // Call backend logout endpoint if user is authenticated
-    if (token && tokenStorage.isValid(token)) {
-      try {
-        await api.post('/auth/logout');
-      } catch (error) {
-        console.error('Logout API call failed:', error);
-      }
+    try {
+      // Backend clears cookie
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error('Logout API call failed:', error);
+    } finally {
+      // Clear local state
+      setUser(null);
+      setError(null);
     }
-    
-    // Clear local state regardless of API call result
-    tokenStorage.remove();
-    setUser(null);
-    setError(null);
   };
 
   const refreshUser = async () => {
-    const token = tokenStorage.get();
-    if (!token) return;
-    
     try {
+      // Cookie is sent automatically
       const response = await api.get('/auth/profile');
       setUser(response.data);
     } catch (error) {
       console.error('Failed to refresh user:', error);
+      setUser(null);
     }
   };
 

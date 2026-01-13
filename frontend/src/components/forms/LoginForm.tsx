@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import toast from '@/lib/toast';
@@ -8,17 +9,27 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import { LoginFormData } from '@/types';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, loading, error } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting }
   } = useForm<LoginFormData>();
+
+  // Check for OAuth error in URL params
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (oauthError === 'oauth_failed') {
+      toast.error('Google sign-in failed. Please try again.');
+    }
+  }, [searchParams]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -118,6 +129,17 @@ export default function LoginForm() {
           'Login'
         )}
       </button>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or</span>
+        </div>
+      </div>
+
+      <GoogleAuthButton />
 
       <div className="text-center">
         <p className="text-sm text-gray-600">
