@@ -1,39 +1,58 @@
 'use client';
 
 import { createContext, useState, useEffect, useContext, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import api from '../lib/api';
 import { User, AuthContextType, AuthProviderProps } from '../types';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Public routes that don't require authentication
+const PUBLIC_ROUTES = [
+  '/',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+];
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isInitialized = useRef(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     if (isInitialized.current) return;
     
-    // Check authentication on mount
+    // Check if current route is public
+    const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/auth/reset-password');
+    
     const checkAuth = async () => {
-      try {
-        // Cookie is sent automatically - just fetch profile
-        const response = await api.get('/auth/profile');
-        if (response.data) {
-          setUser(response.data);
-        }
-      } catch (error) {
-        // Not authenticated or cookie expired
-        setUser(null);
-      } finally {
+      if (isPublicRoute) {
+        // On public routes, skip auth check entirely
+        // User can still login via the login page
         setLoading(false);
         isInitialized.current = true;
+      } else {
+        // On protected routes, check authentication
+        try {
+          const response = await api.get('/auth/profile');
+          if (response.data) {
+            setUser(response.data);
+          }
+        } catch (error) {
+          // Not authenticated or cookie expired
+          setUser(null);
+        } finally {
+          setLoading(false);
+          isInitialized.current = true;
+        }
       }
     };
     
     checkAuth();
-  }, []);
+  }, [pathname]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -59,10 +78,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       setError(null);
       setLoading(true);
-      await api.post('/auth/register', { email, password });
       
-      // Auto-login after registration
-      await login(email, password);
+      // Backend sets JWT cookie automatically on registration
+      const response = await api.post('/auth/register', { email, password });
+      
+      // Fetch full profile (cookie is already set)
+      const profileResponse = await api.get('/auth/profile');
+      setUser(profileResponse.data);
+      return profileResponse.data;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       throw err;

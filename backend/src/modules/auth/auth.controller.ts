@@ -29,8 +29,20 @@ export class AuthController {
   @ApiOperation({ summary: 'Register a new recruiter user' })
   @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(registerDto);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    // Return user only (no token in response body)
+    return { user: result.user };
   }
 
   @Post('login')
@@ -66,34 +78,7 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-  @Get('session/validate')
-  @ApiOperation({ 
-    summary: 'Validate session',
-    description: 'Checks if user has valid session and returns user data'
-  })
-  @ApiResponse({ status: 200, description: 'Session validation result' })
-  async validateSession(@Request() req) {
-    if (req.session?.userId) {
-      try {
-        const user = await this.authService.getProfile(req.session.userId);
-        return { authenticated: true, user };
-      } catch (error) {
-        // User may have been deleted; invalidate stale session
-             await new Promise<void>((resolve) => {
-                 req.session.destroy((err) => {
-                   if (err) {
-                      console.error('Failed to destroy stale session:', err);
-                   }
-                   resolve();
-                 });
-              });
-          
-        // Consider checking error type before destroying session
-        return { authenticated: false };
-      }
-    }
-    return { authenticated: false };
-  }
+
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -183,8 +168,11 @@ export class AuthController {
     description: 'Redirects user to Google OAuth consent screen'
   })
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  @ApiResponse({ status: 401, description: 'Google OAuth not configured or authentication failed' })
   async googleAuth() {
     // Guard handles the redirect to Google
+    // This method should never be reached if OAuth is properly configured
+    // Passport will redirect to Google before this executes
   }
 
   @Get('google/callback')
