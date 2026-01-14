@@ -4,9 +4,9 @@ import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import SuccessPopup from '@/components/ui/SuccessPopup';
-import { tokenStorage } from '@/lib/auth';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfileData } from '@/types';
+import api from '@/lib/api';
 
 export default function CompleteProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -51,20 +51,13 @@ export default function CompleteProfilePage() {
         formData.append('companyLogo', profileData.companyLogo);
       }
 
-      const token = tokenStorage.get();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/complete-profile`, {
-        method: 'PUT',
+      const response = await api.put('/auth/complete-profile', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          'Content-Type': 'multipart/form-data'
+        }
       });
 
-      if (!response.ok) {
-        throw new Error('Profile completion failed');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setUserRole(data.role || 'recruiter');
       await refreshUser();
       setShowSuccessPopup(true);
