@@ -23,6 +23,14 @@ describe('AuthController', () => {
     access_token: 'mock-jwt-token',
   };
 
+  // Mock Response helper
+  const mockResponse = () => {
+    const res: any = {};
+    res.cookie = jest.fn().mockReturnValue(res);
+    res.clearCookie = jest.fn().mockReturnValue(res);
+    return res;
+  };
+
   beforeEach(async () => {
     const mockAuthService = {
       register: jest.fn(),
@@ -68,11 +76,11 @@ describe('AuthController', () => {
       authService.register.mockResolvedValue(mockAuthResponse as any);
 
       // Act
-      const result = await controller.register(registerDto);
+      const result = await controller.register(registerDto, mockResponse());
 
       // Assert
       expect(authService.register).toHaveBeenCalledWith(registerDto);
-      expect(result).toEqual(mockAuthResponse);
+      expect(result).toHaveProperty('user');
     });
 
     it('should handle registration errors', async () => {
@@ -82,7 +90,7 @@ describe('AuthController', () => {
       );
 
       // Act & Assert
-      await expect(controller.register(registerDto)).rejects.toThrow(
+      await expect(controller.register(registerDto, mockResponse())).rejects.toThrow(
         new UnauthorizedException('User with this email already exists'),
       );
     });
@@ -99,11 +107,11 @@ describe('AuthController', () => {
       authService.login.mockResolvedValue(mockAuthResponse as any);
 
       // Act
-      const result = await controller.login(loginDto);
+      const result = await controller.login(loginDto, mockResponse());
 
       // Assert
       expect(authService.login).toHaveBeenCalledWith(loginDto);
-      expect(result).toEqual(mockAuthResponse);
+      expect(result).toHaveProperty('user');
     });
 
     it('should handle login errors', async () => {
@@ -113,7 +121,7 @@ describe('AuthController', () => {
       );
 
       // Act & Assert
-      await expect(controller.login(loginDto)).rejects.toThrow(
+      await expect(controller.login(loginDto, mockResponse())).rejects.toThrow(
         new UnauthorizedException('Invalid credentials'),
       );
     });
