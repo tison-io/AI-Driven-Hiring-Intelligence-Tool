@@ -13,7 +13,7 @@ import api from '@/lib/api';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function AccountSettings() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     jobTitle: '',
@@ -110,8 +110,8 @@ export default function AccountSettings() {
       setLoading(true);
       setError('');
       await api.delete('/api/privacy/delete-data');
+      await logout();
       setIsDeleteModalOpen(false);
-      // Logout and redirect after successful deletion
       window.location.href = '/auth/login';
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete account');
