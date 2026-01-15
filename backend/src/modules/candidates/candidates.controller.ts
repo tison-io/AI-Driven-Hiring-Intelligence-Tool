@@ -74,6 +74,21 @@ export class CandidatesController {
 		required: false,
 		description: "Sort order (asc or desc)",
 	})
+	@ApiQuery({
+		name: "educationLevel",
+		required: false,
+		description: "Filter by education level",
+	})
+	@ApiQuery({
+		name: "certification",
+		required: false,
+		description: "Filter by certification",
+	})
+	@ApiQuery({
+		name: "requiredSkills",
+		required: false,
+		description: "Filter by required skills (array)",
+	})
 	async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
 		return this.candidatesService.findAll(
 			filters,

@@ -6,6 +6,7 @@ import {
 	Max,
 	IsIn,
 	IsDateString,
+	IsArray,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
@@ -99,4 +100,20 @@ export class CandidateFilterDto {
 	@IsOptional()
 	@IsDateString()
 	createdBefore?: string;
+
+	@ApiPropertyOptional({ example: "Bachelor" })
+	@IsOptional()
+	@IsString()
+	educationLevel?: string;
+
+	@ApiPropertyOptional({ example: "AWS Certified" })
+	@IsOptional()
+	@IsString()
+	certification?: string;
+
+	@ApiPropertyOptional({ example: ["JavaScript", "Python"] })
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	requiredSkills?: string[];
 }

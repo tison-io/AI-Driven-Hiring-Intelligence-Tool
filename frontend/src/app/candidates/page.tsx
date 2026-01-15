@@ -51,6 +51,10 @@ function CandidatesContent() {
 		0, 100,
 	]);
 	const [dateRange, setDateRange] = useState({ start: "", end: "" });
+	const [educationFilter, setEducationFilter] = useState("");
+	const [certificationFilter, setCertificationFilter] = useState("");
+	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
+	const [skillInput, setSkillInput] = useState("");
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -110,6 +114,10 @@ function CandidatesContent() {
 			filterObj.confidenceMax = debouncedConfidenceRange[1];
 		if (dateRange.start) filterObj.createdAfter = dateRange.start;
 		if (dateRange.end) filterObj.createdBefore = dateRange.end;
+		if (educationFilter) filterObj.educationLevel = educationFilter;
+		if (certificationFilter) filterObj.certification = certificationFilter;
+		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
+
 		return filterObj;
 	}, [
 		debouncedSearchQuery,
@@ -120,6 +128,9 @@ function CandidatesContent() {
 		statusFilter,
 		debouncedConfidenceRange,
 		dateRange,
+		educationFilter,
+		certificationFilter,
+		skillsFilter,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -205,6 +216,10 @@ function CandidatesContent() {
 		setStatusFilter("");
 		setConfidenceRange([0, 100]);
 		setDateRange({ start: "", end: "" });
+		setEducationFilter("");
+		setCertificationFilter("");
+		setSkillsFilter([]);
+		setSkillInput("");
 		toast.success("Filters cleared");
 	};
 
@@ -323,6 +338,8 @@ function CandidatesContent() {
 											Clear Filters
 										</span>
 									</button>
+
+									{/* Sort */}
 									<select
 										value={sortBy}
 										onChange={(e) =>
@@ -357,6 +374,8 @@ function CandidatesContent() {
 										</option>
 										<option value="asc">Low to High</option>
 									</select>
+
+									{/* Status Filter */}
 									<select
 										value={statusFilter}
 										onChange={(e) =>
@@ -374,6 +393,111 @@ function CandidatesContent() {
 										</option>
 										<option value="failed">Failed</option>
 									</select>
+
+									{/* Education Filter */}
+									<select
+										value={educationFilter}
+										onChange={(e) =>
+											setEducationFilter(e.target.value)
+										}
+										className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+									>
+										<option value="">All Education</option>
+										<option value="phd">PhD</option>
+										<option value="master">Master's</option>
+										<option value="bachelor">
+											Bachelor's
+										</option>
+										<option value="associate">
+											Associate
+										</option>
+										<option value="diploma">Diploma</option>
+									</select>
+									{/* Certification Filter */}
+									<input
+										type="text"
+										placeholder="Filter by certificate..."
+										value={certificationFilter}
+										onChange={(e) =>
+											setCertificationFilter(
+												e.target.value
+											)
+										}
+										className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+									/>
+									{/* Skills Filter */}
+									<div className="flex flex-col gap-2">
+										<div className="flex gap-2">
+											<input
+												type="text"
+												placeholder="Add required skill..."
+												value={skillInput}
+												onChange={(e) =>
+													setSkillInput(
+														e.target.value
+													)
+												}
+												onKeyPress={(e) => {
+													if (
+														e.key === "Enter" &&
+														skillInput.trim()
+													) {
+														setSkillsFilter([
+															...skillsFilter,
+															skillInput.trim(),
+														]);
+														setSkillInput("");
+													}
+												}}
+												className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+											/>
+											<button
+												onClick={() => {
+													if (skillInput.trim()) {
+														setSkillsFilter([
+															...skillsFilter,
+															skillInput.trim(),
+														]);
+														setSkillInput("");
+													}
+												}}
+												className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+											>
+												Add
+											</button>
+										</div>
+										{skillsFilter.length > 0 && (
+											<div className="flex flex-wrap gap-2">
+												{skillsFilter.map(
+													(skill, idx) => (
+														<span
+															key={idx}
+															className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+														>
+															{skill}
+															<button
+																onClick={() =>
+																	setSkillsFilter(
+																		skillsFilter.filter(
+																			(
+																				_,
+																				i
+																			) =>
+																				i !==
+																				idx
+																		)
+																	)
+																}
+																className="hover:text-blue-900"
+															>
+																x
+															</button>
+														</span>
+													)
+												)}
+											</div>
+										)}
+									</div>
 									<div>
 										<label className="text-sm text-gray-400 mb-3 block">
 											Confidence Range:{" "}

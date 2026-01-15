@@ -86,6 +86,31 @@ export class CandidatesService {
 			query.jobRole = { $regex: filters.jobRole, $options: "i" };
 		}
 
+		// Educatioin Level filter
+		if (filters.educationLevel) {
+			query["education.degree_level"] = {
+				$regex: filters.educationLevel,
+				$options: "i",
+			};
+		}
+
+		// Certification filter
+		if (filters.certification) {
+			query.certifications = {
+				$regex: filters.certification,
+				$options: "i",
+			};
+		}
+
+		// Required Skills filter (must have all skills)
+		if (filters.requiredSkills && filters.requiredSkills.length > 0) {
+			query.skills = {
+				$all: filters.requiredSkills.map(
+					(skill) => new RegExp(skill, "i")
+				),
+			};
+		}
+
 		// Sorting
 		const sortOptions: any = {};
 		if (filters.sortBy) {
