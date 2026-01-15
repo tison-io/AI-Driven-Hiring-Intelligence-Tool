@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
 import { LoginDto } from './dto/login.dto';
@@ -20,15 +21,28 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private cloudinaryService: CloudinaryService
+    private cloudinaryService: CloudinaryService,
+    private jwtService: JwtService,
   ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new recruiter user' })
   @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(registerDto);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    // Return user only (no token in response body)
+    return { user: result.user };
   }
 
   @Post('login')
@@ -36,8 +50,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many login attempts' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(loginDto);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    // Return user only (no token in response body)
+    return { user: result.user };
   }
 
   @Post('logout')
@@ -46,43 +72,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req, @Res() res: Response) {
-    // Destroy session if it exists
-    if (req.session) {
-      req.session.destroy((err) => {
-        if (err) {
-          return res.status(500).json({ message: 'Logout failed' });
-        }
-        res.clearCookie('connect.sid');
-        return res.json({ message: 'Logged out successfully' });
-      });
-    } else {
-      return res.json({ message: 'Logged out successfully' });
-    }
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // Clear JWT cookie
+    res.clearCookie('access_token', { path: '/' });
+    return { message: 'Logged out successfully' };
   }
 
-  @Get('session/validate')
-  @ApiOperation({ 
-    summary: 'Validate session',
-    description: 'Checks if user has valid session and returns user data'
-  })
-  @ApiResponse({ status: 200, description: 'Session validation result' })
-  async validateSession(@Request() req) {
-    if (req.session?.userId) {
-      try {
-        const user = await this.authService.getProfile(req.session.userId);
-        return { authenticated: true, user };
-      } catch (error) {
-        // User may have been deleted; invalidate stale session
-        req.session.destroy((err) => {
-          if (err) console.error('Failed to destroy stale session:', err);
-        });
-        // Consider checking error type before destroying session
-        return { authenticated: false };
-      }
-    }
-    return { authenticated: false };
-  }
+
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -172,19 +168,22 @@ export class AuthController {
     description: 'Redirects user to Google OAuth consent screen'
   })
   @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  @ApiResponse({ status: 401, description: 'Google OAuth not configured or authentication failed' })
   async googleAuth() {
     // Guard handles the redirect to Google
+    // This method should never be reached if OAuth is properly configured
+    // Passport will redirect to Google before this executes
   }
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({ 
     summary: 'Google OAuth callback',
-    description: 'Handles Google OAuth callback, creates session, and redirects to frontend'
+    description: 'Handles Google OAuth callback, sets JWT cookie, and redirects to frontend'
   })
   @ApiResponse({ 
     status: 302, 
-    description: 'Creates session and redirects to frontend dashboard or profile completion'
+    description: 'Sets JWT cookie and redirects to frontend dashboard or profile completion'
   })
   @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
@@ -192,16 +191,25 @@ export class AuthController {
       const googleUser = req.user;
       const user = await this.authService.googleLogin(googleUser);
       
-      req.session.userId = user._id.toString();
-      req.session.email = user.email;
-      req.session.role = user.role;
-      req.session.profileCompleted = user.profileCompleted;
+      // Generate JWT token
+      const payload = { 
+        email: user.email, 
+        sub: user._id, 
+        role: user.role, 
+        profileCompleted: user.profileCompleted 
+      };
+      const access_token = this.jwtService.sign(payload);
       
-      // Ensure session is saved before redirect
-      await new Promise<void>((resolve, reject) => {
-        req.session.save((err) => (err ? reject(err) : resolve()));
+      // Set JWT in HTTP-only cookie
+      res.cookie('access_token', access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
       
+      // Redirect to frontend (no token in URL)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       const redirectUrl = user.profileCompleted 
         ? `${frontendUrl}/dashboard`
@@ -210,7 +218,7 @@ export class AuthController {
       return res.redirect(redirectUrl);
     } catch (error) {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+      return res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }
   }
 }

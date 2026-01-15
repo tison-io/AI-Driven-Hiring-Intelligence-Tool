@@ -11,7 +11,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private usersService: UsersService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        // Primary: Extract from HTTP-only cookie
+        (request) => {
+          if (request && request.cookies) {
+            return request.cookies['access_token'];
+          }
+          return null;
+        },
+        // Fallback: Extract from Authorization header (for API clients/testing)
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET'),
     });

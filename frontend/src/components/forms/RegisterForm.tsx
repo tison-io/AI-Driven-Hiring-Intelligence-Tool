@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
+import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import { RegisterFormData, RegisterFormErrors } from '@/types';
 
 export default function RegisterForm() {
@@ -138,6 +139,17 @@ export default function RegisterForm() {
           {isLoading ? 'Creating Account...' : 'Sign Up'}
         </button>
       </form>
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or</span>
+        </div>
+      </div>
+
+      <GoogleAuthButton />
 
       <p className="text-center text-sm text-gray-600">
         Already have an account?{' '}
