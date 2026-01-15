@@ -117,6 +117,9 @@ function CandidatesContent() {
 		debouncedExperienceRange,
 		sortBy,
 		sortOrder,
+		statusFilter,
+		debouncedConfidenceRange,
+		dateRange,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -197,6 +200,11 @@ function CandidatesContent() {
 		setExperienceRange([0, 10]);
 		setMinRole(0);
 		setShowShortlistedOnly(false);
+		setSortBy("");
+		setSortOrder("desc");
+		setStatusFilter("");
+		setConfidenceRange([0, 100]);
+		setDateRange({ start: "", end: "" });
 		toast.success("Filters cleared");
 	};
 
@@ -334,7 +342,7 @@ function CandidatesContent() {
 											Date Added
 										</option>
 										<option value="confidenceScore">
-											Confifence Score
+											Confidence Score
 										</option>
 									</select>
 									<select
@@ -366,50 +374,51 @@ function CandidatesContent() {
 										</option>
 										<option value="failed">Failed</option>
 									</select>
-								</div>
-								<div>
-									<label className="text-sm text-gray-400 mb-3 block">
-										Confidence Range: {confidenceRange[0]} -{" "}
-										{confidenceRange[1]}%
-									</label>
-									<div className="pt-1">
-										<Slider
-											range
-											min={0}
-											max={100}
-											value={confidenceRange}
-											onChange={(value) =>
-												setConfidenceRange(
-													value as number[]
-												)
+									<div>
+										<label className="text-sm text-gray-400 mb-3 block">
+											Confidence Range:{" "}
+											{confidenceRange[0]} -{" "}
+											{confidenceRange[1]}%
+										</label>
+										<div className="pt-1">
+											<Slider
+												range
+												min={0}
+												max={100}
+												value={confidenceRange}
+												onChange={(value) =>
+													setConfidenceRange(
+														value as number[]
+													)
+												}
+												className="custom-slider"
+											/>
+										</div>
+									</div>
+									<div className="flex gap-2">
+										<input
+											type="date"
+											value={dateRange.start}
+											onChange={(e) =>
+												setDateRange((prev) => ({
+													...prev,
+													start: e.target.value,
+												}))
 											}
-											className="custom-slider"
+											className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										/>
+										<input
+											type="date"
+											value={dateRange.end}
+											onChange={(e) =>
+												setDateRange((prev) => ({
+													...prev,
+													end: e.target.value,
+												}))
+											}
+											className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 										/>
 									</div>
-								</div>
-								<div className="flex gap-2">
-									<input
-										type="date"
-										value={dateRange.start}
-										onChange={(e) =>
-											setDateRange((prev) => ({
-												...prev,
-												start: e.target.value,
-											}))
-										}
-										className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-									/>
-									<input
-										type="date"
-										value={dateRange.end}
-										onChange={(e) =>
-											setDateRange((prev) => ({
-												...prev,
-												end: e.target.value,
-											}))
-										}
-										className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-									/>
 								</div>
 								<div className="relative">
 									<button

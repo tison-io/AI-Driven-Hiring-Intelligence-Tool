@@ -97,8 +97,6 @@ export class CandidatesService {
 		}
 
 		return this.candidateModel.find(query).sort(sortOptions).exec();
-
-		return this.candidateModel.find(query).exec();
 	}
 
 	async findById(id: string): Promise<CandidateDocument | null> {
