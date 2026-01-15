@@ -5,6 +5,7 @@ import {
 	Min,
 	Max,
 	IsIn,
+	IsDateString,
 } from "class-validator";
 import { Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
@@ -72,4 +73,30 @@ export class CandidateFilterDto {
 	@IsOptional()
 	@IsIn(["pending", "processing", "completed", "failed"])
 	status?: string;
+
+	@ApiPropertyOptional({ example: 70 })
+	@IsOptional()
+	@Type(() => Number)
+	@IsNumber()
+	@Min(0)
+	@Max(100)
+	confidenceMin?: number;
+
+	@ApiPropertyOptional({ example: 95 })
+	@IsOptional()
+	@Type(() => Number)
+	@IsNumber()
+	@Min(0)
+	@Max(100)
+	confidenceMax?: number;
+
+	@ApiPropertyOptional()
+	@IsOptional()
+	@IsDateString()
+	createdAfter?: string;
+
+	@ApiPropertyOptional()
+	@IsOptional()
+	@IsDateString()
+	createdBefore?: string;
 }

@@ -31,6 +31,27 @@ export class CandidatesService {
 			query.skills = { $regex: filters.skill, $options: "i" };
 		}
 
+		if (
+			filters.confidenceMin !== undefined ||
+			filters.confidenceMax !== undefined
+		) {
+			query.confidenceScore = {};
+			if (filters.confidenceMin !== undefined) {
+				query.confidenceScore.$gte = filters.confidenceMin;
+			}
+			if (filters.confidenceMax !== undefined) {
+				query.confidenceScore.$lte = filters.confidenceMax;
+			}
+		}
+
+		if (filters.createdAfter || filters.createdBefore) {
+			query.createdAt = {};
+			if (filters.createdAfter)
+				query.createdAt.$gte = new Date(filters.createdAfter);
+			if (filters.createdBefore)
+				query.createdAt.$lte = new Date(filters.createdBefore);
+		}
+
 		if (filters.status) {
 			query.status = filters.status;
 		}

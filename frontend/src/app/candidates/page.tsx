@@ -46,6 +46,11 @@ function CandidatesContent() {
 	const [sortBy, setSortBy] = useState("");
 	const [sortOrder, setSortOrder] = useState("desc");
 	const [statusFilter, setStatusFilter] = useState("");
+	const [confidenceRange, setConfidenceRange] = useState([0, 100]);
+	const [debouncedConfidenceRange, setDebouncedConfidenceRange] = useState([
+		0, 100,
+	]);
+	const [dateRange, setDateRange] = useState({ start: "", end: "" });
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -77,6 +82,15 @@ function CandidatesContent() {
 		return () => clearTimeout(timer);
 	}, [experienceRange]);
 
+	// Add debounce effect:
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedConfidenceRange(confidenceRange);
+			setCurrentPage(1);
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [confidenceRange]);
+
 	// Build filters object with useMemo to prevent infinite re-renders
 	const filters = useMemo(() => {
 		const filterObj: any = {};
@@ -89,6 +103,13 @@ function CandidatesContent() {
 		if (sortBy) filterObj.sortBy = sortBy;
 		if (sortOrder) filterObj.sortOrder = sortOrder;
 		if (statusFilter) filterObj.status = statusFilter;
+		// Update filters:
+		if (debouncedConfidenceRange[0] > 0)
+			filterObj.confidenceMin = debouncedConfidenceRange[0];
+		if (debouncedConfidenceRange[1] < 100)
+			filterObj.confidenceMax = debouncedConfidenceRange[1];
+		if (dateRange.start) filterObj.createdAfter = dateRange.start;
+		if (dateRange.end) filterObj.createdBefore = dateRange.end;
 		return filterObj;
 	}, [
 		debouncedSearchQuery,
@@ -345,6 +366,50 @@ function CandidatesContent() {
 										</option>
 										<option value="failed">Failed</option>
 									</select>
+								</div>
+								<div>
+									<label className="text-sm text-gray-400 mb-3 block">
+										Confidence Range: {confidenceRange[0]} -{" "}
+										{confidenceRange[1]}%
+									</label>
+									<div className="pt-1">
+										<Slider
+											range
+											min={0}
+											max={100}
+											value={confidenceRange}
+											onChange={(value) =>
+												setConfidenceRange(
+													value as number[]
+												)
+											}
+											className="custom-slider"
+										/>
+									</div>
+								</div>
+								<div className="flex gap-2">
+									<input
+										type="date"
+										value={dateRange.start}
+										onChange={(e) =>
+											setDateRange((prev) => ({
+												...prev,
+												start: e.target.value,
+											}))
+										}
+										className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+									/>
+									<input
+										type="date"
+										value={dateRange.end}
+										onChange={(e) =>
+											setDateRange((prev) => ({
+												...prev,
+												end: e.target.value,
+											}))
+										}
+										className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+									/>
 								</div>
 								<div className="relative">
 									<button
