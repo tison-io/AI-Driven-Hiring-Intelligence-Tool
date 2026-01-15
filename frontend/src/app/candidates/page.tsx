@@ -45,6 +45,7 @@ function CandidatesContent() {
 	const ITEMS_PER_PAGE = 6;
 	const [sortBy, setSortBy] = useState("");
 	const [sortOrder, setSortOrder] = useState("desc");
+	const [statusFilter, setStatusFilter] = useState("");
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -87,6 +88,7 @@ function CandidatesContent() {
 			filterObj.experience_max = debouncedExperienceRange[1];
 		if (sortBy) filterObj.sortBy = sortBy;
 		if (sortOrder) filterObj.sortOrder = sortOrder;
+		if (statusFilter) filterObj.status = statusFilter;
 		return filterObj;
 	}, [
 		debouncedSearchQuery,
@@ -325,6 +327,23 @@ function CandidatesContent() {
 											High to Low
 										</option>
 										<option value="asc">Low to High</option>
+									</select>
+									<select
+										value={statusFilter}
+										onChange={(e) =>
+											setStatusFilter(e.target.value)
+										}
+										className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+									>
+										<option value="">All Status</option>
+										<option value="pending">Pending</option>
+										<option value="processing">
+											Processing
+										</option>
+										<option value="completed">
+											Completed
+										</option>
+										<option value="failed">Failed</option>
 									</select>
 								</div>
 								<div className="relative">

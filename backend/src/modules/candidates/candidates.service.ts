@@ -31,6 +31,10 @@ export class CandidatesService {
 			query.skills = { $regex: filters.skill, $options: "i" };
 		}
 
+		if (filters.status) {
+			query.status = filters.status;
+		}
+
 		if (
 			filters.experience_min !== undefined ||
 			filters.experience_max !== undefined

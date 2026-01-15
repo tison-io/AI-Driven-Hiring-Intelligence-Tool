@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, Min, Max } from "class-validator";
+import {
+	IsOptional,
+	IsString,
+	IsNumber,
+	Min,
+	Max,
+	IsIn,
+} from "class-validator";
 import { Type } from "class-transformer";
 import { ApiPropertyOptional } from "@nestjs/swagger";
 
@@ -60,4 +67,9 @@ export class CandidateFilterDto {
 	@IsOptional()
 	@IsIn(["asc", "desc"])
 	sortOrder?: string;
+
+	@ApiPropertyOptional({ example: "completed" })
+	@IsOptional()
+	@IsIn(["pending", "processing", "completed", "failed"])
+	status?: string;
 }
