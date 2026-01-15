@@ -53,7 +53,7 @@ export default function CompleteProfilePage() {
 
       const response = await api.put('/auth/complete-profile', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': undefined
         }
       });
 

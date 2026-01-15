@@ -13,7 +13,7 @@ import api from '@/lib/api';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function AccountSettings() {
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     jobTitle: '',
@@ -69,18 +69,11 @@ export default function AccountSettings() {
         formDataToSend.append('userPhoto', selectedPhoto);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/complete-profile`, {
-        method: 'PUT',
+      const response = await api.put('/auth/complete-profile', formDataToSend, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: formDataToSend
+          'Content-Type': undefined
+        }
       });
-      
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to update profile');
-      }
       
       await refreshUser();
       setSelectedPhoto(null);
@@ -88,7 +81,7 @@ export default function AccountSettings() {
       setSuccess('Profile updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to update profile');
+      setError(err.response?.data?.message || err.message || 'Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -99,25 +92,14 @@ export default function AccountSettings() {
       setLoading(true);
       setError('');
       setSuccess('');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/change-password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ currentPassword, newPassword })
-      });
       
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to change password');
-      }
+      await api.put('/auth/change-password', { currentPassword, newPassword });
       
       setSuccess('Password changed successfully');
       setIsPasswordModalOpen(false);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err.message || 'Failed to change password');
+      setError(err.response?.data?.message || err.message || 'Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -128,9 +110,8 @@ export default function AccountSettings() {
       setLoading(true);
       setError('');
       await api.delete('/api/privacy/delete-data');
+      await logout();
       setIsDeleteModalOpen(false);
-      // Logout and redirect after successful deletion
-      localStorage.removeItem('token');
       window.location.href = '/auth/login';
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to delete account');
