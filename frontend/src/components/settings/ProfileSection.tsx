@@ -39,7 +39,8 @@ export default function ProfileSection({
         {/* Avatar */}
         <aside className="flex flex-col items-center">
           {userPhoto ? (
-            <img 
+            <img
+              key={userPhoto}
               src={userPhoto} 
               alt={formData.fullName || userEmail || 'User'} 
               className="w-24 h-24 rounded-full object-cover mb-3"

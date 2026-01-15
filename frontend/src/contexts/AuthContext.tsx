@@ -109,7 +109,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshUser = async () => {
     try {
-      // Cookie is sent automatically
       const response = await api.get('/auth/profile');
       setUser(response.data);
     } catch (error) {

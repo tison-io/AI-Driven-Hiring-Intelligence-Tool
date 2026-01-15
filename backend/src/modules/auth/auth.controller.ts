@@ -126,6 +126,7 @@ export class AuthController {
         'user-photos'
       );
     }
+    
     if (files?.companyLogo?.[0]) {
       companyLogoUrl = await this.cloudinaryService.uploadImage(
         files.companyLogo[0],
