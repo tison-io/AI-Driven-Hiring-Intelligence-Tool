@@ -25,15 +25,7 @@ export class AuthService {
     }
 
     const user = await this.usersService.create(registerDto);
-    const userObj = user.toObject();
-    const { password, ...result } = userObj;
-    
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
-    return {
-      user: result,
-      access_token: this.jwtService.sign(payload),
-    };
+    return this.generateAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {
@@ -54,14 +46,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const userObj = user.toObject();
-    const { password, ...result } = userObj;
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
-    return {
-      user: result,
-      access_token: this.jwtService.sign(payload),
-    };
+    return this.generateAuthResponse(user);
   }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
@@ -209,6 +194,23 @@ export class AuthService {
       });
     }
     
-    return user;
+    return this.generateAuthResponse(user);
+  }
+
+  private generateAuthResponse(user: any) {
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
+    
+    const payload = {
+      email: user.email,
+      sub: user._id,
+      role: user.role,
+      profileCompleted: user.profileCompleted || false
+    };
+    
+    return {
+      user: result,
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

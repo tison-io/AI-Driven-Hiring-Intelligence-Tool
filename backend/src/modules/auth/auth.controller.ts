@@ -74,7 +74,11 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(@Res({ passthrough: true }) res: Response) {
     // Clear JWT cookie
-    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('access_token', { 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/' });
     return { message: 'Logged out successfully' };
   }
 
@@ -190,19 +194,10 @@ export class AuthController {
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
     try {
       const googleUser = req.user;
-      const user = await this.authService.googleLogin(googleUser);
-      
-      // Generate JWT token
-      const payload = { 
-        email: user.email, 
-        sub: user._id, 
-        role: user.role, 
-        profileCompleted: user.profileCompleted 
-      };
-      const access_token = this.jwtService.sign(payload);
+      const result = await this.authService.googleLogin(googleUser);
       
       // Set JWT in HTTP-only cookie
-      res.cookie('access_token', access_token, {
+      res.cookie('access_token', result.access_token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -212,7 +207,7 @@ export class AuthController {
       
       // Redirect to frontend (no token in URL)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-      const redirectUrl = user.profileCompleted 
+      const redirectUrl = result.user.profileCompleted 
         ? `${frontendUrl}/dashboard`
         : `${frontendUrl}/complete-profile`;
       
