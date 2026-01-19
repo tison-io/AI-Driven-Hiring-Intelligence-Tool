@@ -12,15 +12,13 @@ const api = axios.create({
   withCredentials: true, // Enable cookies for JWT authentication
 });
 
-// Response interceptor for 401/403 error handling
+// Response interceptor to tag auth errors
 api.interceptors.response.use(
   (response: any) => response,
   (error: any) => {
+    // Tag auth errors for components to handle
     if (error.response?.status === 401 || error.response?.status === 403) {
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.href = '/auth/login';
-      }
+      error.isAuthError = true;
     }
     return Promise.reject(error);
   }

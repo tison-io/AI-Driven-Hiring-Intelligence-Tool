@@ -37,8 +37,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setLoading(true);
         const response = await api.get('/auth/profile');
         setUser(response.data);
-      } catch (error) {
+      } catch (error: any) {
         setUser(null);
+        // Handle auth errors by redirecting to login (client-side only)
+        if (error.isAuthError && typeof window !== 'undefined' && !isPublicRoute) {
+          window.location.href = '/auth/login';
+        }
       } finally {
         setLoading(false);
         isInitialized.current = true;
@@ -60,8 +64,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const profileResponse = await api.get('/auth/profile');
       setUser(profileResponse.data);
       return profileResponse.data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+    } catch (err: any) {
+      const message = err.response?.data?.message || (err instanceof Error ? err.message : 'Login failed');
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -80,8 +85,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const profileResponse = await api.get('/auth/profile');
       setUser(profileResponse.data);
       return profileResponse.data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+    } catch (err: any) {
+      const message = err.response?.data?.message || (err instanceof Error ? err.message : 'Registration failed');
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
