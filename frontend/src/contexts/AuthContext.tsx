@@ -23,31 +23,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (isInitialized.current) return;
-    
-    // Check if current route is public
     const isPublicRoute = PUBLIC_ROUTES.includes(pathname) || pathname.startsWith('/auth/reset-password');
     
     const checkAuth = async () => {
-      if (isPublicRoute) {
-        // On public routes, skip auth check entirely
-        // User can still login via the login page
+      // If we're on a public route AND we've already checked auth once, skip
+      if (isPublicRoute && isInitialized.current) {
+        setLoading(false);
+        return;
+      }
+
+      // On first load OR when entering a protected route, always verify authentication
+      try {
+        setLoading(true);
+        const response = await api.get('/auth/profile');
+        setUser(response.data);
+      } catch (error: any) {
+        setUser(null);
+        // Handle auth errors by redirecting to login (client-side only)
+        if (error.isAuthError && typeof window !== 'undefined' && !isPublicRoute) {
+          window.location.href = '/auth/login';
+        }
+      } finally {
         setLoading(false);
         isInitialized.current = true;
-      } else {
-        // On protected routes, check authentication
-        try {
-          const response = await api.get('/auth/profile');
-          if (response.data) {
-            setUser(response.data);
-          }
-        } catch (error) {
-          // Not authenticated or cookie expired
-          setUser(null);
-        } finally {
-          setLoading(false);
-          isInitialized.current = true;
-        }
       }
     };
     
@@ -66,8 +64,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const profileResponse = await api.get('/auth/profile');
       setUser(profileResponse.data);
       return profileResponse.data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+    } catch (err: any) {
+      const message = err.response?.data?.message || (err instanceof Error ? err.message : 'Login failed');
+      setError(message);
       throw err;
     } finally {
       setLoading(false);
@@ -86,8 +85,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const profileResponse = await api.get('/auth/profile');
       setUser(profileResponse.data);
       return profileResponse.data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+    } catch (err: any) {
+      const message = err.response?.data?.message || (err instanceof Error ? err.message : 'Registration failed');
+      setError(message);
       throw err;
     } finally {
       setLoading(false);

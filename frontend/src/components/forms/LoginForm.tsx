@@ -26,10 +26,22 @@ export default function LoginForm() {
   // Check for OAuth error in URL params
   useEffect(() => {
     const oauthError = searchParams.get('error');
-    if (oauthError === 'oauth_failed') {
-      toast.error('Google sign-in failed. Please try again.');
+    if (oauthError) {
+      const errorMessages: Record<string, string> = {
+        'oauth_failed': 'Google sign-in failed. Please try again.',
+        'access_denied': 'Access was denied. Please grant permissions.',
+        'invalid_scope': 'Invalid permissions requested.',
+      };
+      
+      toast.error(errorMessages[oauthError] || 'Authentication failed. Please try again.');
+      
+      // Clear the error param from URL
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('error');
+      const newQuery = params.toString();
+      router.replace(`/auth/login${newQuery ? `?${newQuery}` : ''}`, { scroll: false });
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const onSubmit = async (data: LoginFormData) => {
     try {

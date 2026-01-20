@@ -15,8 +15,10 @@ export class GoogleAuthGuard extends AuthGuard('google') {
     const callbackUrl = this.configService.get<string>('GOOGLE_CALLBACK_URL');
 
     if (!clientId || !clientSecret || !callbackUrl) {
+      // Log detailed error for operators
+      // console.error('Google OAuth not configured: missing GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, or GOOGLE_CALLBACK_URL');
       throw new UnauthorizedException(
-        'Google OAuth is not configured. Please set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL environment variables.'
+        'Google authentication is currently unavailable'
       );
     }
 
