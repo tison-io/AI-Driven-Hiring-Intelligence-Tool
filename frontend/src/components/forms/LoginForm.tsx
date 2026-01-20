@@ -39,7 +39,7 @@ export default function LoginForm() {
       const params = new URLSearchParams(searchParams.toString());
       params.delete('error');
       const newQuery = params.toString();
-      router.replace(newQuery ? `?${newQuery}` : '/auth/login', { scroll: false });
+      router.replace(`/auth/login${newQuery ? `?${newQuery}` : ''}`, { scroll: false });
     }
   }, [searchParams, router]);
 
