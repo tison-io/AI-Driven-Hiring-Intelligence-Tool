@@ -25,38 +25,41 @@ export class AuthService {
     }
 
     const user = await this.usersService.create(registerDto);
-    const userObj = user.toObject();
-    const { password, ...result } = userObj;
-    
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
-    return {
-      user: result,
-      access_token: this.jwtService.sign(payload),
-    };
+    return this.generateAuthResponse(user);
   }
 
   async login(loginDto: LoginDto) {
     const user = await this.usersService.findByEmail(loginDto.email);
     
-    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const userObj = user.toObject();
-    const { password, ...result } = userObj;
-    const payload = { email: user.email, sub: user._id, role: user.role, profileCompleted: user.profileCompleted || false };
-    
-    return {
-      user: result,
-      access_token: this.jwtService.sign(payload),
-    };
+    // Prevent OAuth-only users from using password login
+    if (user.authProvider === 'google' && !user.password) {
+      throw new UnauthorizedException(
+        'This account uses Google sign-in. Please use the "Sign in with Google" button.'
+      );
+    }
+
+    if (!(await bcrypt.compare(loginDto.password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    return this.generateAuthResponse(user);
   }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersService.findById(userId);
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    // Prevent OAuth-only users from changing password
+    if (user.authProvider === 'google' && !user.password) {
+      throw new BadRequestException(
+        'Your account uses Google sign-in. Password management is handled by Google.'
+      );
     }
 
     const isCurrentPasswordValid = await bcrypt.compare(
@@ -150,5 +153,64 @@ export class AuthService {
     await this.emailService.sendPasswordResetConfirmation(user.email, user.fullName);
 
     return { message: 'Password reset successful' };
+  }
+
+  async googleLogin(googleUser: {
+    email: string;
+    fullName: string;
+    userPhoto?: string;
+    googleId: string;
+  }) {
+    const { email, fullName, userPhoto, googleId } = googleUser;
+    
+    // Check if user exists
+    let user = await this.usersService.findByEmail(email);
+    
+    if (user) {
+      // Existing user - link Google account if not already linked
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.authProvider = user.password ? 'hybrid' : 'google';
+      }
+      
+      // Update profile photo if not set
+      if (userPhoto && !user.userPhoto) {
+        user.userPhoto = userPhoto;
+      }
+      
+      await user.save();
+    } else {
+      // New user - create with OAuth data
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 10);
+      
+      user = await this.usersService.createOAuthUser({
+        email,
+        password: hashedPassword,
+        fullName,
+        userPhoto,
+        googleId,
+        authProvider: 'google',
+      });
+    }
+    
+    return this.generateAuthResponse(user);
+  }
+
+  private generateAuthResponse(user: any) {
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
+    
+    const payload = {
+      email: user.email,
+      sub: user._id,
+      role: user.role,
+      profileCompleted: user.profileCompleted || false
+    };
+    
+    return {
+      user: result,
+      access_token: this.jwtService.sign(payload),
+    };
   }
 }

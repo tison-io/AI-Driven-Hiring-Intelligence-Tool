@@ -9,27 +9,16 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000, // 10 seconds timeout
+  withCredentials: true, // Enable cookies for JWT authentication
 });
 
-// Request interceptor to attach Bearer token
-api.interceptors.request.use(
-  (config: any) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error: any) => Promise.reject(error)
-);
-
-// Response interceptor for 401/403 error handling
+// Response interceptor to tag auth errors
 api.interceptors.response.use(
   (response: any) => response,
   (error: any) => {
+    // Tag auth errors for components to handle
     if (error.response?.status === 401 || error.response?.status === 403) {
-      localStorage.removeItem('token');
-      window.location.href = '/auth/login';
+      error.isAuthError = true;
     }
     return Promise.reject(error);
   }
@@ -60,6 +49,11 @@ export const candidatesApi = {
 
 // Auth API functions
 export const authApi = {
+  validateSession: async () => {
+    const response = await api.get('/auth/session/validate', { withCredentials: true });
+    return response.data;
+  },
+
   forgotPassword: async (email: string) => {
     const response = await api.post('/auth/forgot-password', { email });
     return response.data;

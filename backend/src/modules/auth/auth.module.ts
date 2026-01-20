@@ -7,6 +7,7 @@ import { UsersModule } from '../users/users.module';
 import { UploadModule } from '../upload/upload.module';
 import { EmailModule } from '../email/email.module';
 import { JwtStrategy } from './jwt.strategy';
+import { GoogleStrategy } from './google.strategy';
 import { JwtConfig } from '../../config/jwt.config';
 
 @Module({
@@ -20,7 +21,7 @@ import { JwtConfig } from '../../config/jwt.config';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, GoogleStrategy],
   exports: [AuthService],
 })
 export class AuthModule {}

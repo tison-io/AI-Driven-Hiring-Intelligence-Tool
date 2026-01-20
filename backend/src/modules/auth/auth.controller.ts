@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Put, UseGuards, Request, UseInterceptors, UploadedFiles, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { CloudinaryService } from '../upload/cloudinary.service';
 import { LoginDto } from './dto/login.dto';
@@ -12,21 +14,35 @@ import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(
     private authService: AuthService,
-    private cloudinaryService: CloudinaryService
+    private cloudinaryService: CloudinaryService,
+    private jwtService: JwtService,
   ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new recruiter user' })
   @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(registerDto);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    // Return user only (no token in response body)
+    return { user: result.user };
   }
 
   @Post('login')
@@ -34,8 +50,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged in' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many login attempts' })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(loginDto);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    // Return user only (no token in response body)
+    return { user: result.user };
   }
 
   @Post('logout')
@@ -44,9 +72,17 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   @ApiResponse({ status: 200, description: 'User successfully logged out' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req) {
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // Clear JWT cookie
+    res.clearCookie('access_token', { 
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/' });
     return { message: 'Logged out successfully' };
   }
+
+
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -94,6 +130,7 @@ export class AuthController {
         'user-photos'
       );
     }
+    
     if (files?.companyLogo?.[0]) {
       companyLogoUrl = await this.cloudinaryService.uploadImage(
         files.companyLogo[0],
@@ -127,5 +164,57 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto
   ) {
     return this.authService.resetPassword(token, resetPasswordDto.newPassword);
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Initiate Google OAuth login',
+    description: 'Redirects user to Google OAuth consent screen'
+  })
+  @ApiResponse({ status: 302, description: 'Redirects to Google OAuth' })
+  @ApiResponse({ status: 401, description: 'Google OAuth not configured or authentication failed' })
+  async googleAuth() {
+    // Guard handles the redirect to Google
+    // This method should never be reached if OAuth is properly configured
+    // Passport will redirect to Google before this executes
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({ 
+    summary: 'Google OAuth callback',
+    description: 'Handles Google OAuth callback, sets JWT cookie, and redirects to frontend'
+  })
+  @ApiResponse({ 
+    status: 302, 
+    description: 'Sets JWT cookie and redirects to frontend dashboard or profile completion'
+  })
+  @ApiResponse({ status: 401, description: 'OAuth authentication failed' })
+  async googleAuthRedirect(@Request() req, @Res() res: Response) {
+    try {
+      const googleUser = req.user;
+      const result = await this.authService.googleLogin(googleUser);
+      
+      // Set JWT in HTTP-only cookie
+      res.cookie('access_token', result.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+      
+      // Redirect to frontend (no token in URL)
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const redirectUrl = result.user.profileCompleted 
+        ? `${frontendUrl}/dashboard`
+        : `${frontendUrl}/complete-profile`;
+      
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      return res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
+    }
   }
 }

@@ -3,6 +3,7 @@ import PublicRoute from '@/components/auth/PublicRoute';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { Suspense } from 'react';
 
 export default function LoginPage() {
   return (
@@ -43,7 +44,9 @@ export default function LoginPage() {
             <h2 className="text-2xl font-medium text-gray-900 mb-8">
               Log In to Your Account
             </h2>
-            <LoginForm />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </div>
         </div>
       </div>
