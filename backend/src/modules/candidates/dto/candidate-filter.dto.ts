@@ -116,4 +116,9 @@ export class CandidateFilterDto {
 	@IsArray()
 	@IsString({ each: true })
 	requiredSkills?: string[];
+
+	@ApiPropertyOptional({ example: "Google" })
+	@IsOptional()
+	@IsString()
+	previousCompany?: string;
 }

@@ -8,13 +8,13 @@ import { CandidateFilterDto } from "./dto/candidate-filter.dto";
 export class CandidatesService {
 	constructor(
 		@InjectModel(Candidate.name)
-		private candidateModel: Model<CandidateDocument>
+		private candidateModel: Model<CandidateDocument>,
 	) {}
 
 	async findAll(
 		filters: CandidateFilterDto,
 		userId: string,
-		userRole: string
+		userRole: string,
 	): Promise<CandidateDocument[]> {
 		const query: FilterQuery<CandidateDocument> =
 			userRole === "admin" ? {} : { createdBy: userId };
@@ -106,8 +106,15 @@ export class CandidatesService {
 		if (filters.requiredSkills && filters.requiredSkills.length > 0) {
 			query.skills = {
 				$all: filters.requiredSkills.map(
-					(skill) => new RegExp(skill, "i")
+					(skill) => new RegExp(skill, "i"),
 				),
+			};
+		}
+		// Previous company filter
+		if (filters.previousCompany) {
+			query["workExperience.company"] = {
+				$regex: filters.previousCompany,
+				$options: "i",
 			};
 		}
 
@@ -129,7 +136,7 @@ export class CandidatesService {
 	}
 
 	async create(
-		candidateData: Partial<Candidate>
+		candidateData: Partial<Candidate>,
 	): Promise<CandidateDocument> {
 		const candidate = new this.candidateModel(candidateData);
 		return candidate.save();
@@ -137,7 +144,7 @@ export class CandidatesService {
 
 	async update(
 		id: string,
-		updateData: Partial<Candidate>
+		updateData: Partial<Candidate>,
 	): Promise<CandidateDocument | null> {
 		return this.candidateModel
 			.findByIdAndUpdate(id, updateData, { new: true })

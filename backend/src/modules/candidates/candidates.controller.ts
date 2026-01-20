@@ -89,11 +89,16 @@ export class CandidatesController {
 		required: false,
 		description: "Filter by required skills (array)",
 	})
+	@ApiQuery({
+		name: "previousCompany",
+		required: false,
+		desription: "Filter by previous company",
+	})
 	async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
 		return this.candidatesService.findAll(
 			filters,
 			req.user.id,
-			req.user.role
+			req.user.role,
 		);
 	}
 

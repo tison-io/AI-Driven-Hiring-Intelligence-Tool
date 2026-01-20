@@ -40,7 +40,7 @@ function CandidatesContent() {
 	const [isExporting, setIsExporting] = useState(false);
 	const [currentPage, setCurrentPage] = useState(1);
 	const [showShortlistedOnly, setShowShortlistedOnly] = useState(
-		searchParams?.get("shortlisted") === "true"
+		searchParams?.get("shortlisted") === "true",
 	);
 	const ITEMS_PER_PAGE = 6;
 	const [sortBy, setSortBy] = useState("");
@@ -56,6 +56,7 @@ function CandidatesContent() {
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState("");
 	const [showAdvanced, setShowAdvanced] = useState(false);
+	const [companyFilter, setCompanyFilter] = useState("");
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -118,6 +119,7 @@ function CandidatesContent() {
 		if (educationFilter) filterObj.educationLevel = educationFilter;
 		if (certificationFilter) filterObj.certification = certificationFilter;
 		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
+		if (companyFilter) filterObj.previousCompany = companyFilter;
 
 		return filterObj;
 	}, [
@@ -132,6 +134,7 @@ function CandidatesContent() {
 		educationFilter,
 		certificationFilter,
 		skillsFilter,
+		companyFilter,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -156,7 +159,7 @@ function CandidatesContent() {
 	const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 	const candidates = filteredCandidates.slice(
 		startIndex,
-		startIndex + ITEMS_PER_PAGE
+		startIndex + ITEMS_PER_PAGE,
 	);
 
 	const pagination = {
@@ -173,7 +176,7 @@ function CandidatesContent() {
 	// Detect if any candidates are still processing
 	const hasProcessingCandidates = useMemo(() => {
 		return candidates.some(
-			(c) => c.status === "pending" || c.status === "processing"
+			(c) => c.status === "pending" || c.status === "processing",
 		);
 	}, [candidates]);
 
@@ -201,7 +204,7 @@ function CandidatesContent() {
 			refetch();
 		} catch (error: any) {
 			toast.error(
-				error.response?.data?.message || "Failed to delete candidate"
+				error.response?.data?.message || "Failed to delete candidate",
 			);
 			throw error;
 		}
@@ -221,6 +224,7 @@ function CandidatesContent() {
 		setCertificationFilter("");
 		setSkillsFilter([]);
 		setSkillInput("");
+		setCompanyFilter("");
 		toast.success("Filters cleared");
 	};
 
@@ -308,13 +312,13 @@ function CandidatesContent() {
 								/>
 							</div>
 
-							{/* Filters Row */}
+							{/* Basic Filters Row */}
 							<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
-								<div className="flex gap-3">
+								<div className="flex flex-wrap gap-3">
 									<button
 										onClick={() => {
 											setShowShortlistedOnly(
-												!showShortlistedOnly
+												!showShortlistedOnly,
 											);
 											setCurrentPage(1);
 										}}
@@ -339,7 +343,6 @@ function CandidatesContent() {
 											Clear Filters
 										</span>
 									</button>
-									{/* Advanced Filters button */}
 									<button
 										onClick={() =>
 											setShowAdvanced(!showAdvanced)
@@ -352,7 +355,8 @@ function CandidatesContent() {
 											Advanced Filters
 										</span>
 									</button>
-									{/* Sort */}
+								</div>
+								<div className="flex flex-wrap gap-3">
 									<select
 										value={sortBy}
 										onChange={(e) =>
@@ -387,180 +391,249 @@ function CandidatesContent() {
 										</option>
 										<option value="asc">Low to High</option>
 									</select>
+									<div className="relative">
+										<button
+											onClick={() =>
+												setIsExportMenuOpen(
+													!isExportMenuOpen,
+												)
+											}
+											disabled={isExporting}
+											className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											<Download className="w-4 h-4" />
+											<span className="text-sm">
+												{isExporting
+													? "Exporting..."
+													: "Export Data"}
+											</span>
+											<ChevronDown className="w-4 h-4" />
+										</button>
+										{isExportMenuOpen && (
+											<div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+												<button
+													onClick={() =>
+														handleExport("csv")
+													}
+													className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+												>
+													Export as CSV
+												</button>
+												<button
+													onClick={() =>
+														handleExport("xlsx")
+													}
+													className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+												>
+													Export as XLSX
+												</button>
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
 
-									{showAdvanced && (
-										<>
-											{/* Status Filter */}
-											<select
-												value={statusFilter}
-												onChange={(e) =>
-													setStatusFilter(
-														e.target.value
-													)
-												}
-												className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-											>
-												<option value="">
-													All Status
-												</option>
-												<option value="pending">
-													Pending
-												</option>
-												<option value="processing">
-													Processing
-												</option>
-												<option value="completed">
-													Completed
-												</option>
-												<option value="failed">
-													Failed
-												</option>
-											</select>
 
-											{/* Education Filter */}
-											<select
-												value={educationFilter}
-												onChange={(e) =>
-													setEducationFilter(
-														e.target.value
-													)
-												}
-												className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-											>
-												<option value="">
-													All Education
-												</option>
-												<option value="phd">PhD</option>
-												<option value="master">
-													Master's
-												</option>
-												<option value="bachelor">
-													Bachelor's
-												</option>
-												<option value="associate">
-													Associate
-												</option>
-												<option value="diploma">
-													Diploma
-												</option>
-											</select>
-											{/* Certification Filter */}
+
+
+
+
+							{/* Advanced Filters Section */}
+							{showAdvanced && (
+								<div className="border-t border-gray-200 pt-6 mb-6">
+									<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+										{/* Status Filter */}
+										<select
+											value={statusFilter}
+											onChange={(e) =>
+												setStatusFilter(
+													e.target.value,
+												)
+											}
+											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">
+												All Status
+											</option>
+											<option value="pending">
+												Pending
+											</option>
+											<option value="processing">
+												Processing
+											</option>
+											<option value="completed">
+												Completed
+											</option>
+											<option value="failed">
+												Failed
+											</option>
+										</select>
+
+										{/* Education Filter */}
+										<select
+											value={educationFilter}
+											onChange={(e) =>
+												setEducationFilter(
+													e.target.value,
+												)
+											}
+											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">
+												All Education
+											</option>
+											<option value="phd">PhD</option>
+											<option value="master">
+												Master's
+											</option>
+											<option value="bachelor">
+												Bachelor's
+											</option>
+											<option value="associate">
+												Associate
+											</option>
+											<option value="diploma">
+												Diploma
+											</option>
+										</select>
+										{/* Certification Filter */}
+										<input
+											type="text"
+											placeholder="Filter by certificate..."
+											value={certificationFilter}
+											onChange={(e) =>
+												setCertificationFilter(
+													e.target.value,
+												)
+											}
+											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										/>
+										{/* Company Filter */}
+										<input
+											type="text"
+											placeholder="Filter by previous company..."
+											value={companyFilter}
+											onChange={(e) =>
+												setCompanyFilter(
+													e.target.value,
+												)
+											}
+											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										/>
+									</div>
+									
+									{/* Skills Filter */}
+									<div className="mt-4">
+										<div className="flex gap-2 mb-2">
 											<input
 												type="text"
-												placeholder="Filter by certificate..."
-												value={certificationFilter}
+												placeholder="Add required skill..."
+												value={skillInput}
 												onChange={(e) =>
-													setCertificationFilter(
-														e.target.value
+													setSkillInput(
+														e.target.value,
 													)
 												}
-												className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+												onKeyPress={(e) => {
+													if (
+														e.key ===
+															"Enter" &&
+														skillInput.trim()
+													) {
+														setSkillsFilter(
+															[
+																...skillsFilter,
+																skillInput.trim(),
+															],
+														);
+														setSkillInput(
+															"",
+														);
+													}
+												}}
+												className="flex-1 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
 											/>
-											{/* Skills Filter */}
-											<div className="flex flex-col gap-2">
-												<div className="flex gap-2">
-													<input
-														type="text"
-														placeholder="Add required skill..."
-														value={skillInput}
-														onChange={(e) =>
-															setSkillInput(
-																e.target.value
-															)
-														}
-														onKeyPress={(e) => {
-															if (
-																e.key ===
-																	"Enter" &&
-																skillInput.trim()
-															) {
-																setSkillsFilter(
-																	[
-																		...skillsFilter,
-																		skillInput.trim(),
-																	]
-																);
-																setSkillInput(
-																	""
-																);
-															}
-														}}
-														className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
-													/>
-													<button
-														onClick={() => {
-															if (
-																skillInput.trim()
-															) {
-																setSkillsFilter(
-																	[
-																		...skillsFilter,
-																		skillInput.trim(),
-																	]
-																);
-																setSkillInput(
-																	""
-																);
-															}
-														}}
-														className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-													>
-														Add
-													</button>
-												</div>
-												{skillsFilter.length > 0 && (
-													<div className="flex flex-wrap gap-2">
-														{skillsFilter.map(
-															(skill, idx) => (
-																<span
-																	key={idx}
-																	className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-																>
-																	{skill}
-																	<button
-																		onClick={() =>
-																			setSkillsFilter(
-																				skillsFilter.filter(
-																					(
-																						_,
-																						i
-																					) =>
-																						i !==
-																						idx
-																				)
-																			)
-																		}
-																		className="hover:text-blue-900"
-																	>
-																		x
-																	</button>
-																</span>
-															)
-														)}
-													</div>
+											<button
+												onClick={() => {
+													if (
+														skillInput.trim()
+													) {
+														setSkillsFilter(
+															[
+																...skillsFilter,
+																skillInput.trim(),
+															],
+														);
+														setSkillInput(
+															"",
+														);
+													}
+												}}
+												className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+											>
+												Add
+											</button>
+										</div>
+										{skillsFilter.length > 0 && (
+											<div className="flex flex-wrap gap-2">
+												{skillsFilter.map(
+													(skill, idx) => (
+														<span
+															key={idx}
+															className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
+														>
+															{skill}
+															<button
+																onClick={() =>
+																	setSkillsFilter(
+																		skillsFilter.filter(
+																			(
+																				_,
+																				i,
+																			) =>
+																				i !==
+																				idx,
+																		),
+																	)
+																}
+																className="hover:text-blue-900"
+															>
+																x
+															</button>
+														</span>
+													),
 												)}
 											</div>
-											<div>
-												<label className="text-sm text-gray-400 mb-3 block">
-													Confidence Range:{" "}
-													{confidenceRange[0]} -{" "}
-													{confidenceRange[1]}%
-												</label>
-												<div className="pt-1">
-													<Slider
-														range
-														min={0}
-														max={100}
-														value={confidenceRange}
-														onChange={(value) =>
-															setConfidenceRange(
-																value as number[]
-															)
-														}
-														className="custom-slider"
-													/>
-												</div>
+										)}
+									</div>
+
+									{/* Date Range and Confidence Range */}
+									<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+										<div>
+											<label className="text-sm text-gray-400 mb-3 block">
+												Confidence Range:{" "}
+												{confidenceRange[0]} -{" "}
+												{confidenceRange[1]}%
+											</label>
+											<div className="pt-1">
+												<Slider
+													range
+													min={0}
+													max={100}
+													value={confidenceRange}
+													onChange={(value) =>
+														setConfidenceRange(
+															value as number[],
+														)
+													}
+													className="custom-slider"
+												/>
 											</div>
+										</div>
+										<div>
+											<label className="text-sm text-gray-400 mb-3 block">
+												Date Range
+											</label>
 											<div className="flex gap-2">
 												<input
 													type="date"
@@ -571,10 +644,10 @@ function CandidatesContent() {
 																...prev,
 																start: e.target
 																	.value,
-															})
+															}),
 														)
 													}
-													className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+													className="flex-1 px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 												/>
 												<input
 													type="date"
@@ -585,55 +658,16 @@ function CandidatesContent() {
 																...prev,
 																end: e.target
 																	.value,
-															})
+															}),
 														)
 													}
-													className="px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+													className="flex-1 px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 												/>
 											</div>
-										</>
-									)}
-								</div>
-								<div className="relative">
-									<button
-										onClick={() =>
-											setIsExportMenuOpen(
-												!isExportMenuOpen
-											)
-										}
-										disabled={isExporting}
-										className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-500/10 border border-gray-500/30 rounded-lg text-black hover:bg-cyan-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										<Download className="w-4 h-4" />
-										<span className="text-sm">
-											{isExporting
-												? "Exporting..."
-												: "Export Data"}
-										</span>
-										<ChevronDown className="w-4 h-4" />
-									</button>
-									{isExportMenuOpen && (
-										<div className="absolute right-0 mt-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-											<button
-												onClick={() =>
-													handleExport("csv")
-												}
-												className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-											>
-												Export as CSV
-											</button>
-											<button
-												onClick={() =>
-													handleExport("xlsx")
-												}
-												className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-											>
-												Export as XLSX
-											</button>
 										</div>
-									)}
+									</div>
 								</div>
-							</div>
+							)}
 
 							{/* Range Sliders */}
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
@@ -651,7 +685,7 @@ function CandidatesContent() {
 											value={experienceRange}
 											onChange={(value) =>
 												setExperienceRange(
-													value as number[]
+													value as number[],
 												)
 											}
 											className="custom-slider"
@@ -688,7 +722,7 @@ function CandidatesContent() {
 								-
 								{Math.min(
 									currentPage * ITEMS_PER_PAGE,
-									pagination.total
+									pagination.total,
 								)}{" "}
 								of {pagination.total} candidates
 							</div>
@@ -777,7 +811,7 @@ function CandidatesContent() {
 															handleDeleteClick(
 																candidate._id ||
 																	candidate.id,
-																candidate.name
+																candidate.name,
 															)
 														}
 														className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
@@ -867,7 +901,7 @@ function CandidatesContent() {
 																	.map(
 																		(
 																			skill: string,
-																			idx: string
+																			idx: string,
 																		) => (
 																			<span
 																				key={
@@ -879,7 +913,7 @@ function CandidatesContent() {
 																					skill
 																				}
 																			</span>
-																		)
+																		),
 																	)}
 															</div>
 														</td>
@@ -921,7 +955,7 @@ function CandidatesContent() {
 																		handleDeleteClick(
 																			candidate._id ||
 																				candidate.id,
-																			candidate.name
+																			candidate.name,
 																		)
 																	}
 																	className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
@@ -944,7 +978,7 @@ function CandidatesContent() {
 											<button
 												onClick={() =>
 													setCurrentPage((p) =>
-														Math.max(1, p - 1)
+														Math.max(1, p - 1),
 													)
 												}
 												disabled={currentPage === 1}
@@ -979,7 +1013,7 @@ function CandidatesContent() {
 													(p) =>
 														p > 0 &&
 														p <=
-															pagination.totalPages
+															pagination.totalPages,
 												)
 												.map((p) => (
 													<button
@@ -1009,7 +1043,7 @@ function CandidatesContent() {
 												<button
 													onClick={() =>
 														setCurrentPage(
-															pagination.totalPages
+															pagination.totalPages,
 														)
 													}
 													className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -1023,8 +1057,8 @@ function CandidatesContent() {
 													setCurrentPage((p) =>
 														Math.min(
 															pagination.totalPages,
-															p + 1
-														)
+															p + 1,
+														),
 													)
 												}
 												disabled={
