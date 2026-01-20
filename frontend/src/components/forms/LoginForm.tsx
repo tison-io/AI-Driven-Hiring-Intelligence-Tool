@@ -38,7 +38,8 @@ export default function LoginForm() {
       // Clear the error param from URL
       const params = new URLSearchParams(searchParams.toString());
       params.delete('error');
-      router.replace(`?${params.toString()}`, { scroll: false });
+      const newQuery = params.toString();
+      router.replace(newQuery ? `?${newQuery}` : '/auth/login', { scroll: false });
     }
   }, [searchParams, router]);
 
