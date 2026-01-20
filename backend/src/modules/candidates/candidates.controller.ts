@@ -92,7 +92,7 @@ export class CandidatesController {
 	@ApiQuery({
 		name: "previousCompany",
 		required: false,
-		desription: "Filter by previous company",
+		description: "Filter by previous company",
 	})
 	async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
 		return this.candidatesService.findAll(
