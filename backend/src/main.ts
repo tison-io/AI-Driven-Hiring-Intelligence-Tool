@@ -4,8 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
-import { createClient } from 'redis';
-import RedisStore from 'connect-redis';
+
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,22 +12,9 @@ async function bootstrap() {
   // Cookie parser middleware
   app.use(cookieParser());
 
-  // Redis client for session storage
-  const redisClient = createClient({
-    socket: {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-    },
-    password: process.env.REDIS_PASSWORD || undefined,
-  });
-
-  redisClient.on('error', (err) => console.error('Redis Client Error:', err));
-  await redisClient.connect();
-
-  // Session middleware with Redis store
+  // Session middleware (in-memory for development)
   app.use(
     session({
-      store: new RedisStore({ client: redisClient }),
       secret: process.env.SESSION_SECRET || 'your-session-secret-change-in-production',
       resave: false,
       saveUninitialized: false,
