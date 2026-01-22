@@ -158,9 +158,8 @@ export class CandidatesService {
 	}
 
 	async deleteByUserId(userId: string): Promise<void> {
-		// For now, this is a placeholder
-		// In production, you'd delete candidates where userId matches
-		await this.candidateModel.deleteMany({}).exec();
+		// FIXED: Delete only candidates created by this specific user
+		await this.candidateModel.deleteMany({ createdBy: userId }).exec();
 	}
 
 	async delete(id: string): Promise<{ success: boolean; message: string }> {
