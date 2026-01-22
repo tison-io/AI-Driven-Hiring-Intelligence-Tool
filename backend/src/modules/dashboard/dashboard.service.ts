@@ -204,7 +204,7 @@ export class DashboardService {
 		const confidenceAverage =
 			await this.getConfidenceScoreAverage(queryUserId);
 		const biasAlerts = await this.getBiasDetectionAlerts(queryUserId);
-		const sourceAnalysis = await this.getResumeSourceAalysis(queryUserId);
+		const sourceAnalysis = await this.getResumeSourceAnalysis(queryUserId);
 		const scoreDistribution = await this.getScoreDistribution(queryUserId);
 
 		return {
@@ -264,14 +264,14 @@ export class DashboardService {
 			roleFitScore: { $exists: true, $ne: null },
 		});
 
-		const hightQuality = await this.candidateModel.countDocuments({
+		const highQuality = await this.candidateModel.countDocuments({
 			...query,
 			status: "completed",
 			roleFitScore: { $gte: 80 },
 		});
 
 		return totalCompleted > 0
-			? Math.round((hightQuality / totalCompleted) * 100)
+			? Math.round((highQuality / totalCompleted) * 100)
 			: 0;
 	}
 
@@ -299,11 +299,11 @@ export class DashboardService {
 		const query = userId ? { createdBy: userId } : {};
 		return await this.candidateModel.countDocuments({
 			...query,
-			biasCheck: { $exists: true, $ne: [] },
+			biasCheck: { $exists: true, $nin: [null, ""] },
 		});
 	}
 
-	async getResumeSourceAalysis(userId?: string) {
+	async getResumeSourceAnalysis(userId?: string) {
 		const query = userId ? { createdBy: userId } : {};
 
 		const linkedinCandidates = await this.candidateModel
