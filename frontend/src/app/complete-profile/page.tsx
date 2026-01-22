@@ -16,6 +16,8 @@ export default function CompleteProfilePage() {
     userPhoto: null,
     companyLogo: null
   });
+  const [userPhotoPreview, setUserPhotoPreview] = useState<string | null>(null);
+  const [companyLogoPreview, setCompanyLogoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [userRole, setUserRole] = useState<string>('recruiter');
@@ -25,6 +27,13 @@ export default function CompleteProfilePage() {
 
   const handleFileUpload = (type: 'userPhoto' | 'companyLogo', file: File) => {
     setProfileData({ ...profileData, [type]: file });
+    
+    const previewUrl = URL.createObjectURL(file);
+    if (type === 'userPhoto') {
+      setUserPhotoPreview(previewUrl);
+    } else {
+      setCompanyLogoPreview(previewUrl);
+    }
   };
 
   const handleRedirect = async (role?: string) => {
@@ -116,11 +125,21 @@ export default function CompleteProfilePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Your Photo</label>
               <div 
-                className="w-32 h-32 mx-auto bg-gray-100 border-2 border-gray-300 rounded-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                className="w-32 h-32 mx-auto bg-gray-100 border-2 border-gray-300 rounded-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
                 onClick={() => document.getElementById('userPhoto')?.click()}
               >
-                <UserIcon className="h-8 w-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Upload</span>
+                {userPhotoPreview ? (
+                  <img 
+                    src={userPhotoPreview} 
+                    alt="User photo preview" 
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <>
+                    <UserIcon className="h-8 w-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Upload</span>
+                  </>
+                )}
               </div>
               <input
                 id="userPhoto"
@@ -134,11 +153,21 @@ export default function CompleteProfilePage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Company Logo</label>
               <div 
-                className="w-32 h-32 mx-auto bg-gray-100 border-2 border-gray-300 rounded-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
+                className="w-32 h-32 mx-auto bg-gray-100 border-2 border-gray-300 rounded-full flex flex-col items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden"
                 onClick={() => document.getElementById('companyLogo')?.click()}
               >
-                <BuildingOfficeIcon className="h-8 w-8 text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Upload</span>
+                {companyLogoPreview ? (
+                  <img 
+                    src={companyLogoPreview} 
+                    alt="Company logo preview" 
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <>
+                    <BuildingOfficeIcon className="h-8 w-8 text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Upload</span>
+                  </>
+                )}
               </div>
               <input
                 id="companyLogo"
