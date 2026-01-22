@@ -69,13 +69,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			setError(null);
 			setLoading(true);
 
-			// Backend sets JWT cookie automatically
 			const response = await api.post("/auth/login", { email, password });
 
-			// Fetch full profile (cookie is already set)
-			const profileResponse = await api.get("/auth/profile");
-			setUser(profileResponse.data);
-			return profileResponse.data;
+			// Use user data directly from login response
+			setUser(response.data.user);
+			return response.data.user;
 		} catch (err: any) {
 			const message =
 				err.response?.data?.message ||
@@ -92,16 +90,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			setError(null);
 			setLoading(true);
 
-			// Backend sets JWT cookie automatically on registration
 			const response = await api.post("/auth/register", {
 				email,
 				password,
 			});
 
-			// Fetch full profile (cookie is already set)
-			const profileResponse = await api.get("/auth/profile");
-			setUser(profileResponse.data);
-			return profileResponse.data;
+			// Use user data directly from registration response
+			setUser(response.data.user);
+			return response.data.user;
 		} catch (err: any) {
 			const message =
 				err.response?.data?.message ||
