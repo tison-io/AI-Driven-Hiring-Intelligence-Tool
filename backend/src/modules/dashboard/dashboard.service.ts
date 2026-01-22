@@ -199,13 +199,19 @@ export class DashboardService {
 			.select("name jobRole roleFitScore createdAt")
 			.exec();
 
-		const highQualityRate =
-			await this.getHighQualityCandidatesRate(queryUserId);
-		const confidenceAverage =
-			await this.getConfidenceScoreAverage(queryUserId);
-		const biasAlerts = await this.getBiasDetectionAlerts(queryUserId);
-		const sourceAnalysis = await this.getResumeSourceAnalysis(queryUserId);
-		const scoreDistribution = await this.getScoreDistribution(queryUserId);
+		const [
+			highQualityRate,
+			confidenceAverage,
+			biasAlerts,
+			sourceAnalysis,
+			scoreDistribution,
+		] = await Promise.all([
+			this.getHighQualityCandidatesRate(queryUserId),
+			this.getConfidenceScoreAverage(queryUserId),
+			this.getBiasDetectionAlerts(queryUserId),
+			this.getResumeSourceAnalysis(queryUserId),
+			this.getScoreDistribution(queryUserId),
+		]);
 
 		return {
 			totalCandidates,
