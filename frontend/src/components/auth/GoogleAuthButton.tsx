@@ -11,14 +11,6 @@ export default function GoogleAuthButton() {
     setIsLoading(true);
     
     try {
-      // Only logout if user is logged in
-      if (user) {
-        await logout();
-        // Small delay to ensure state update propagates
-        await new Promise(resolve => setTimeout(resolve, 150));
-      }
-      
-      // Now safely start OAuth
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
       window.location.href = `${apiUrl}/auth/google`;
     } catch (error) {
