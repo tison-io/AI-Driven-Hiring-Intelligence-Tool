@@ -1,35 +1,44 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import { ProtectedRouteProps } from '@/types';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { ProtectedRouteProps } from "@/types";
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading, isInitialized } = useAuth();
-  const router = useRouter();
-  const [showContent, setShowContent] = useState(false);
+	const { user, loading, isInitialized } = useAuth();
+	const router = useRouter();
+	const pathname = usePathname();
+	const [showContent, setShowContent] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/auth/login');
-    } else if (!loading && user) {
-      setShowContent(true);
-    }
-  }, [user, loading, router]);
+	useEffect(() => {
+		if (!loading && !user) {
+			router.push("/auth/login");
+		} else if (
+			!loading &&
+			user &&
+			!user.profileCompleted &&
+			pathname !== "/complete-profile"
+		) {
+			router.push("/complete-profile");
+		} else if (!loading && user) {
+			setShowContent(true);
+		}
+	}, [user, loading, router, pathname]);
 
-  if (loading && !isInitialized) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="md" />
-      </div>
-    );
-  }
+	if (loading && !isInitialized) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<LoadingSpinner size="md" />
+			</div>
+		);
+	}
 
-  if (!user || !showContent) {
-    return null;
-  }
+	if (!user || !showContent) {
+		return null;
+	}
 
-  return <>{children}</>;
+	return <>{children}</>;
 }
