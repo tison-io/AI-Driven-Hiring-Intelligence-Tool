@@ -31,6 +31,11 @@ export class DashboardController {
 				averageRoleFitScore: { type: "number", example: 75.5 },
 				shortlistCount: { type: "number", example: 25 },
 				processingCount: { type: "number", example: 5 },
+				highQualityRate: { type: "number", example: 68.5 },
+				confidenceAverage: { type: "number", example: 85.2 },
+				biasAlerts: { type: "array", example: [] },
+				sourceAnalysis: { type: "object", example: {} },
+				scoreDistribution: { type: "array", example: [] },
 				recentCandidates: {
 					type: "array",
 					items: {
@@ -168,7 +173,7 @@ export class DashboardController {
 	@Get("/analytics")
 	@UseGuards(JwtAuthGuard)
 	async getAnalytics(@Request() req) {
-		const userId = req.user.userId;
+		const userId = req.user.id;
 		const userRole = req.user.role;
 
 		const queryUserId = userRole === "admin" ? undefined : userId;

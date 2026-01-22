@@ -53,6 +53,7 @@ export default function DashboardPage() {
 
 	useEffect(() => {
 		async function fetchDashboard() {
+			setError(null);
 			try {
 				setLoading(true);
 				const response = await api.get("/api/dashboard");

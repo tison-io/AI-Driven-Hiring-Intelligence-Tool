@@ -44,7 +44,7 @@ export default function AnalyticsCards({
 					Bias Alerts
 				</h3>
 				<p className="text-2xl font-bold text-green-600">
-					{biasAlerts}%
+					{biasAlerts}
 				</p>
 				<p className="text-xs text-gray-400">Candidates flagged</p>
 			</div>
