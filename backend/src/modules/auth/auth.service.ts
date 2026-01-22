@@ -178,7 +178,12 @@ export class AuthService {
         user.userPhoto = userPhoto;
       }
       
-      await user.save();
+      try {
+        await user.save();
+      } catch (error) {
+        console.error('Failed to update user with Google data:', error);
+        // Continue with existing user data
+      }
     } else {
       // New user - create with OAuth data
       const randomPassword = crypto.randomBytes(32).toString('hex');

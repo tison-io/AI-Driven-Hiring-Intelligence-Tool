@@ -7,6 +7,7 @@ import SuccessPopup from '@/components/ui/SuccessPopup';
 import { useAuth } from '@/contexts/AuthContext';
 import { ProfileData } from '@/types';
 import api from '@/lib/api';
+import { showError } from '@/lib/toast';
 
 export default function CompleteProfilePage() {
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -67,6 +68,7 @@ export default function CompleteProfilePage() {
       }, 5000);
     } catch (error) {
       console.error('Profile completion failed:', error);
+      showError('Failed to complete profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
