@@ -1,6 +1,7 @@
 // @ts-ignore
 import axios from "axios";
 import { CandidateFilters } from "@/types";
+import { AnalyticsData } from "@/types/dashboard";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -75,7 +76,7 @@ export const dashboardApi = {
 		const response = await api.get("/api/dashboard/admin");
 		return response.data;
 	},
-	getAnalytics: async (): Promise<any> => {
+	getAnalytics: async (): Promise<AnalyticsData> => {
 		const response = await api.get("/api/dashboard/analytics");
 		return response.data;
 	},
