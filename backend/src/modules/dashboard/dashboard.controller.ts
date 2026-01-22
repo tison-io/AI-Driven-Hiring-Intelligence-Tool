@@ -35,7 +35,16 @@ export class DashboardController {
 				confidenceAverage: { type: "number", example: 85.2 },
 				biasAlerts: { type: "array", example: [] },
 				sourceAnalysis: { type: "object", example: {} },
-				scoreDistribution: { type: "array", example: [] },
+				scoreDistribution: {
+					type: "object",
+					properties: {
+						"0-20": { type: "number", example: 5 },
+						"21-40": { type: "number", example: 15 },
+						"41-60": { type: "number", example: 30 },
+						"61-80": { type: "number", example: 45 },
+						"81-100": { type: "number", example: 25 },
+					},
+				},
 				recentCandidates: {
 					type: "array",
 					items: {
