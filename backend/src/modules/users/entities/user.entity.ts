@@ -60,6 +60,16 @@ export class User {
 
   @Prop()
   lastPasswordResetRequest?: Date;
+
+  // Stripe fields
+  @Prop()
+  stripeCustomerId?: string;
+
+  @Prop()
+  subscriptionId?: string;
+
+  @Prop({ enum: ['active', 'canceled', 'past_due', 'unpaid', 'trialing', 'incomplete', 'incomplete_expired'] })
+  subscriptionStatus?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
