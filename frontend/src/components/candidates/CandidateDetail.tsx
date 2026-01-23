@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from '@/lib/toast'
-import { candidatesApi } from '@/lib/api'
+import api, { candidatesApi } from '@/lib/api'
 import { CandidateWithShortlist, CandidateDetailProps } from '@/types'
 import CandidateHeader from './CandidateHeader'
 import ScoreCards from './ScoreCards'
@@ -36,16 +36,15 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     try {
       setIsDownloadingReport(true)
 
-      const token = localStorage.getItem('token')
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/export/report/${candidateId}`
-
-      const response = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      // Use api client which automatically sends cookies
+      const response = await api.get(`/api/export/report/${candidateId}`, {
+        responseType: 'blob',
       })
 
-      if (!response.ok) throw new Error('Download failed')
-
-      const blob = await response.blob()
+      // Create blob from response
+      const blob = new Blob([response.data], { type: 'text/html' })
+      
+      // Trigger download
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = downloadUrl
@@ -54,8 +53,8 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
       window.URL.revokeObjectURL(downloadUrl)
 
       toast.success('Report downloaded successfully')
-    } catch (error) {
-      toast.error('Failed to download report')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to download report')
     } finally {
       setIsDownloadingReport(false)
     }
