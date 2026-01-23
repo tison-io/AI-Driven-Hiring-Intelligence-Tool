@@ -57,7 +57,8 @@
 		"redis": "^4.6.8",
 		"reflect-metadata": "^0.1.13",
 		"rxjs": "^7.8.1",
-		"sib-api-v3-sdk": "^8.5.0"
+		"sib-api-v3-sdk": "^8.5.0",
+		"stripe": "^20.2.0"
 	},
 	"devDependencies": {
 		"@nestjs/schematics": "^10.0.0",
@@ -72,6 +73,7 @@
 		"@types/node": "^20.3.1",
 		"@types/passport-google-oauth20": "^2.0.17",
 		"@types/passport-jwt": "^3.0.9",
+		"@types/stripe": "^8.0.416",
 		"@types/supertest": "^2.0.12",
 		"@typescript-eslint/eslint-plugin": "^6.0.0",
 		"@typescript-eslint/parser": "^6.0.0",
