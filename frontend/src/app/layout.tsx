@@ -3,6 +3,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { StripeProvider } from "@/contexts/StripeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,7 +23,11 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body className={inter.className}>
-				<AuthProvider>{children}</AuthProvider>
+				<AuthProvider>
+					<StripeProvider>
+						{children}
+					</StripeProvider>
+				</AuthProvider>
 				<Toaster 
 					position="top-right"
 					toastOptions={{

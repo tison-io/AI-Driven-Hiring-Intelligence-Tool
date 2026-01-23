@@ -4,10 +4,14 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import { json } from 'express';
 
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
+
+  // Raw body handling for Stripe webhooks
+  app.use('/stripe/webhook', json({ verify: (req: any, res, buf) => { req.rawBody = buf; } }));
 
   // Cookie parser middleware
   app.use(cookieParser());
