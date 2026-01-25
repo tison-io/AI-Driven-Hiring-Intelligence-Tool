@@ -59,3 +59,8 @@ body {
 .file-uploaded {
   @apply border-green-300 bg-green-50;
 }
+
+/* Fix for Hero H1 overflow issue */
+body > section:nth-child(1) h1 {
+  line-height: 1.1;
+}
