@@ -305,7 +305,11 @@ export class DashboardService {
 		const query = userId ? { createdBy: userId } : {};
 		return await this.candidateModel.countDocuments({
 			...query,
-			biasCheck: { $exists: true, $nin: [null, ""] },
+			biasCheck: { 
+				$exists: true, 
+				$nin: [null, ""], 
+				$not: /^No significant bias detected/i
+			},
 		});
 	}
 
