@@ -14,6 +14,7 @@ import api from "@/lib/api";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import AnalyticsCards from "@/components/dashboard/AnalyticsCards";
 import ScoreDistributionChart from "@/components/dashboard/ScoreDistributionChart";
+import SourcePerformanceChart from "@/components/dashboard/SourcePerformanceChart";
 
 function formatRelativeTime(dateString: string): string {
 	const now = new Date();
@@ -186,6 +187,10 @@ export default function DashboardPage() {
 							<ScoreDistributionChart
 								data={dashboardData.scoreDistribution}
 								title="Score Distribution"
+							/>
+							<SourcePerformanceChart
+								data={dashboardData.sourceAnalysis}
+								title="Source Performance"
 							/>
 						</div>
 
