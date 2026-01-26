@@ -319,7 +319,7 @@ export class DashboardService {
 		const linkedinCandidates = await this.candidateModel
 			.find({
 				...query,
-				linkedinUrl: { $exists: true, $ne: null },
+				source: 'linkedin',
 				status: "completed",
 				roleFitScore: { $exists: true, $ne: null },
 			})
@@ -328,7 +328,7 @@ export class DashboardService {
 		const fileCandidates = await this.candidateModel
 			.find({
 				...query,
-				fileUrl: { $exists: true, $ne: null },
+				source: 'file',
 				status: "completed",
 				roleFitScore: { $exists: true, $ne: null },
 			})
