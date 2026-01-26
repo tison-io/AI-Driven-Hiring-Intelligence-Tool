@@ -207,9 +207,9 @@ export class DashboardController {
 		};
 	}
 
-	@Get("admin/ai-performace")
+	@Get("admin/ai-performance")
 	@Roles(UserRole.ADMIN)
-	@ApiOperation({ summary: "Get AI performace metrics and trends" })
+	@ApiOperation({ summary: "Get AI performance metrics and trends" })
 	@ApiResponse({
 		status: 200,
 		description: "AI performance metrics retrieved successfully",

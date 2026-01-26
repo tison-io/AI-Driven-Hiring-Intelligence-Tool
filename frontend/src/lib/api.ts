@@ -81,7 +81,7 @@ export const dashboardApi = {
 		return response.data;
 	},
 	getAIPerformanceMetrics: async () => {
-		const response = await api.get("/api/dashbooard/ai-performance");
+		const response = await api.get("/api/dashboard/admin/ai-performance");
 		return response.data;
 	},
 };
