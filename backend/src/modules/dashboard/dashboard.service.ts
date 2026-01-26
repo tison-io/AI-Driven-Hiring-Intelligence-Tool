@@ -77,7 +77,7 @@ export class DashboardService {
 				: 0;
 
 		const currentShortlisted = await this.candidateModel.countDocuments({
-			isShortlisted: true,
+			$or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
 			createdAt: {
 				$gte: currentMonth.startDate,
 				$lte: currentMonth.endDate,
@@ -110,7 +110,7 @@ export class DashboardService {
 				: 0;
 
 		const lastShortlisted = await this.candidateModel.countDocuments({
-			isShortlisted: true,
+			$or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
 			createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate },
 		});
 
@@ -244,21 +244,30 @@ export class DashboardService {
 					) / completedCandidates.length
 				: 0;
 
-		const failedCount = await this.candidateModel.countDocuments({
+		// Get 24h metrics for consistency
+		const last24Hours = new Date();
+		last24Hours.setHours(last24Hours.getHours() - 24);
+		
+		const failedCount24h = await this.candidateModel.countDocuments({
 			status: "failed",
+			createdAt: { $gte: last24Hours },
 		});
-		const totalProcessed = await this.candidateModel.countDocuments({
-			status: { $in: ["completed", "failed"] },
+		
+		const completedCount24h = await this.candidateModel.countDocuments({
+			status: "completed",
+			createdAt: { $gte: last24Hours },
 		});
-		const successRate =
-			totalProcessed > 0
-				? ((totalProcessed - failedCount) / totalProcessed) * 100
+		
+		const totalProcessed24h = completedCount24h + failedCount24h;
+		const successRate24h =
+			totalProcessed24h > 0
+				? (completedCount24h / totalProcessed24h) * 100
 				: 100;
 
 		return {
 			averageProcessingTime: Math.round(avgProcessingTime),
-			successRate: Math.round(successRate * 100) / 100,
-			failedProcessingCount: failedCount,
+			successRate: Math.round(successRate24h * 100) / 100,
+			failedProcessingCount: failedCount24h,
 		};
 	}
 
@@ -305,8 +314,22 @@ export class DashboardService {
 		const query = userId ? { createdBy: userId } : {};
 		return await this.candidateModel.countDocuments({
 			...query,
-			biasCheck: { $exists: true, $nin: [null, ""] },
+			biasCheck: { 
+				$exists: true, 
+				$nin: [null, ""],
+				$not: /^(no bias|none|not detected|no significant bias)/i
+			},
 		});
+	}
+
+	async getBiasDetectionRate(userId?: string) {
+		const query = userId ? { createdBy: userId } : {};
+		const totalCandidates = await this.candidateModel.countDocuments({
+			...query,
+			status: "completed",
+		});
+		const biasAlerts = await this.getBiasDetectionAlerts(userId);
+		return totalCandidates > 0 ? Math.round((biasAlerts / totalCandidates) * 100 * 100) / 100 : 0;
 	}
 
 	async getResumeSourceAnalysis(userId?: string) {
@@ -390,14 +413,12 @@ export class DashboardService {
 
 	async getAIReliabilityScore() {
 		const avgConfidence = await this.getConfidenceScoreAverage();
-		const totalCandidates = await this.candidateModel.countDocuments({
-			status: "completed",
-		});
-		const biasAlerts = await this.getBiasDetectionAlerts();
-		const biasRate =
-			totalCandidates > 0 ? (biasAlerts / totalCandidates) * 100 : 0;
+		const biasRate = await this.getBiasDetectionRate();
+		
+		// If no data, return 0
+		if (avgConfidence === 0) return 0;
+		
 		const reliabilityScore = avgConfidence * 0.7 + (100 - biasRate) * 0.3;
-
 		return Math.round(reliabilityScore * 100) / 100;
 	}
 
@@ -468,7 +489,7 @@ export class DashboardService {
 											$not: {
 												$regexMatch: {
 													input: "$biasCheck",
-													regex: /^No significant bias detected/i,
+													regex: /^(no bias|none|not detected|no significant bias)/i,
 												},
 											},
 										},
@@ -532,4 +553,5 @@ export class DashboardService {
 			value: Math.round(item.avgScore * 100) / 100,
 		}));
 	}
+
 }

@@ -228,7 +228,7 @@ export class DashboardController {
 			this.dashboardService.getRoleFitScoreTrend(),
 			this.dashboardService.getAIReliabilityScore(),
 			this.dashboardService.getConfidenceScoreAverage(),
-			this.dashboardService.getBiasDetectionAlerts(),
+			this.dashboardService.getBiasDetectionRate(),
 		]);
 
 		return {

@@ -6,7 +6,7 @@ import AdminHeader from "@/components/admin/AdminHeader";
 import MetricCard from "@/components/admin/MetricCard";
 import SystemHealthCard from "@/components/admin/SystemHealthCard";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
-import TrendChard from "@/components/admin/TrendChart";
+import TrendChart from "@/components/admin/TrendChart";
 
 export default function AdminDashboard() {
 	const { data, loading, error, aiData } = useAdminDashboard();
@@ -109,15 +109,15 @@ export default function AdminDashboard() {
 								{aiData && (
 									<>
 										<h2 className="text-xl font-semibold text-gray-900 mb-4 mt-8">
-											AI Model Performace
+											AI Model Performance
 										</h2>
 
-										{/* AI Performace Metric Cards */}
-										<div className="grid grid-cols1 md:grid-cols-3 gap-6 mb-6">
+										{/* AI Performance Metric Cards */}
+										<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
 											<MetricCard
 												title="Avg Confidence Score"
 												value={
-													aiData.currentConfidenceAvg
+													aiData.currentConfidenceAvg || 0
 												}
 												percentageChange={0}
 												trend="neutral"
@@ -125,15 +125,15 @@ export default function AdminDashboard() {
 											/>
 											<MetricCard
 												title="Bias Detection Rate"
-												value={aiData.currentBiasRate}
+												value={aiData.currentBiasRate || 0}
 												percentageChange={0}
 												trend="neutral"
-												type="candidates"
+												type="score"
 											/>
 											<MetricCard
 												title="AI Reliability Score"
 												value={
-													aiData.aiReliabilityScore
+													aiData.aiReliabilityScore || 0
 												}
 												percentageChange={0}
 												trend="neutral"
@@ -143,14 +143,14 @@ export default function AdminDashboard() {
 
 										{/* AI Performance Charts */}
 										<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-											<TrendChard
-												data={aiData.roleFitTrend}
+											<TrendChart
+												data={aiData.roleFitTrend || []}
 												title="Role-Fit Score Trend"
 												color="#3B82F6"
 												yAxisLabel="Average Score (%)"
 											/>
-											<TrendChard
-												data={aiData.confidenceTrend}
+											<TrendChart
+												data={aiData.confidenceTrend || []}
 												title="Confidence Score Trend"
 												color="#10B981"
 												yAxisLabel="Confidence (%)"
@@ -158,9 +158,9 @@ export default function AdminDashboard() {
 										</div>
 
 										<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-											<TrendChard
-												data={aiData.biasTrend}
-												title="Bias Deteection Rate"
+											<TrendChart
+												data={aiData.biasTrend || []}
+												title="Bias Detection Rate"
 												color="#F59E0B"
 												yAxisLabel="Detection Rate (%)"
 											/>
