@@ -83,3 +83,17 @@ export interface AnalyticsData {
 	highQualityRate: number;
 	confidenceAverage: number;
 }
+
+export interface TrendDataPoint {
+	date: string;
+	value: number;
+}
+
+export interface AIPerformanceData {
+	confidenceTrend: TrendDataPoint[];
+	biasTrend: TrendDataPoint[];
+	roleFitTrend: TrendDataPoint[];
+	aiReliabilityScore: number;
+	currentConfidenceAvg: number;
+	currentBiasRate: number;
+}

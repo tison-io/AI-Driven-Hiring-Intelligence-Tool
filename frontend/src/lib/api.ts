@@ -80,6 +80,10 @@ export const dashboardApi = {
 		const response = await api.get("/api/dashboard/analytics");
 		return response.data;
 	},
+	getAIPerformanceMetrics: async () => {
+		const response = await api.get("/api/dashbooard/ai-performance");
+		return response.data;
+	},
 };
 
 // Error Logs API functions
