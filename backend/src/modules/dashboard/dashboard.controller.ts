@@ -206,4 +206,38 @@ export class DashboardController {
 				),
 		};
 	}
+
+	@Get("admin/ai-performace")
+	@Roles(UserRole.ADMIN)
+	@ApiOperation({ summary: "Get AI performace metrics and trends" })
+	@ApiResponse({
+		status: 200,
+		description: "AI performance metrics retrieved successfully",
+	})
+	async getAIPerformanceMetrics(){
+		const [
+			confidenceTrend,
+			biasTrend,
+			roleFitTrend,
+			aiReliabilityScore,
+			currentConfidenceAvg,
+			currentBiasRate
+		] = await Promise.all([
+			this.dashboardService.getConfidenceScoreTrend(),
+			this.dashboardService.getBiasDetectionTrend(),
+			this.dashboardService.getRoleFitScoreTrend(),
+			this.dashboardService.getAIReliabilityScore(),
+			this.dashboardService.getConfidenceScoreAverage(),
+			this.dashboardService.getBiasDetectionAlerts(),
+		]);
+
+		return {
+			confidenceTrend,
+			biasTrend,
+			roleFitTrend,
+			aiReliabilityScore,
+			currentConfidenceAvg,
+			currentBiasRate
+		};
+	}
 }
