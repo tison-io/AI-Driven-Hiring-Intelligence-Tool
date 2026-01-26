@@ -19,7 +19,7 @@ import { useCandidates } from "@/hooks/useCandidates";
 import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkeleton";
 import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
-import { candidatesApi } from "@/lib/api";
+import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
 	const searchParams = useSearchParams();
@@ -233,19 +233,20 @@ function CandidatesContent() {
 			setIsExporting(true);
 			setIsExportMenuOpen(false);
 
-			const token = localStorage.getItem("token");
-			const params = new URLSearchParams({ format });
-			const url = `${process.env.NEXT_PUBLIC_API_URL}/api/export/candidates?${params}`;
-
-			const response = await fetch(url, {
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
+			// Use api client which automatically sends cookies
+			const response = await api.get('/api/export/candidates', {
+				params: { format },
+				responseType: 'blob',
 			});
 
-			if (!response.ok) throw new Error("Export failed");
-
-			const blob = await response.blob();
+			// Create blob from response
+			const blob = new Blob([response.data], {
+				type: format === 'csv' 
+					? 'text/csv' 
+					: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+			});
+			
+			// Trigger download
 			const downloadUrl = window.URL.createObjectURL(blob);
 			const link = document.createElement("a");
 			link.href = downloadUrl;
@@ -255,7 +256,7 @@ function CandidatesContent() {
 
 			toast.success(`Exported as ${format.toUpperCase()} successfully`);
 		} catch (error: any) {
-			toast.error("Export failed. Please try again.");
+			toast.error(error.response?.data?.message || "Export failed. Please try again.");
 		} finally {
 			setIsExporting(false);
 		}

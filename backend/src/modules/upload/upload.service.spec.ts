@@ -5,6 +5,7 @@ import { CandidatesService } from '../candidates/candidates.service';
 import { QueueService } from '../queue/queue.service';
 import { ApifyService } from '../linkedin-scraper/linkedinScraper.service';
 import { LinkedInMapper } from '../linkedin-scraper/mappers/linkedin-mapper';
+import { CloudinaryService } from './cloudinary.service';
 import {
   ProfileNotFoundException,
   InvalidLinkedInUrlException,
@@ -22,6 +23,7 @@ describe('UploadService', () => {
   let queueService: jest.Mocked<QueueService>;
   let apifyService: jest.Mocked<ApifyService>;
   let linkedInMapper: jest.Mocked<LinkedInMapper>;
+  let cloudinaryService: jest.Mocked<CloudinaryService>;
 
   const mockCandidate = {
     _id: 'candidate-id-123',
@@ -105,6 +107,10 @@ describe('UploadService', () => {
       transformMultipleProfiles: jest.fn(),
     };
 
+    const mockCloudinaryService = {
+      uploadFile: jest.fn().mockResolvedValue('https://cloudinary.com/file-url'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UploadService,
@@ -124,6 +130,10 @@ describe('UploadService', () => {
           provide: LinkedInMapper,
           useValue: mockLinkedInMapper,
         },
+        {
+          provide: CloudinaryService,
+          useValue: mockCloudinaryService,
+        },
       ],
     }).compile();
 
@@ -132,6 +142,7 @@ describe('UploadService', () => {
     queueService = module.get(QueueService);
     apifyService = module.get(ApifyService);
     linkedInMapper = module.get(LinkedInMapper);
+    cloudinaryService = module.get(CloudinaryService);
   });
 
   describe('processResume', () => {
@@ -154,6 +165,8 @@ describe('UploadService', () => {
         name: 'Extracted from Resume',
         rawText: 'Extracted PDF text content',
         jobRole: 'Backend Engineer',
+        fileUrl: expect.any(String),
+        source: 'file',
         status: 'pending',
         createdBy: 'test-user-id',
       });
@@ -181,6 +194,8 @@ describe('UploadService', () => {
         name: 'Extracted from Resume',
         rawText: 'Extracted Word document content',
         jobRole: 'Frontend Engineer',
+        fileUrl: expect.any(String),
+        source: 'file',
         status: 'pending',
         createdBy: 'test-user-id',
       });
@@ -250,6 +265,7 @@ describe('UploadService', () => {
         linkedinUrl,
         rawText: expect.stringContaining('Name: John Doe'),
         jobRole,
+        source: 'linkedin',
         status: 'pending',
         createdBy: 'test-user-id',
       });

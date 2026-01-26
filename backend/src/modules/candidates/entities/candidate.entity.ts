@@ -78,6 +78,9 @@ export class Candidate {
   @Prop()
   fileUrl?: string;
 
+  @Prop({ enum: ['linkedin', 'file'], required: true })
+  source: 'linkedin' | 'file';
+
   @Prop()
   processingTime?: number; // in milliseconds
 

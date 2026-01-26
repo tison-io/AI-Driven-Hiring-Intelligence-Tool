@@ -152,15 +152,13 @@ export class CandidatesService {
 	}
 
 	async findByUserId(userId: string): Promise<CandidateDocument[]> {
-		// For now, return all candidates since we don't have userId field in candidates
-		// In production, you'd add a userId field to candidate schema
-		return this.candidateModel.find().exec();
+		// Return only candidates created by this specific user
+		return this.candidateModel.find({ createdBy: userId }).exec();
 	}
 
 	async deleteByUserId(userId: string): Promise<void> {
-		// For now, this is a placeholder
-		// In production, you'd delete candidates where userId matches
-		await this.candidateModel.deleteMany({}).exec();
+		// Delete only candidates created by this specific user
+		await this.candidateModel.deleteMany({ createdBy: userId }).exec();
 	}
 
 	async delete(id: string): Promise<{ success: boolean; message: string }> {

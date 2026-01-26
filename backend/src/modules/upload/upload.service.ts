@@ -27,6 +27,7 @@ export class UploadService {
 			name: "Extracted from Resume", // Will be updated by AI
 			rawText,
 			jobRole,
+			source: 'file',
 			...(jobDescription && { jobDescription }),
 			status: ProcessingStatus.PENDING,
 			createdBy: userId,
@@ -84,6 +85,7 @@ export class UploadService {
 				linkedinUrl,
 				rawText,
 				jobRole,
+				source: 'linkedin',
 				...(jobDescription && { jobDescription }),
 				status: ProcessingStatus.PENDING,
 				createdBy: userId,

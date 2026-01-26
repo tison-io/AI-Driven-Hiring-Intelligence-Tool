@@ -32,7 +32,7 @@ export class PrivacyService {
         candidateData: {
           retentionPeriod: '2 years',
           description: 'Resume content, LinkedIn profiles, and AI evaluations',
-          autoCleanup: true
+          autoCleanup: false  // DISABLED: Prevent automated deletions
         },
         userData: {
           retentionPeriod: 'Until account deletion',
