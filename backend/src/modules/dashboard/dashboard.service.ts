@@ -77,7 +77,7 @@ export class DashboardService {
 				: 0;
 
 		const currentShortlisted = await this.candidateModel.countDocuments({
-			isShortlisted: true,
+			$or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
 			createdAt: {
 				$gte: currentMonth.startDate,
 				$lte: currentMonth.endDate,
@@ -110,7 +110,7 @@ export class DashboardService {
 				: 0;
 
 		const lastShortlisted = await this.candidateModel.countDocuments({
-			isShortlisted: true,
+			$or: [{ isShortlisted: true }, { roleFitScore: { $gte: 80 } }],
 			createdAt: { $gte: lastMonth.startDate, $lte: lastMonth.endDate },
 		});
 
@@ -244,21 +244,30 @@ export class DashboardService {
 					) / completedCandidates.length
 				: 0;
 
-		const failedCount = await this.candidateModel.countDocuments({
+		// Get 24h metrics for consistency
+		const last24Hours = new Date();
+		last24Hours.setHours(last24Hours.getHours() - 24);
+		
+		const failedCount24h = await this.candidateModel.countDocuments({
 			status: "failed",
+			createdAt: { $gte: last24Hours },
 		});
-		const totalProcessed = await this.candidateModel.countDocuments({
-			status: { $in: ["completed", "failed"] },
+		
+		const completedCount24h = await this.candidateModel.countDocuments({
+			status: "completed",
+			createdAt: { $gte: last24Hours },
 		});
-		const successRate =
-			totalProcessed > 0
-				? ((totalProcessed - failedCount) / totalProcessed) * 100
+		
+		const totalProcessed24h = completedCount24h + failedCount24h;
+		const successRate24h =
+			totalProcessed24h > 0
+				? (completedCount24h / totalProcessed24h) * 100
 				: 100;
 
 		return {
 			averageProcessingTime: Math.round(avgProcessingTime),
-			successRate: Math.round(successRate * 100) / 100,
-			failedProcessingCount: failedCount,
+			successRate: Math.round(successRate24h * 100) / 100,
+			failedProcessingCount: failedCount24h,
 		};
 	}
 
@@ -307,10 +316,20 @@ export class DashboardService {
 			...query,
 			biasCheck: { 
 				$exists: true, 
-				$nin: [null, ""], 
-				$not: /^No significant bias detected/i
+				$nin: [null, ""],
+				$not: /^(no bias|none|not detected|no significant bias)/i
 			},
 		});
+	}
+
+	async getBiasDetectionRate(userId?: string) {
+		const query = userId ? { createdBy: userId } : {};
+		const totalCandidates = await this.candidateModel.countDocuments({
+			...query,
+			status: "completed",
+		});
+		const biasAlerts = await this.getBiasDetectionAlerts(userId);
+		return totalCandidates > 0 ? Math.round((biasAlerts / totalCandidates) * 100 * 100) / 100 : 0;
 	}
 
 	async getResumeSourceAnalysis(userId?: string) {
@@ -391,4 +410,148 @@ export class DashboardService {
 
 		return distribution;
 	}
+
+	async getAIReliabilityScore() {
+		const avgConfidence = await this.getConfidenceScoreAverage();
+		const biasRate = await this.getBiasDetectionRate();
+		
+		// If no data, return 0
+		if (avgConfidence === 0) return 0;
+		
+		const reliabilityScore = avgConfidence * 0.7 + (100 - biasRate) * 0.3;
+		return Math.round(reliabilityScore * 100) / 100;
+	}
+
+		async getConfidenceScoreTrend(days: number = 30) {
+			const startDate = new Date();
+			startDate.setDate(startDate.getDate() - days);
+
+			const pipeline = [
+				{
+					$match: {
+						status: "completed",
+						confidenceScore: { $exists: true, $ne: null },
+						createdAt: { $gte: startDate },
+					},
+				},
+				{
+					$group: {
+						_id: {
+							$dateToString: {
+								format: "%Y-%m-%d",
+								date: "$createdAt",
+							},
+						},
+						avgConfidence: { $avg: "$confidenceScore" },
+						count: { $sum: 1 },
+					},
+				},
+				{
+					$sort: { _id: 1 as const },
+				},
+			];
+
+			const results = await this.candidateModel.aggregate(pipeline);
+			return results.map((item) => ({
+				date: item._id,
+				value: Math.round(item.avgConfidence * 100) / 100,
+			}));
+		}
+
+	async getBiasDetectionTrend(days: number = 30) {
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - days);
+
+		const pipeline = [
+			{
+				$match: {
+					status: "completed",
+					createdAt: { $gte: startDate },
+				},
+			},
+			{
+				$group: {
+					_id: {
+						$dateToString: {
+							format: "%Y-%m-%d",
+							date: "$createdAt",
+						},
+					},
+					total: { $sum: 1 },
+					biasDetected: {
+						$sum: {
+							$cond: [
+								{
+									$and: [
+										{ $ne: ["$biasCheck", null] },
+										{ $ne: ["$biasCheck", ""] },
+										{
+											$not: {
+												$regexMatch: {
+													input: "$biasCheck",
+													regex: /^(no bias|none|not detected|no significant bias)/i,
+												},
+											},
+										},
+									],
+								},
+								1,
+								0,
+							],
+						},
+					},
+				},
+			},
+			{
+				$sort: { _id: 1 as const },
+			},
+		];
+
+		const results = await this.candidateModel.aggregate(pipeline);
+		return results.map((item) => ({
+			date: item._id,
+			value:
+				item.total > 0
+					? Math.round((item.biasDetected / item.total) * 100 * 100) /
+						100
+					: 0,
+		}));
+	}
+
+	async getRoleFitScoreTrend(days: number = 30) {
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - days);
+
+		const pipeline = [
+			{
+				$match: {
+					status: "completed",
+					roleFitScore: { $exists: true, $ne: null },
+					createdAt: { $gte: startDate },
+				},
+			},
+			{
+				$group: {
+					_id: {
+						$dateToString: {
+							format: "%Y-%m-%d",
+							date: "$createdAt",
+						},
+					},
+					avgScore: { $avg: "$roleFitScore" },
+					count: { $sum: 1 },
+				},
+			},
+			{
+				$sort: { _id: 1 as const },
+			},
+		];
+
+		const results = await this.candidateModel.aggregate(pipeline);
+		return results.map((item) => ({
+			date: item._id,
+			value: Math.round(item.avgScore * 100) / 100,
+		}));
+	}
+
 }
