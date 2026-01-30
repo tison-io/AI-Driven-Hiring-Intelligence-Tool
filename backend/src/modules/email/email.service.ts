@@ -49,4 +49,54 @@ export class EmailService {
 
     await this.apiInstance.sendTransacEmail(sendSmtpEmail);
   }
+
+  async sendVerificationEmail(to: string, code: string, userName?: string): Promise<void> {
+    const greeting = userName ? `Hi ${userName},` : 'Hi,';
+    
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.sender = { name: this.brevoConfig.fromName, email: this.brevoConfig.fromEmail };
+    sendSmtpEmail.to = [{ email: to }];
+    sendSmtpEmail.subject = 'Verify Your Email Address';
+    sendSmtpEmail.htmlContent = `
+      <h2 style="margin-bottom: 12px;">Verify Your Email Address</h2>
+      
+      <p style="margin: 0 0 12px 0;">
+        ${greeting}
+      </p>
+      
+      <p style="margin: 0 0 16px 0;">
+        Thanks for signing up! To complete your registration, please enter the verification code below:
+      </p>
+      
+      <div
+        style="
+          background-color: #f4f4f4;
+          padding: 16px;
+          text-align: center;
+          font-size: 32px;
+          font-weight: 700;
+          letter-spacing: 6px;
+          border-radius: 6px;
+          margin: 24px 0;
+        "
+      >
+        ${code}
+      </div>
+      
+      <p style="margin: 0 0 8px 0;">
+        ⏱️ This code will expire in <strong>15 minutes</strong>.
+      </p>
+      
+      <p style="margin: 0 0 8px 0; color: #555;">
+        If you didn't create an account, you can safely ignore this email.
+      </p>
+
+      <p style="font-size: 12px; color: #777;">
+      For security reasons, <strong>never share this code with anyone</strong>.
+      </p>
+
+    `;
+
+    await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+  }
 }

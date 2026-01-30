@@ -13,6 +13,8 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CompleteProfileDto } from './dto/complete-profile.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 
@@ -27,22 +29,10 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new recruiter user' })
-  @ApiResponse({ status: 201, description: 'Recruiter successfully registered' })
+  @ApiResponse({ status: 201, description: 'Recruiter successfully registered. Verification email sent.' })
   @ApiResponse({ status: 400, description: 'Bad request - Invalid password format or user exists' })
-  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(registerDto);
-    
-    // Set JWT in HTTP-only cookie
-    res.cookie('access_token', result.access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-    
-    // Return user only (no token in response body)
-    return { user: result.user };
+  async register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
   }
 
   @Post('login')
@@ -216,5 +206,36 @@ export class AuthController {
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
       return res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
     }
+  }
+
+  @Post('verify-email')
+  @ApiOperation({ summary: 'Verify email with 6-digit code' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully, JWT issued' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired verification code' })
+  async verifyEmail(
+    @Body() verifyEmailDto: VerifyEmailDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.verifyEmail(verifyEmailDto.email, verifyEmailDto.code);
+    
+    // Set JWT in HTTP-only cookie
+    res.cookie('access_token', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
+    return { user: result.user };
+  }
+
+  @Post('resend-verification')
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Resend verification code (Rate limit: 3 per hour)' })
+  @ApiResponse({ status: 200, description: 'Verification code sent if account exists' })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async resendVerification(@Body() resendVerificationDto: ResendVerificationDto) {
+    return this.authService.resendVerificationCode(resendVerificationDto.email);
   }
 }
