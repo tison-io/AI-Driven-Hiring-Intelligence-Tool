@@ -74,7 +74,7 @@ describe('UploadService', () => {
   beforeEach(async () => {
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Mock pdf-parse
     (pdfParse as jest.MockedFunction<typeof pdfParse>).mockResolvedValue({
       text: 'Extracted PDF text content',
@@ -84,7 +84,7 @@ describe('UploadService', () => {
       metadata: {},
       version: '1.0'
     });
-    
+
     // Mock mammoth
     (mammoth.extractRawText as jest.MockedFunction<typeof mammoth.extractRawText>).mockResolvedValue({
       value: 'Extracted Word document content',
@@ -165,7 +165,6 @@ describe('UploadService', () => {
         name: 'Extracted from Resume',
         rawText: 'Extracted PDF text content',
         jobRole: 'Backend Engineer',
-        fileUrl: expect.any(String),
         source: 'file',
         status: 'pending',
         createdBy: 'test-user-id',
@@ -194,7 +193,6 @@ describe('UploadService', () => {
         name: 'Extracted from Resume',
         rawText: 'Extracted Word document content',
         jobRole: 'Frontend Engineer',
-        fileUrl: expect.any(String),
         source: 'file',
         status: 'pending',
         createdBy: 'test-user-id',
@@ -259,7 +257,7 @@ describe('UploadService', () => {
 
       expect(apifyService.scrapeLinkedInProfiles).toHaveBeenCalledWith([linkedinUrl]);
       expect(linkedInMapper.transformMultipleProfiles).toHaveBeenCalledWith([mockLinkedInProfile]);
-      
+
       expect(candidatesService.create).toHaveBeenCalledWith({
         name: 'John Doe',
         linkedinUrl,
@@ -289,7 +287,7 @@ describe('UploadService', () => {
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
         await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
       } catch (error) {
@@ -306,7 +304,7 @@ describe('UploadService', () => {
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
         await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
       } catch (error) {
@@ -346,7 +344,7 @@ describe('UploadService', () => {
       await expect(
         service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id')
       ).rejects.toBeInstanceOf(HttpException);
-      
+
       try {
         await service.processLinkedinProfile(linkedinUrl, jobRole, 'test-user-id');
       } catch (error) {
@@ -416,7 +414,7 @@ describe('UploadService', () => {
     it('should complete full upload workflow for resume', async () => {
       candidatesService.create.mockResolvedValue(mockCandidate as any);
       queueService.addAIProcessingJob.mockResolvedValue(undefined);
-      
+
       const result = await service.processResume(mockPdfFile, 'Data Scientist', 'test-user-id');
 
       // Verify the complete workflow

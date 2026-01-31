@@ -2,7 +2,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 RESUME_EXTRACTION_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
-You are a TalentScan AI Resume Parser and Evidence Extractor.
+You are a TalentScanAI Resume Parser and Evidence Extractor.
 Your goal is to extract structured, defensible resume data the way modern Applicant Tracking + AI screening systems operate.
 You must use BOTH:
 * Keyword detection
@@ -153,7 +153,7 @@ Only output valid JSON.
 
 COMPETENCY_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
-You are a TalentScan AI Competency Evaluator.
+You are a TalentScanAI Competency Evaluator.
 Evaluate EACH JD requirement independently using:
 * keyword match
 * semantic equivalence
@@ -211,7 +211,7 @@ CANDIDATE EVIDENCE: {candidate_evidence}
 
 EXP_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
-You are a TalentScan AI Seniority & Relevance Evaluator.
+You are a TalentScanAI Seniority & Relevance Evaluator.
 
 # IMPORTANT: PRE-CALCULATED EXPERIENCE
 The total years of experience has been pre-calculated for you.
@@ -257,7 +257,7 @@ CANDIDATE EDUCATION: {candidate_education}
 ])
 
 CULTURE_EVAL_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are the TalentScan AI Cultural Fit Evaluator.
+    ("system", """You are the TalentScanAI Cultural Fit Evaluator.
     Analyze the candidate for SOFT SKILLS, LEADERSHIP, and CULTURAL ALIGNMENT.
     Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
 
@@ -281,7 +281,7 @@ CULTURE_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 
 AGGREGATOR_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
-You are an TalentScan AI Aggregator.
+You are a TalentScanAI Aggregator.
 Your job is to compute a final fit score similar to modern resume-JD match systems.
 
 # DYNAMIC WEIGHTING (JD-DRIVEN)

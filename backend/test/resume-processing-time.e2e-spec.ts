@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
@@ -43,7 +44,7 @@ describe('Resume Processing Time (e2e)', () => {
     // Upload resume
     const resumePath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
     const resumeBuffer = fs.readFileSync(resumePath);
-    
+
     const uploadResponse = await request(app.getHttpServer())
       .post('/api/candidates/upload-resume')
       .set('Authorization', `Bearer ${authToken}`)
@@ -67,7 +68,7 @@ describe('Resume Processing Time (e2e)', () => {
 
     while (attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       const response = await request(app.getHttpServer())
         .get(`/api/candidates/${candidateId}`)
         .set('Authorization', `Bearer ${authToken}`);

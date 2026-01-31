@@ -54,6 +54,10 @@ describe('AuthController', () => {
           provide: CloudinaryService,
           useValue: mockCloudinaryService,
         },
+        {
+          provide: 'JwtService',
+          useValue: { sign: jest.fn(), verify: jest.fn() },
+        },
       ],
     }).compile();
 

@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -47,7 +48,7 @@ describe('Upload + AI + Queue Integration', () => {
     it('should complete full resume processing flow', async () => {
       // Create test PDF file
       const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
-      
+
       // Step 1: Upload file and verify initial response
       const uploadResponse = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
@@ -100,18 +101,18 @@ describe('Upload + AI + Queue Integration', () => {
 
       // Step 4: Verify AI processing completed (or failed gracefully)
       expect(processedCandidate).toBeDefined();
-      
+
       if (processedCandidate.status === ProcessingStatus.COMPLETED) {
         expect(processedCandidate.status).toBe(ProcessingStatus.COMPLETED);
-      expect(processedCandidate).toMatchObject({
-        name: expect.any(String),
-        roleFitScore: expect.any(Number),
-        keyStrengths: expect.any(Array),
-        potentialWeaknesses: expect.any(Array),
-        skills: expect.any(Array),
-        experienceYears: expect.any(Number),
-        processingTime: expect.any(Number)
-      });
+        expect(processedCandidate).toMatchObject({
+          name: expect.any(String),
+          roleFitScore: expect.any(Number),
+          keyStrengths: expect.any(Array),
+          potentialWeaknesses: expect.any(Array),
+          skills: expect.any(Array),
+          experienceYears: expect.any(Number),
+          processingTime: expect.any(Number)
+        });
 
         // Step 5: Verify AI results are realistic
         expect(processedCandidate.roleFitScore).toBeGreaterThanOrEqual(0);
@@ -127,7 +128,7 @@ describe('Upload + AI + Queue Integration', () => {
     it('should handle file extraction errors gracefully', async () => {
       // Create invalid file
       const invalidFile = Buffer.from('invalid content');
-      
+
       const response = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
         .set('Authorization', `Bearer ${authToken}`)
@@ -141,7 +142,7 @@ describe('Upload + AI + Queue Integration', () => {
     it('should handle AI service failures with fallback', async () => {
       // Mock AI service failure by using invalid job role
       const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
-      
+
       const uploadResponse = await request(app.getHttpServer())
         .post('/api/candidates/upload-resume')
         .set('Authorization', `Bearer ${authToken}`)
@@ -150,7 +151,7 @@ describe('Upload + AI + Queue Integration', () => {
 
       // Should accept upload regardless of job role
       expect([201, 400]).toContain(uploadResponse.status);
-      
+
       if (uploadResponse.status !== 201) {
         return; // Skip rest of test if upload failed
       }
@@ -188,7 +189,7 @@ describe('Upload + AI + Queue Integration', () => {
       const axios = require('axios');
       const originalPost = axios.post;
       let callCount = 0;
-      
+
       axios.post = jest.fn().mockImplementation(() => {
         callCount++;
         return Promise.reject(new Error('ECONNREFUSED: AI service unavailable'));
@@ -228,10 +229,10 @@ describe('Upload + AI + Queue Integration', () => {
         // Step 4: Verify candidate marked as failed after retries
         expect(finalCandidate).toBeDefined();
         expect(finalCandidate.status).toBe(ProcessingStatus.FAILED);
-        
+
         // Wait additional time for all retry attempts (exponential backoff: 2s, 4s, 8s)
         await new Promise(resolve => setTimeout(resolve, 15000));
-        
+
         // Verify AI service was called multiple times (3 attempts)
         // Queue retries the entire job, so each retry calls axios again
         expect(callCount).toBeGreaterThanOrEqual(3);
@@ -245,11 +246,11 @@ describe('Upload + AI + Queue Integration', () => {
   describe('Flow 3: Upload File → Queue Service Down → Graceful Error Handling', () => {
     it('should handle queue service failures gracefully', async () => {
       const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
-      
+
       // Mock queue service to simulate it being down
       const queueService = app.get(QueueService);
       const originalAddJob = queueService.addAIProcessingJob;
-      queueService.addAIProcessingJob = jest.fn().mockRejectedValue(
+      queueService.addAIProcessingJob = jest.fn<() => Promise<never>>().mockRejectedValue(
         new Error('Redis connection failed')
       );
 
@@ -286,7 +287,7 @@ describe('Upload + AI + Queue Integration', () => {
     it('should handle multiple concurrent uploads', async () => {
       const testPdfPath = path.join(__dirname, '../../AI_Backend/Sample Resume6.pdf');
       const uploadCount = 3;
-      
+
       // Step 1: Upload multiple files concurrently
       const uploadPromises = Array.from({ length: uploadCount }, (_, i) =>
         request(app.getHttpServer())

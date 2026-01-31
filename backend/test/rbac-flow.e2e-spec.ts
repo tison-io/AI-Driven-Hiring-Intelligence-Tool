@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { AppModule } from '../src/app.module';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { CandidatesService } from '../src/modules/candidates/candidates.service';
@@ -30,7 +31,7 @@ describe('RBAC Flow Tests', () => {
 
   async function setupTestUsers() {
     const timestamp = Date.now();
-    
+
     // Register and login admin with unique email
     await request(app.getHttpServer())
       .post('/auth/register')
@@ -97,11 +98,11 @@ describe('RBAC Flow Tests', () => {
     expect(response.status).toBe(200);
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBeGreaterThan(0);
-    
+
     // Verify recruiter sees their candidate
-    const candidateIds = response.body.map(c => String(c._id || c.id));
+    const candidateIds = response.body.map((c: { _id?: string; id?: string }) => String(c._id || c.id));
     const expectedId = String(recruiterCandidateId);
-    
+
     expect(candidateIds).toContain(expectedId);
   });
 
