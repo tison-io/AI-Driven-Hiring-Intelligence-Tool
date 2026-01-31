@@ -36,9 +36,9 @@ export class AuthService {
     }
 
     // Prevent OAuth-only users from using password login
-    if (user.authProvider === 'google' && !user.password) {
+    if (user.authProvider === 'google') {
       throw new UnauthorizedException(
-        'This account uses Google sign-in. Please use the "Sign in with Google" button.'
+        'This account uses Google sign-in. Please use the "Continue with Google" button.'
       );
     }
 
@@ -56,7 +56,7 @@ export class AuthService {
     }
 
     // Prevent OAuth-only users from changing password
-    if (user.authProvider === 'google' && !user.password) {
+    if (user.authProvider === 'google') {
       throw new BadRequestException(
         'Your account uses Google sign-in. Password management is handled by Google.'
       );
