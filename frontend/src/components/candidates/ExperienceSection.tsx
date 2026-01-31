@@ -5,12 +5,12 @@ export default function ExperienceSection({ experience, education }: ExperienceS
   return (
     <div className="bg-white rounded-xl border border-gray-300 p-6 mb-8">
       <h2 className="text-xl font-bold text-black mb-6">Experience & Education</h2>
-      
+
       {/* Experience */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-6 h-6 rounded flex items-center justify-center">
-            <span className="text-xs text-gray-500"><Briefcase/></span>
+            <span className="text-xs text-gray-500"><Briefcase /></span>
           </div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Experience</h3>
         </div>
@@ -37,14 +37,22 @@ export default function ExperienceSection({ experience, education }: ExperienceS
       <div>
         <div className="flex items-center gap-2 mb-4">
           <div className="w-6 h-6 rounded flex items-center justify-center">
-            <span className="text-xs text-gray-500"><GraduationCap/></span>
+            <span className="text-xs text-gray-500"><GraduationCap /></span>
           </div>
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Education</h3>
         </div>
-        <div className="ml-8">
-           <h4 className="text-black font-semibold">{education?.degree || education?.institution}</h4>
-           <p className="text-cyan-400 text-sm">{education?.institution}</p>
-           <p className="text-gray-400 text-sm">{education?.year_graduated}</p>
+        <div className="space-y-4 ml-8">
+          {education && education.length > 0 ? (
+            education.map((edu, idx) => (
+              <div key={idx}>
+                <h4 className="text-black font-semibold">{edu.degree || edu.institution}</h4>
+                <p className="text-cyan-400 text-sm">{edu.institution}</p>
+                <p className="text-gray-400 text-sm">{edu.year_graduated}</p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-400 text-sm italic">No education listed.</p>
+          )}
         </div>
       </div>
     </div>

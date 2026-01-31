@@ -2,7 +2,6 @@ import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import FormData from 'form-data';
-import { ExtractedCandidateData, ScoringResult, BiasCheckFlag } from './interfaces/ai-response.interface';
 
 @Injectable()
 export class AiService {
@@ -13,163 +12,166 @@ export class AiService {
     this.aiServiceUrl = this.configService.get('AI_SERVICE_URL', 'http://localhost:8000');
   }
 
-  async evaluateCandidateFast(rawText: string, jobRole: string, jobDescription?: string) {
+  async evaluateCandidateGraph(rawText: string, jobRole: string, jobDescription?: string) {
     try {
-      this.logger.log('Starting Stage 1: Fast Analysis via /analyze/fast');
+      this.logger.log('Starting LangGraph Evaluation via /analyze/graph');
       const startTime = Date.now();
 
-      const formData = new FormData();
-      formData.append('raw_text', rawText);
-      formData.append('role_name', jobRole);
-      const finalJD = jobDescription || this.getJobDescription(jobRole);
-      formData.append('job_description', finalJD);
-
-      const response = await axios.post(
-        `${this.aiServiceUrl}/analyze/fast`,
-        formData,
-        {
-          headers: { ...formData.getHeaders() },
-          timeout: 30000
-        }
-      );
-
-      const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      this.logger.log(`Stage 1 complete in ${processingTime}s`);
-
-      const { role_fit_score, scoring_breakdown, payload_for_stage_2 } = response.data;
-
-      // Extract candidate data from the payload to show the profile immediately
-      const candidateData = payload_for_stage_2?.stage_1_result?.candidate_data;
-
-      if (!candidateData) {
-        this.logger.warn('Candidate data not found in Stage 1 payload. Some profile details may be missing.');
-      }
-
-      // Transform partial result for Frontend (Score + Profile)
-      const frontendData = this.transformStage1Response(candidateData || {}, role_fit_score, scoring_breakdown);
-
-      return {
-        ...frontendData,
-        stage2Payload: payload_for_stage_2 // Frontend must send this back for Stage 2
-      };
-
-    } catch (error) {
-      this.handleError(error, 'Stage 1 (Fast) evaluation failed');
-    }
-  }
-
-  async evaluateCandidateDetailed(stage2Payload: any) {
-    try {
-      this.logger.log('Starting Stage 2: Detailed Analysis via /analyze/detailed');
-      const startTime = Date.now();
-
-      const response = await axios.post(
-        `${this.aiServiceUrl}/analyze/detailed`,
-        stage2Payload,
-        {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 60000
-        }
-      );
-
-      const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-      this.logger.log(`Stage 2 complete in ${processingTime}s`);
-
-      return this.transformStage2Response(response.data);
-
-    } catch (error) {
-      this.handleError(error, 'Stage 2 (Detailed) evaluation failed');
-    }
-  }
-
-  async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
-    try {
-      this.logger.log('Starting Legacy Monolithic Evaluation via /analyze');
       const formData = new FormData();
       formData.append('raw_text', rawText);
       formData.append('role_name', jobRole);
       formData.append('job_description', jobDescription || this.getJobDescription(jobRole));
 
-      const response = await axios.post(`${this.aiServiceUrl}/analyze`, formData, {
-        headers: { ...formData.getHeaders() },
-        timeout: 60000
-      });
+      const response = await axios.post(
+        `${this.aiServiceUrl}/analyze/graph`,
+        formData,
+        {
+          headers: { ...formData.getHeaders() },
+          timeout: 120000
+        }
+      );
 
-      const { candidate_profile, evaluation } = response.data;
-      return this.transformAiResponse(candidate_profile, evaluation);
+      const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      this.logger.log(`Graph Analysis complete in ${processingTime}s`);
+
+      const { final_score, summary, agent_reports, parsed_profile } = response.data;
+
+      return this.transformGraphResponse(final_score, summary, agent_reports, parsed_profile);
 
     } catch (error) {
-      this.handleError(error, 'Legacy AI evaluation failed');
+      this.handleError(error, 'LangGraph evaluation failed');
     }
   }
 
-  private transformStage1Response(extractedData: ExtractedCandidateData, score: number, breakdown: any) {
-    const relevantExperience = breakdown.relevant_years_calculated !== undefined
-      ? breakdown.relevant_years_calculated
-      : (extractedData.total_years_experience || 0);
+  private transformGraphResponse(finalScore: number, summary: any, agentReports: any, profile: any) {
+    // Defensive null checks - use safe defaults for all response-derived objects
+    const safeSummary = summary || {};
+    const safeAgentReports = agentReports || {};
+    const safeProfile = profile || {};
 
-    return {
-      name: extractedData.candidate_name || 'Anonymous',
-      roleFitScore: score,
-      isShortlisted: score >= 80,
-      skills: extractedData.skills || [],
-      experienceYears: relevantExperience,
-      scoringBreakdown: breakdown,
-      workExperience: extractedData.work_experience?.map((job) => ({
-        company: job.company || '',
-        jobTitle: job.job_title || job.jobTitle || '',
-        startDate: job.start_date || job.startDate || '',
-        endDate: job.end_date || job.endDate || '',
-        description: job.description || '',
-        technologies: job.technologies_used || job.technologies || []
-      })) || [],
-      education: extractedData.education || [],
-      certifications: extractedData.certifications || []
+    // Initialize categoryScores with safe defaults and validate expected keys
+    const categoryScores = safeSummary?.category_scores || {};
+    const scoringBreakdown = {
+      skill_match: categoryScores?.competency ?? 0,
+      experience_relevance: categoryScores?.experience ?? 0,
+      education_fit: categoryScores?.soft_skills ?? 0,
+      certifications: safeAgentReports?.competency_agent?.score ?? categoryScores?.competency ?? 0
     };
-  }
 
-  private transformStage2Response(scoringResult: ScoringResult) {
-    const keyStrengths = scoringResult.key_strengths?.map((s) =>
-      typeof s === 'string' ? s : (s.strength || JSON.stringify(s))
-    ) || [];
+    // Get candidate's actual skills (normalized to lowercase for comparison)
+    const candidateSkills = (safeProfile?.skills || []).map((s: string) => s.toLowerCase().trim());
 
-    const potentialWeaknesses = scoringResult.potential_weaknesses?.map((w) =>
-      typeof w === 'string' ? w : (w.weakness || JSON.stringify(w))
-    ) || [];
+    // Filter out "missing" skills that the candidate actually has
+    const reportedMissingSkills = safeAgentReports?.competency_agent?.missing_competencies || [];
+    const actuallyMissingSkills = reportedMissingSkills.filter((skill: string) => {
+      const normalizedSkill = skill.toLowerCase().trim();
+      // Check if candidate has this skill (exact match or partial match)
+      return !candidateSkills.some((candidateSkill: string) =>
+        candidateSkill.includes(normalizedSkill) || normalizedSkill.includes(candidateSkill)
+      );
+    });
 
-    return {
-      keyStrengths,
-      potentialWeaknesses,
-      missingSkills: scoringResult.missing_skills || [],
-      interviewQuestions: scoringResult.recommended_interview_questions || [],
-      confidenceScore: scoringResult.confidence_score || 0,
-      biasCheck: this.formatBiasCheck(scoringResult.bias_check_flag),
-    };
-  }
+    // Guard all profile field accesses with optional chaining and fallback arrays
+    const workExperience = (safeProfile?.work_experience || []).map((job: any) => ({
+      company: job?.company || '',
+      jobTitle: job?.job_title || '',
+      startDate: job?.start_date || '',
+      endDate: job?.end_date || '',
+      description: job?.description || ''
+    }));
 
-  private transformAiResponse(extractedData: ExtractedCandidateData, scoringResult: ScoringResult) {
-    const stage1 = this.transformStage1Response(extractedData, scoringResult.role_fit_score, scoringResult.scoring_breakdown);
-    const stage2 = this.transformStage2Response(scoringResult);
-    return { ...stage1, ...stage2 };
-  }
+    // Calculate dynamic confidence score based on profile completeness
+    const profileFields = [
+      safeProfile?.candidate_name,
+      safeProfile?.skills?.length > 0,
+      safeProfile?.work_experience?.length > 0,
+      safeProfile?.education?.length > 0,
+      safeProfile?.total_years_experience != null
+    ];
+    const filledFields = profileFields.filter(Boolean).length;
+    const profileCompleteness = (filledFields / profileFields.length) * 100;
 
-  private formatBiasCheck(biasFlag?: BiasCheckFlag): string {
-    if (!biasFlag) return 'No bias analysis available';
-    if (biasFlag.detected) {
-      return `Potential bias detected: ${biasFlag.flags?.join(', ') || 'Unknown bias factors'}`;
+    // Get evaluation scores for bias detection
+    const competencyScore = categoryScores?.competency ?? 0;
+    const experienceScore = categoryScores?.experience ?? 0;
+    const softSkillsScore = categoryScores?.soft_skills ?? 0;
+    const inferredJobFamily = safeAgentReports?.competency_agent?.inferred_job_family || '';
+
+    // Check for explicit JD-Role mismatch from competency agent
+    const explicitJdRoleMismatch = safeAgentReports?.competency_agent?.jd_role_mismatch === true;
+
+    // Check for jurisdiction/licensing issues (qualified but wrong jurisdiction)
+    const hasJurisdictionIssue = safeAgentReports?.competency_agent?.jurisdiction_issue === true;
+
+    // Fallback detection: high experience/culture but zero/very low competency indicates mismatch
+    // BUT only if there's no jurisdiction issue (jurisdiction issues aren't true mismatches)
+    const hasHighExperienceOrCulture = experienceScore >= 70 || softSkillsScore >= 70;
+    const hasVeryLowCompetency = competencyScore <= 10;
+    const inferredJdRoleMismatch = hasHighExperienceOrCulture && hasVeryLowCompetency && !hasJurisdictionIssue;
+
+    // Use explicit flag if available, otherwise use inferred detection
+    const isJdRoleMismatch = explicitJdRoleMismatch || inferredJdRoleMismatch;
+
+    // Detect other bias signals
+    const hasMissingCriticalSkills = actuallyMissingSkills.length > 3;
+    const hasVeryLowFinalScore = (finalScore ?? 0) < 40;
+
+    // Calculate bias penalty
+    let biasPenalty = 0;
+    let biasReasons: string[] = [];
+
+    if (isJdRoleMismatch) {
+      biasPenalty = 70; // Maximum penalty for JD-Role mismatch
+      biasReasons.push(`JD-Role mismatch detected (inferred: ${inferredJobFamily || 'unknown'})`);
+    } else if (hasJurisdictionIssue) {
+      // Jurisdiction issues get moderate penalty - candidate is qualified but needs license transfer
+      biasPenalty = 50;
+      biasReasons.push('Jurisdiction/licensing issue: candidate may need license transfer');
     }
-    return 'No significant bias detected in evaluation';
+    if (hasMissingCriticalSkills && !isJdRoleMismatch && !hasJurisdictionIssue) {
+      biasPenalty = Math.max(biasPenalty, 30);
+      biasReasons.push('Significant skill gaps detected');
+    }
+    if (hasVeryLowFinalScore && !isJdRoleMismatch && !hasJurisdictionIssue) {
+      biasPenalty = Math.max(biasPenalty, 20);
+      biasReasons.push('Low overall fit score');
+    }
+
+    // Apply bias penalty to confidence score
+    const confidenceScore = Math.max(0, Math.min(100, Math.round(profileCompleteness - biasPenalty)));
+
+    // Determine bias check status
+    const biasCheck = biasReasons.length > 0
+      ? `REVIEW REQUIRED: ${biasReasons.join('; ')}`
+      : "No bias detected";
+
+    return {
+      name: safeProfile?.candidate_name || 'Anonymous',
+      email: safeProfile?.email || '',
+      skills: safeProfile?.skills || [],
+      // Use relevant_years_validated from experience agent (more accurate for role fit)
+      // Falls back to profile total_years_experience if not available
+      experienceYears: safeAgentReports?.experience_agent?.relevant_years_validated ?? safeProfile?.total_years_experience ?? 0,
+      workExperience: workExperience,
+      education: safeProfile?.education || [],
+      certifications: safeProfile?.certifications || [],
+
+      roleFitScore: finalScore ?? 0,
+      isShortlisted: (finalScore ?? 0) >= 75,
+      scoringBreakdown: scoringBreakdown,
+
+      keyStrengths: safeSummary?.strengths || [],
+      potentialWeaknesses: safeSummary?.weaknesses || [],
+      missingSkills: actuallyMissingSkills,
+      interviewQuestions: safeSummary?.interview_questions || [],
+
+      confidenceScore: confidenceScore,
+      biasCheck: biasCheck
+    };
   }
 
   private getJobDescription(jobRole: string): string {
-    const jobDescriptions = {
-      'Backend Engineer': 'Develop server-side applications using Node.js, Python, or Java. Experience with databases, APIs, and cloud services required.',
-      'Frontend Developer': 'Build user interfaces using React, Vue, or Angular. Strong HTML, CSS, JavaScript skills required.',
-      'Full Stack Developer': 'Work on both frontend and backend development. Experience with modern web frameworks and databases.',
-      'Data Analyst': 'Analyze data using SQL, Python, R. Experience with data visualization tools and statistical analysis.',
-      'DevOps Engineer': 'Manage CI/CD pipelines, cloud infrastructure, and deployment automation. Docker, Kubernetes experience preferred.'
-    };
-    return jobDescriptions[jobRole] || `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
+    return `Professional role requiring relevant technical skills and experience in ${jobRole}.`;
   }
 
   private handleError(error: any, context: string) {

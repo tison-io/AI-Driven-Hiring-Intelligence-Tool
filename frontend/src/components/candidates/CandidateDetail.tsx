@@ -43,7 +43,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
 
       // Create blob from response
       const blob = new Blob([response.data], { type: 'text/html' })
-      
+
       // Trigger download
       const downloadUrl = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -88,9 +88,9 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
           biasCheck={candidate.biasCheck}
         />
 
-         <ExperienceSection
+        <ExperienceSection
           experience={candidate.experience || candidate.workExperience || []}
-          education={candidate.education?.[0]}
+          education={candidate.education || []}
         />
 
         <AIAnalysisSection

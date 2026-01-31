@@ -4,6 +4,7 @@ openai
 python-dotenv
 pydantic
 langchain
+langchain-core
 langchain-openai
 tiktoken
 pypdf
@@ -12,3 +13,4 @@ python-multipart
 numpy
 scikit-learn
 langsmith
+langgraph

@@ -32,6 +32,7 @@ describe('CandidatesService', () => {
 
     // Add static methods to the constructor function
     mockCandidateModel.find = jest.fn().mockReturnThis();
+    mockCandidateModel.sort = jest.fn().mockReturnThis();
     mockCandidateModel.findById = jest.fn().mockReturnThis();
     mockCandidateModel.findByIdAndUpdate = jest.fn().mockReturnThis();
     mockCandidateModel.findByIdAndDelete = jest.fn().mockReturnThis();
