@@ -44,21 +44,25 @@ export class AiService {
   }
 
   private transformGraphResponse(finalScore: number, summary: any, agentReports: any, profile: any) {
+    // Defensive null checks - use safe defaults for all response-derived objects
+    const safeSummary = summary || {};
+    const safeAgentReports = agentReports || {};
+    const safeProfile = profile || {};
 
-    const categoryScores = summary.category_scores || {};
-
+    // Initialize categoryScores with safe defaults and validate expected keys
+    const categoryScores = safeSummary?.category_scores || {};
     const scoringBreakdown = {
-      skill_match: categoryScores.competency || 0,
-      experience_relevance: categoryScores.experience || 0,
-      education_fit: categoryScores.soft_skills || 0,
-      certifications: categoryScores.competency || 0
+      skill_match: categoryScores?.competency ?? 0,
+      experience_relevance: categoryScores?.experience ?? 0,
+      education_fit: categoryScores?.soft_skills ?? 0,
+      certifications: categoryScores?.competency ?? 0
     };
 
     // Get candidate's actual skills (normalized to lowercase for comparison)
-    const candidateSkills = (profile.skills || []).map((s: string) => s.toLowerCase().trim());
+    const candidateSkills = (safeProfile?.skills || []).map((s: string) => s.toLowerCase().trim());
 
     // Filter out "missing" skills that the candidate actually has
-    const reportedMissingSkills = agentReports.competency_agent?.missing_competencies || [];
+    const reportedMissingSkills = safeAgentReports?.competency_agent?.missing_competencies || [];
     const actuallyMissingSkills = reportedMissingSkills.filter((skill: string) => {
       const normalizedSkill = skill.toLowerCase().trim();
       // Check if candidate has this skill (exact match or partial match)
@@ -67,29 +71,32 @@ export class AiService {
       );
     });
 
-    return {
-      name: profile.candidate_name || 'Anonymous',
-      email: profile.email || '',
-      skills: profile.skills || [],
-      experienceYears: profile.total_years_experience || 0,
-      workExperience: profile.work_experience?.map((job: any) => ({
-        company: job.company,
-        jobTitle: job.job_title,
-        startDate: job.start_date,
-        endDate: job.end_date,
-        description: job.description
-      })) || [],
-      education: profile.education || [],
-      certifications: profile.certifications || [],
+    // Guard all profile field accesses with optional chaining and fallback arrays
+    const workExperience = (safeProfile?.work_experience || []).map((job: any) => ({
+      company: job?.company || '',
+      jobTitle: job?.job_title || '',
+      startDate: job?.start_date || '',
+      endDate: job?.end_date || '',
+      description: job?.description || ''
+    }));
 
-      roleFitScore: finalScore,
-      isShortlisted: finalScore >= 75,
+    return {
+      name: safeProfile?.candidate_name || 'Anonymous',
+      email: safeProfile?.email || '',
+      skills: safeProfile?.skills || [],
+      experienceYears: safeProfile?.total_years_experience ?? 0,
+      workExperience: workExperience,
+      education: safeProfile?.education || [],
+      certifications: safeProfile?.certifications || [],
+
+      roleFitScore: finalScore ?? 0,
+      isShortlisted: (finalScore ?? 0) >= 75,
       scoringBreakdown: scoringBreakdown,
 
-      keyStrengths: summary.strengths || [],
-      potentialWeaknesses: summary.weaknesses || [],
+      keyStrengths: safeSummary?.strengths || [],
+      potentialWeaknesses: safeSummary?.weaknesses || [],
       missingSkills: actuallyMissingSkills,
-      interviewQuestions: summary.interview_questions || [],
+      interviewQuestions: safeSummary?.interview_questions || [],
 
       confidenceScore: 90,
       biasCheck: "No bias detected"
