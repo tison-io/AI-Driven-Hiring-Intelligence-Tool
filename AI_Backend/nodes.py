@@ -16,7 +16,6 @@ from prompts import (
 )
 
 dotenv.load_dotenv()
-client=os.getenv("OPENAI_API_KEY")
 
 llm=ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
@@ -84,6 +83,10 @@ def extract_resume_node(state: AgentState):
 
     try:
         result=chain.invoke({"resume_text": state["resume_text"]})
+        
+        if not result.get("is_valid_resume", True):
+            print("[RESUME_EXTRACTION] Warning: Document may not be a valid resume")
+            log_stage("RESUME_EXTRACTION_WARNING", {"is_valid_resume": False}, is_output=True)
         
         work_experience = result.get("work_experience", [])
         if work_experience:
@@ -211,6 +214,7 @@ def culture_agent_node(state: AgentState):
     chain = CULTURE_EVAL_PROMPT | llm | JsonOutputParser()
     try:
         result = chain.invoke({
+            "role_name": state.get("role_name", ""),
             "jd_responsibilities": json.dumps(jd.get("responsibilities", [])),
             "candidate_summary": candidate.get("summary", ""),
             "candidate_evidence": json.dumps(candidate.get("capability_evidence", []))
@@ -267,5 +271,4 @@ def aggregator_node(state: AgentState):
     except Exception as e:
         error_result = {"final_score": 0, "final_reasoning": str(e), "error": True}
         log_stage("AGGREGATOR_ERROR", error_result, is_output=True)
-        return {"final_evaluation": {"final_score": 0, "final_reasoning": str(e)}}
         return {"final_evaluation": {"final_score": 0, "final_reasoning": str(e)}}

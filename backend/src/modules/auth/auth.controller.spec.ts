@@ -7,6 +7,7 @@ import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -55,7 +56,7 @@ describe('AuthController', () => {
           useValue: mockCloudinaryService,
         },
         {
-          provide: 'JwtService',
+          provide: JwtService,
           useValue: { sign: jest.fn(), verify: jest.fn() },
         },
       ],

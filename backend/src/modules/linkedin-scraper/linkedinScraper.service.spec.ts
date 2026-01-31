@@ -328,8 +328,8 @@ describe('ApifyService', () => {
         service.scrapeLinkedInProfiles(['invalid-url'])
       ).rejects.toThrow(HttpException);
 
-      // Note: Non-retryable errors still get retried in current implementation,
-      // so we can't assert on httpService.get call count here
+      // InvalidLinkedInUrlException is now non-retryable and fails immediately
+      // The URL validation happens before httpService.get is called
     }, 15000);
 
     it('should fail after max retries', async () => {

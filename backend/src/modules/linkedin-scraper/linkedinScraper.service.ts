@@ -23,7 +23,7 @@ export class ApifyService {
 	constructor(
 		private readonly httpService: HttpService,
 		private readonly apifyConfig: ApifyConfig
-	) {}
+	) { }
 
 	async scrapeLinkedInProfiles(
 		profileUrls: string[]
@@ -81,7 +81,7 @@ export class ApifyService {
 			attempt++
 		) {
 			try {
-					this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
+				this.logger.debug(`Attempt ${attempt} to call RapidAPI`);
 				this.logger.debug(`Using API key: ${this.apifyConfig.rapidApiKey?.substring(0, 10)}...`);
 				this.logger.debug(`Endpoint: ${this.apifyConfig.linkedinScraperEndpoint}`);
 
@@ -144,6 +144,10 @@ export class ApifyService {
 				}
 				if (error.response?.status === 429) {
 					throw new RateLimitExceededException();
+				}
+				// Don't retry for invalid URL errors - fail immediately
+				if (error instanceof InvalidLinkedInUrlException) {
+					throw error;
 				}
 
 				if (attempt < this.apifyConfig.maxRetries) {

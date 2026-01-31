@@ -55,7 +55,7 @@ export class AiService {
       skill_match: categoryScores?.competency ?? 0,
       experience_relevance: categoryScores?.experience ?? 0,
       education_fit: categoryScores?.soft_skills ?? 0,
-      certifications: categoryScores?.competency ?? 0
+      certifications: safeAgentReports?.competency_agent?.score ?? categoryScores?.competency ?? 0
     };
 
     // Get candidate's actual skills (normalized to lowercase for comparison)
@@ -80,11 +80,78 @@ export class AiService {
       description: job?.description || ''
     }));
 
+    // Calculate dynamic confidence score based on profile completeness
+    const profileFields = [
+      safeProfile?.candidate_name,
+      safeProfile?.skills?.length > 0,
+      safeProfile?.work_experience?.length > 0,
+      safeProfile?.education?.length > 0,
+      safeProfile?.total_years_experience != null
+    ];
+    const filledFields = profileFields.filter(Boolean).length;
+    const profileCompleteness = (filledFields / profileFields.length) * 100;
+
+    // Get evaluation scores for bias detection
+    const competencyScore = categoryScores?.competency ?? 0;
+    const experienceScore = categoryScores?.experience ?? 0;
+    const softSkillsScore = categoryScores?.soft_skills ?? 0;
+    const inferredJobFamily = safeAgentReports?.competency_agent?.inferred_job_family || '';
+
+    // Check for explicit JD-Role mismatch from competency agent
+    const explicitJdRoleMismatch = safeAgentReports?.competency_agent?.jd_role_mismatch === true;
+
+    // Check for jurisdiction/licensing issues (qualified but wrong jurisdiction)
+    const hasJurisdictionIssue = safeAgentReports?.competency_agent?.jurisdiction_issue === true;
+
+    // Fallback detection: high experience/culture but zero/very low competency indicates mismatch
+    // BUT only if there's no jurisdiction issue (jurisdiction issues aren't true mismatches)
+    const hasHighExperienceOrCulture = experienceScore >= 70 || softSkillsScore >= 70;
+    const hasVeryLowCompetency = competencyScore <= 10;
+    const inferredJdRoleMismatch = hasHighExperienceOrCulture && hasVeryLowCompetency && !hasJurisdictionIssue;
+
+    // Use explicit flag if available, otherwise use inferred detection
+    const isJdRoleMismatch = explicitJdRoleMismatch || inferredJdRoleMismatch;
+
+    // Detect other bias signals
+    const hasMissingCriticalSkills = actuallyMissingSkills.length > 3;
+    const hasVeryLowFinalScore = (finalScore ?? 0) < 40;
+
+    // Calculate bias penalty
+    let biasPenalty = 0;
+    let biasReasons: string[] = [];
+
+    if (isJdRoleMismatch) {
+      biasPenalty = 70; // Maximum penalty for JD-Role mismatch
+      biasReasons.push(`JD-Role mismatch detected (inferred: ${inferredJobFamily || 'unknown'})`);
+    } else if (hasJurisdictionIssue) {
+      // Jurisdiction issues get moderate penalty - candidate is qualified but needs license transfer
+      biasPenalty = 50;
+      biasReasons.push('Jurisdiction/licensing issue: candidate may need license transfer');
+    }
+    if (hasMissingCriticalSkills && !isJdRoleMismatch && !hasJurisdictionIssue) {
+      biasPenalty = Math.max(biasPenalty, 30);
+      biasReasons.push('Significant skill gaps detected');
+    }
+    if (hasVeryLowFinalScore && !isJdRoleMismatch && !hasJurisdictionIssue) {
+      biasPenalty = Math.max(biasPenalty, 20);
+      biasReasons.push('Low overall fit score');
+    }
+
+    // Apply bias penalty to confidence score
+    const confidenceScore = Math.max(0, Math.min(100, Math.round(profileCompleteness - biasPenalty)));
+
+    // Determine bias check status
+    const biasCheck = biasReasons.length > 0
+      ? `REVIEW REQUIRED: ${biasReasons.join('; ')}`
+      : "No bias detected";
+
     return {
       name: safeProfile?.candidate_name || 'Anonymous',
       email: safeProfile?.email || '',
       skills: safeProfile?.skills || [],
-      experienceYears: safeProfile?.total_years_experience ?? 0,
+      // Use relevant_years_validated from experience agent (more accurate for role fit)
+      // Falls back to profile total_years_experience if not available
+      experienceYears: safeAgentReports?.experience_agent?.relevant_years_validated ?? safeProfile?.total_years_experience ?? 0,
       workExperience: workExperience,
       education: safeProfile?.education || [],
       certifications: safeProfile?.certifications || [],
@@ -98,8 +165,8 @@ export class AiService {
       missingSkills: actuallyMissingSkills,
       interviewQuestions: safeSummary?.interview_questions || [],
 
-      confidenceScore: 90,
-      biasCheck: "No bias detected"
+      confidenceScore: confidenceScore,
+      biasCheck: biasCheck
     };
   }
 

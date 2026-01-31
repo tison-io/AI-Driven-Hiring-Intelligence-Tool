@@ -154,7 +154,25 @@ Only output valid JSON.
 COMPETENCY_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
 You are a TalentScanAI Competency Evaluator.
-Evaluate EACH JD requirement independently using:
+
+### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
+Determine if the JD requirements align with the stated ROLE NAME.
+
+jd_role_mismatch = true ONLY when the JD is for a COMPLETELY DIFFERENT PROFESSION than the ROLE NAME.
+Examples of TRUE mismatch:
+- ROLE = "Nurse" but JD has software/programming requirements → TRUE mismatch
+- ROLE = "Software Engineer" but JD has nursing/healthcare requirements → TRUE mismatch
+
+Examples that are NOT mismatches (jd_role_mismatch = false):
+- ROLE = "Nurse" and JD requires NY State license but candidate has Kenya license → NOT a mismatch (same profession, different jurisdiction)
+- ROLE = "Nurse" and JD requires BCLS but candidate has BLS → NOT a mismatch (evaluate as competency gap)
+
+If jd_role_mismatch = true:
+- Set score = 0
+- Use inferred requirements for the ROLE NAME
+
+### COMPETENCY EVALUATION (when jd_role_mismatch = false)
+Evaluate EACH requirement independently using:
 * keyword match
 * semantic equivalence
 * evidence support
@@ -166,39 +184,48 @@ Match sources allowed:
 - education
 
 # MATCH STRENGTH LEVELS
-Strong match = exact tool/skill + evidence
-Moderate match = related tool/domain + evidence
+Strong match = exact skill/credential + evidence
+Moderate match = equivalent credential or related skill + evidence
 Weak match = declared skill only
 
-# EQUIVALENCY RULES
-Use industry equivalence
+# EQUIVALENCY RULES - IMPORTANT
+1. Education equivalency:
+   - "BSc. Nursing" / "Bachelor of Science in Nursing" = "Graduation from nursing program" = "BSN"
+   - Nursing diploma/degree from ANY country = "Graduation from a Nursing program" (regardless of accreditation body)
+   - Different naming conventions for same degree level are EQUIVALENT
 
-## EXAMPLES:
-SQL → PostgreSQL, MySQL, SQL Server
-NoSQL → MongoDB, Redis
-Cloud → AWS, Azure, GCP
-Agile → Scrum, Kanban
+2. Certification equivalency:
+   - "Basic Life Support (BLS)" ≈ "Basic Life Saver (BCLS)" - same core competency
+   - "First Aid certified" ≈ basic emergency response training
 
-# HARD REQUIREMENTS
-Licenses & certs = strict match
-Wrong jurisdiction ≠ match
+3. Licensing considerations:
+   - Wrong jurisdiction license (e.g., Kenya vs NY) = candidate HAS the skill but LACKS the specific jurisdiction license
+   - This should be flagged as "Missing: [State] license" NOT as "Missing: Nursing qualification"
+   - Do NOT list general qualifications as missing if candidate has equivalent from another jurisdiction
 
 # SCORING
-score = matched / total * 100
-apply penalties:
-missing license -25
-missing required cert -15 each
+If jd_role_mismatch = true, score MUST be 0.
+If total requirements is 0, set score = 100.
+Otherwise: score = (matched / total) * 100
+Apply penalties:
+- missing jurisdiction-specific license: -25
+- missing required cert: -15 each
 
-Never output zero unless nothing matches.
+# FLAG FOR REVIEW
+If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
+- Set jurisdiction_issue = true
+- This helps distinguish "unqualified candidate" from "qualified but needs license transfer"
 
 # OUTPUT JSON ONLY
 {{
     "inferred_job_family": "string",
+    "jd_role_mismatch": boolean,
+    "jurisdiction_issue": boolean,
     "critical_success_factors": ["string"],
     "score": number,
     "reasoning": "string",
     "matched_competencies": ["string"],
-    "missing_competencies": ["string"]
+    "missing_competencies": ["string (be specific: 'NY State RN license' not 'Nursing qualification')"]
 }}
 """),
 ("user", """
@@ -213,14 +240,31 @@ EXP_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
 You are a TalentScanAI Seniority & Relevance Evaluator.
 
+### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
+Before evaluating, determine if the JD requirements align with the stated ROLE NAME.
+1. Infer the job family from the ROLE NAME (e.g., "Nurse" → Healthcare/Nursing)
+2. Check if JD requirements match that job family
+3. If JD requirements are for a DIFFERENT profession than the ROLE NAME:
+   - Set jd_role_mismatch = true
+   - IGNORE the JD requirements completely
+   - Infer standard experience requirements for the ROLE NAME
+   - Set relevant_years_validated = 0 if candidate has no experience in the ROLE field
+   - Add "JD-Role mismatch: candidate experience is in [their field], not [ROLE NAME]" to red_flags
+
+Example: If ROLE = "Nurse" but candidate has software engineering experience:
+- jd_role_mismatch = true
+- relevant_years_validated = 0 (no nursing experience)
+- score = 0
+- red_flags = ["JD-Role mismatch: candidate has software engineering experience, not nursing"]
+
 # IMPORTANT: PRE-CALCULATED EXPERIENCE
 The total years of experience has been pre-calculated for you.
-YOU MUST USE the provided total_years_calculated value as relevant_years_validated.
-DO NOT recalculate the years yourself - use the provided value.
+ONLY use this value if the experience is RELEVANT to the ROLE NAME.
+If candidate's experience is in a different field than the ROLE, relevant_years = 0.
 
-# EVALUATION CRITERIA
+# EVALUATION CRITERIA (only if JD aligns with role)
 Evaluate:
-* Compare total_years_calculated vs JD required years
+* Compare total_years_calculated vs required years (from JD or inferred)
 * Role similarity and relevance
 * Career progression
 * Domain continuity
@@ -233,12 +277,14 @@ Penalize:
 - Regressions without reason
 
 # SCORING GUIDE
-Use the formula:
-Score = (relevant_years_validated / required_years) * 100
-If relevant_years_validated is greater than required_years, then the score should be 100.
+If jd_role_mismatch = true and experience is unrelated, score = 0.
+If required_years is 0 or missing, set score = 100 (no requirement means full match).
+Otherwise: Score = (relevant_years_validated / required_years) * 100
+If relevant_years_validated >= required_years, cap score at 100.
 
 # Return strict JSON.
 {{
+    "jd_role_mismatch": boolean,
     "score": number,
     "reasoning": "string",
     "relevant_years_validated": number,
@@ -258,20 +304,48 @@ CANDIDATE EDUCATION: {candidate_education}
 
 CULTURE_EVAL_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """You are the TalentScanAI Cultural Fit Evaluator.
-    Analyze the candidate for SOFT SKILLS, LEADERSHIP, and CULTURAL ALIGNMENT.
-    Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
+    
+### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
+Before evaluating, determine if the JD responsibilities align with the stated ROLE NAME.
+1. Infer the job family from the ROLE NAME (e.g., "Nurse" → Healthcare/Nursing)
+2. Check if JD responsibilities match that job family
+3. If JD responsibilities are for a DIFFERENT profession than the ROLE NAME:
+   - Set jd_role_mismatch = true
+   - IGNORE the JD responsibilities completely
+   - Evaluate soft skills relevant to the ROLE NAME instead
+   - The reasoning MUST reference the ROLE NAME, not the JD profession
 
-    # CRITICAL: Output ONLY valid JSON. No markdown, no explanations, no headers, no additional text.
-    Your entire response must be a single valid JSON object:
-    {{
-        "score": <integer 0-100>,
-        "reasoning": "<concise string explaining the score>",
-        "soft_skills_detected": ["<skill 1>", "<skill 2>", ...]
-    }}
+### SCORING RULES FOR JD-ROLE MISMATCH
+If jd_role_mismatch = true:
+- Identify soft skills required for the ROLE NAME (not the JD profession)
+- If candidate has NO evidence of role-specific soft skills → score = 0
+- If candidate has SOME transferable soft skills → score = 10-30 max
+- Never give a score above 30 if jd_role_mismatch = true AND candidate lacks core role skills
+
+Example: If ROLE = "Nurse" but JD has software development responsibilities:
+- jd_role_mismatch = true
+- Required nursing soft skills: empathy, patient communication, bedside manner, compassion, stress management in clinical settings
+- If candidate is a software engineer with no nursing evidence → score = 0
+- Reasoning should say "candidate lacks soft skills for the Nurse role" (NOT "Senior Software Engineer")
+
+### SOFT SKILLS EVALUATION (if JD aligns with role)
+Analyze the candidate for SOFT SKILLS, LEADERSHIP, and CULTURAL ALIGNMENT.
+Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
+
+# CRITICAL: Output ONLY valid JSON. No markdown, no explanations, no headers, no additional text.
+Your entire response must be a single valid JSON object:
+{{
+    "jd_role_mismatch": boolean,
+    "score": <integer 0-100>,
+    "reasoning": "<explain score in context of ROLE NAME, not JD profession>",
+    "soft_skills_detected": ["<skill 1>", "<skill 2>", ...],
+    "missing_role_skills": ["<skill needed for ROLE NAME but not detected>"]
+}}
 
     """),
 
     ("user", """
+    ROLE: {role_name}
     JD RESPONSIBILITIES: {jd_responsibilities}
     CANDIDATE SUMMARY: {candidate_summary}
     CANDIDATE EVIDENCE: {candidate_evidence}
@@ -290,16 +364,17 @@ High tool density → increase competency weight
 High responsibility density → increase experience weight
 High collaboration language → increase soft skill weight
 Licensing/certification language → mark as critical gate
-Normalize weights to total 100.
+Normalize weights to sum to 1.0 (e.g., 0.5, 0.3, 0.2).
 
 # CRITICAL REQUIREMENT GATE
 If JD contains mandatory license/certification and competency report shows missing → cap final_score ≤ 40.
 
 # SCORING FORMULA
 final_score =
-competency_score * competency_weight +
-experience_score * experience_weight +
-soft_skill_score * soft_weight
+(competency_score * competency_weight) +
+(experience_score * experience_weight) +
+(soft_skill_score * soft_weight)
+Since weights sum to 1.0, final_score will be in range 0-100.
 
 # REQUIREMENT COVERAGE CHECK
 Evaluate each evaluation criterion against matched competencies and evidence using equivalency rules.
