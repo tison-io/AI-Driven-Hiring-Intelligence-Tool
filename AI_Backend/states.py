@@ -8,6 +8,7 @@ class InputState(TypedDict):
 class AgentState(InputState):
     candidate_profile: Optional[Dict[str, Any]]
     extracted_scoring_rules: Optional[Dict[str, Any]]
+    jd_role_alignment: Optional[Dict[str, Any]]  # Centralized JD-Role alignment check result
     tech_evaluation: Optional[Dict[str, Any]]  
     experience_evaluation: Optional[Dict[str, Any]] 
     culture_evaluation: Optional[Dict[str, Any]] 

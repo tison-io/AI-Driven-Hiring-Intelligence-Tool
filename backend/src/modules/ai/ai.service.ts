@@ -61,9 +61,15 @@ export class AiService {
     // Get candidate's actual skills (normalized to lowercase for comparison)
     const candidateSkills = (safeProfile?.skills || []).map((s: string) => s.toLowerCase().trim());
 
+    // Combine missing skills from both competency agent and behavioral/culture agent
+    const missingCompetencies = safeAgentReports?.competency_agent?.missing_competencies || [];
+    const missingRoleSkills = safeAgentReports?.behavioral_agent?.missing_role_skills || [];
+
+    // Merge both sources of missing skills, removing duplicates
+    const allReportedMissingSkills = [...new Set([...missingCompetencies, ...missingRoleSkills])];
+
     // Filter out "missing" skills that the candidate actually has
-    const reportedMissingSkills = safeAgentReports?.competency_agent?.missing_competencies || [];
-    const actuallyMissingSkills = reportedMissingSkills.filter((skill: string) => {
+    const actuallyMissingSkills = allReportedMissingSkills.filter((skill: string) => {
       const normalizedSkill = skill.toLowerCase().trim();
       // Check if candidate has this skill (exact match or partial match)
       return !candidateSkills.some((candidateSkill: string) =>

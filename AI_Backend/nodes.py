@@ -9,6 +9,7 @@ from states import AgentState
 from prompts import (
     RESUME_EXTRACTION_PROMPT,
     JD_PARSING_PROMPT,
+    JD_ROLE_ALIGNMENT_PROMPT,
     COMPETENCY_EVAL_PROMPT,
     EXP_EVAL_PROMPT,
     CULTURE_EVAL_PROMPT,
@@ -124,13 +125,55 @@ def parse_jd_node(state: AgentState):
         log_stage("JD_PARSING_ERROR", error_result, is_output=True)
         return {"extracted_scoring_rules": {}}
 
+def jd_role_alignment_node(state: AgentState):
+    """Centralized JD-Role alignment check - runs ONCE after JD parsing."""
+    print("STAGE: JD-ROLE ALIGNMENT CHECK")
+    
+    jd = state.get("extracted_scoring_rules", {})
+    role_name = state.get("role_name", "")
+    
+    input_data = {
+        "role_name": role_name,
+        "jd_requirements_count": len(jd.get("primary_requirements", [])),
+        "jd_responsibilities_count": len(jd.get("responsibilities", []))
+    }
+    log_stage("JD_ROLE_ALIGNMENT", input_data, is_output=False)
+    
+    chain = JD_ROLE_ALIGNMENT_PROMPT | llm | JsonOutputParser()
+    
+    try:
+        result = chain.invoke({
+            "role_name": role_name,
+            "jd_requirements": json.dumps(jd.get("primary_requirements", [])),
+            "jd_responsibilities": json.dumps(jd.get("responsibilities", []))
+        })
+        log_stage("JD_ROLE_ALIGNMENT", result, is_output=True)
+        return {"jd_role_alignment": result}
+    except Exception as e:
+        error_result = {
+            "jd_role_mismatch": False,
+            "inferred_job_family": "Unknown",
+            "stated_role_family": role_name,
+            "reasoning": f"Error during alignment check: {str(e)}",
+            "error": True
+        }
+        log_stage("JD_ROLE_ALIGNMENT_ERROR", error_result, is_output=True)
+        return {"jd_role_alignment": error_result}
+
 def tech_agent_node(state: AgentState):
     print("STAGE: TECH/COMPETENCY AGENT")
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
+    alignment = state.get("jd_role_alignment", {})
+    
+    # Get pre-determined alignment status
+    jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
     input_data = {
         "role_name": state["role_name"],
+        "jd_role_mismatch": jd_role_mismatch,
+        "inferred_job_family": inferred_job_family,
         "jd_skills": jd.get("primary_requirements", []),
         "candidate_skills": candidate.get("skills", []),
         "candidate_evidence": candidate.get("capability_evidence", []),
@@ -149,35 +192,47 @@ def tech_agent_node(state: AgentState):
     try:
         result = chain.invoke({
             "role_name": state["role_name"],
+            "jd_role_mismatch": jd_role_mismatch,
+            "inferred_job_family": inferred_job_family,
             "jd_skills": json.dumps(jd.get("primary_requirements", [])),
             "candidate_skills": json.dumps(candidate.get("skills", [])),
             "candidate_evidence": json.dumps(combined_evidence)
         })
+        # Ensure the result reflects the centralized mismatch status
+        result["jd_role_mismatch"] = jd_role_mismatch
+        result["inferred_job_family"] = inferred_job_family
         log_stage("TECH_AGENT", result, is_output=True)
         return {"tech_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
         log_stage("TECH_AGENT_ERROR", error_result, is_output=True)
-        return {"tech_evaluation": {"score": 0, "reasoning": str(e)}}
+        return {"tech_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
 
 
 def experience_agent_node(state: AgentState):
     print("STAGE: EXPERIENCE AGENT")
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
+    alignment = state.get("jd_role_alignment", {})
     work_experience = candidate.get("work_experience", [])
     current_dt = datetime.now()
     calculated_years = calculate_total_years(work_experience, current_dt)
     
+    # Get pre-determined alignment status
+    jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    inferred_job_family = alignment.get("inferred_job_family", "Unknown")
+    
     input_data = {
         "role_name": state["role_name"],
+        "jd_role_mismatch": jd_role_mismatch,
+        "inferred_job_family": inferred_job_family,
         "jd_experience_rules": {
             "required_years": jd.get("required_years"),
             "education_requirement": jd.get("education_requirement")
         },
         "candidate_experience": candidate.get("work_experience", []),
         "candidate_education": candidate.get("education", []),
-        "calculated_total_years": calculated_years  # Added for visibility
+        "calculated_total_years": calculated_years
     }
     log_stage("EXPERIENCE_AGENT", input_data, is_output=False)
     
@@ -186,25 +241,36 @@ def experience_agent_node(state: AgentState):
     try:
         result = chain.invoke({
             "role_name": state["role_name"],
+            "jd_role_mismatch": jd_role_mismatch,
+            "inferred_job_family": inferred_job_family,
             "current_date": current_date,
             "total_years_calculated": calculated_years,
             "jd_experience_rules": json.dumps(jd),
             "candidate_experience": json.dumps(candidate.get("work_experience", [])),
             "candidate_education": json.dumps(candidate.get("education", [])) 
         })
+        # Ensure the result reflects the centralized mismatch status
+        result["jd_role_mismatch"] = jd_role_mismatch
         log_stage("EXPERIENCE_AGENT", result, is_output=True)
         return {"experience_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
         log_stage("EXPERIENCE_AGENT_ERROR", error_result, is_output=True)
-        return {"experience_evaluation": {"score": 0, "reasoning": str(e)}}
+        return {"experience_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
 
 def culture_agent_node(state: AgentState):
     print("STAGE: CULTURE/BEHAVIORAL AGENT")
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
+    alignment = state.get("jd_role_alignment", {})
+    
+    # Get pre-determined alignment status
+    jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
     input_data = {
+        "role_name": state.get("role_name", ""),
+        "jd_role_mismatch": jd_role_mismatch,
         "jd_responsibilities": jd.get("responsibilities", []),
         "candidate_summary": candidate.get("summary", ""),
         "candidate_evidence_count": len(candidate.get("capability_evidence", []))
@@ -215,16 +281,20 @@ def culture_agent_node(state: AgentState):
     try:
         result = chain.invoke({
             "role_name": state.get("role_name", ""),
+            "jd_role_mismatch": jd_role_mismatch,
+            "inferred_job_family": inferred_job_family,
             "jd_responsibilities": json.dumps(jd.get("responsibilities", [])),
             "candidate_summary": candidate.get("summary", ""),
             "candidate_evidence": json.dumps(candidate.get("capability_evidence", []))
         })
+        # Ensure the result reflects the centralized mismatch status
+        result["jd_role_mismatch"] = jd_role_mismatch
         log_stage("CULTURE_AGENT", result, is_output=True)
         return {"culture_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
         log_stage("CULTURE_AGENT_ERROR", error_result, is_output=True)
-        return {"culture_evaluation": {"score": 0, "reasoning": str(e)}}
+        return {"culture_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
 
 def aggregator_node(state: AgentState):
     print("STAGE: FINAL AGGREGATOR")
