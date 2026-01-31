@@ -25,74 +25,49 @@ export class AiProcessor {
       });
 
       const candidate = await this.candidatesService.findById(candidateId);
-      if (!candidate) {
-        throw new NotFoundException('Candidate not found');
-      }
+      if (!candidate) throw new NotFoundException('Candidate not found');
 
-      this.logger.log(`Stage 1: Calculating Score for Candidate ${candidateId}...`);
+      this.logger.log(`Starting Graph Analysis for Candidate ${candidateId}...`);
 
-      const stage1Result = await this.aiService.evaluateCandidateFast(
+      const result = await this.aiService.evaluateCandidateGraph(
         candidate.rawText,
         jobRole,
         jobDescription
       );
 
+      const processingTime = Date.now() - startTime;
+
       await this.candidatesService.update(candidateId, {
-        name: stage1Result.name,
-        roleFitScore: stage1Result.roleFitScore,
-        scoringBreakdown: stage1Result.scoringBreakdown,
-        skills: stage1Result.skills,
-        experienceYears: stage1Result.experienceYears,
-        workExperience: stage1Result.workExperience,
-        education: stage1Result.education,
-        certifications: stage1Result.certifications,
-        isShortlisted: stage1Result.isShortlisted,
-        status: ProcessingStatus.PROCESSING
+        name: result.name,
+        skills: result.skills,
+        experienceYears: result.experienceYears,
+        workExperience: result.workExperience,
+        education: result.education,
+        certifications: result.certifications,
+        
+        roleFitScore: result.roleFitScore,
+        scoringBreakdown: result.scoringBreakdown,
+        isShortlisted: result.isShortlisted,
+        keyStrengths: result.keyStrengths,
+        potentialWeaknesses: result.potentialWeaknesses,
+        missingSkills: result.missingSkills,
+        interviewQuestions: result.interviewQuestions,
+        confidenceScore: result.confidenceScore,
+        biasCheck: result.biasCheck,
+
+        status: ProcessingStatus.COMPLETED,
+        processingTime,
       });
 
-      this.logger.log(`Stage 1 Saved (Name updated). UI should now see the score.`);
-
-      this.logger.log(`Stage 2: Generating Interview Questions...`);
-
-      if (!stage1Result.stage2Payload) {
-        this.logger.warn(`Stage 2 payload not found for candidate ${candidateId}. Skipping detailed analysis.`);
-        const processingTime = Date.now() - startTime;
-        await this.candidatesService.update(candidateId, {
-          status: ProcessingStatus.COMPLETED,
-          processingTime,
-        });
-        this.logger.log(`Process complete for candidate ${candidateId} without Stage 2 analysis.`);
-      } else {
-        const stage2Result = await this.aiService.evaluateCandidateDetailed(
-          stage1Result.stage2Payload
-        );
-
-        const processingTime = Date.now() - startTime;
-
-        await this.candidatesService.update(candidateId, {
-          keyStrengths: stage2Result.keyStrengths,
-          potentialWeaknesses: stage2Result.potentialWeaknesses,
-          missingSkills: stage2Result.missingSkills,
-          interviewQuestions: stage2Result.interviewQuestions,
-          confidenceScore: stage2Result.confidenceScore,
-          biasCheck: stage2Result.biasCheck,
-
-          status: ProcessingStatus.COMPLETED,
-          processingTime,
-        });
-
-        this.logger.log(`Stage 2 Saved. Process Complete.`);
-      }
-
+      this.logger.log(`Graph Processing Complete for ${candidateId}. Time: ${processingTime}ms`);
       return { success: true, candidateId };
 
     } catch (error) {
       this.logger.error(`Processing failed for candidate ${candidateId}`, error.stack);
-      const processingTime = Date.now() - startTime;
-
+      
       await this.candidatesService.update(candidateId, {
         status: ProcessingStatus.FAILED,
-        processingTime,
+        processingTime: Date.now() - startTime,
       });
 
       throw error;

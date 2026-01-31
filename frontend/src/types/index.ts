@@ -239,7 +239,7 @@ export interface Education {
 // Component Props Types
 export interface ExperienceSectionProps {
   experience: WorkExperience[];
-  education?: Education;
+  education?: Education[];
 }
 
 export interface ShortlistedCandidate {
