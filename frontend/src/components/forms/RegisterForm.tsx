@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import toast from '@/lib/toast';
 import { RegisterFormData, RegisterFormErrors } from '@/types';
 
 export default function RegisterForm() {
@@ -54,9 +55,13 @@ export default function RegisterForm() {
     setIsLoading(true);
     try {
       await registerUser(formData.email, formData.password);
+      toast.success('Account created successfully!');
       router.push('/complete-profile');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration failed:', error);
+      // Show specific error message from backend
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
