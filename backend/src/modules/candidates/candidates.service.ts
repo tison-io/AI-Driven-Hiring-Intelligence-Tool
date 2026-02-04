@@ -97,11 +97,11 @@ export class CandidatesService {
 		// Certification filter - handle both array and single value
 		if (filters.certifications && filters.certifications.length > 0) {
 			query.certifications = {
-				$in: filters.certifications.map(cert => new RegExp(cert, 'i'))
+				$in: filters.certifications.map(cert => new RegExp(this.escapeRegex(cert), 'i'))
 			};
 		} else if (filters.certification) {
 			query.certifications = {
-				$regex: filters.certification,
+				$regex: this.escapeRegex(filters.certification),
 				$options: "i",
 			};
 		}
@@ -110,7 +110,7 @@ export class CandidatesService {
 		if (filters.requiredSkills && filters.requiredSkills.length > 0) {
 			query.skills = {
 				$all: filters.requiredSkills.map(
-					(skill) => new RegExp(skill, "i"),
+					(skill) => new RegExp(this.escapeRegex(skill), "i"),
 				),
 			};
 		}
@@ -118,11 +118,11 @@ export class CandidatesService {
 		// Previous company filter - handle both array and single value
 		if (filters.companies && filters.companies.length > 0) {
 			query['workExperience.company'] = {
-				$in: filters.companies.map(company => new RegExp(company, 'i'))
+				$in: filters.companies.map(company => new RegExp(this.escapeRegex(company), 'i'))
 			};
 		} else if (filters.previousCompany) {
 			query["workExperience.company"] = {
-				$regex: filters.previousCompany,
+				$regex: this.escapeRegex(filters.previousCompany),
 				$options: "i",
 			};
 		}
@@ -136,6 +136,8 @@ export class CandidatesService {
 		} else {
 			sortOptions.createdAt = -1; // default sort
 		}
+		// Always add secondary sort by _id for consistent ordering
+		sortOptions._id = 1;
 
 		return this.candidateModel.find(query).sort(sortOptions).exec();
 	}
@@ -226,5 +228,9 @@ export class CandidatesService {
 				),
 			],
 		};
+	}
+
+	private escapeRegex(string: string): string {
+		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	}
 }

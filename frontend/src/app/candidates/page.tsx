@@ -11,6 +11,10 @@ import {
 	Eye,
 	Trash2,
 	ChevronDown,
+	ArrowUpDown,
+	ArrowUp,
+	ArrowDown,
+	X,
 } from "lucide-react";
 import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
@@ -63,6 +67,7 @@ function CandidatesContent() {
 		companies: string[];
 		skills: string[];
 	}>({ certifications: [], companies: [], skills: [] });
+	const [isLoadingFilterOptions, setIsLoadingFilterOptions] = useState(true);
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -98,10 +103,14 @@ function CandidatesContent() {
 	useEffect(() => {
 		const loadFilterOptions = async () => {
 			try {
+				setIsLoadingFilterOptions(true);
 				const options = await candidatesApi.getFilterOptions();
 				setFilterOptions(options);
 			} catch (error) {
 				console.error('Failed to load filter options:', error);
+				toast.error('Failed to load filter options');
+			} finally {
+				setIsLoadingFilterOptions(false);
 			}
 		};
 		loadFilterOptions();
@@ -191,6 +200,28 @@ function CandidatesContent() {
 	const shortlistedCount = useMemo(() => {
 		return allCandidates.filter((c) => c.isShortlisted).length;
 	}, [allCandidates]);
+
+	// Check if any filters are active
+	const hasActiveFilters = useMemo(() => {
+		return (
+			searchQuery ||
+			minRole > 0 ||
+			experienceRange[0] > 0 || experienceRange[1] < 10 ||
+			sortBy ||
+			statusFilter ||
+			confidenceRange[0] > 0 || confidenceRange[1] < 100 ||
+			dateRange.start || dateRange.end ||
+			educationFilter ||
+			certificationFilters.length > 0 ||
+			skillsFilter.length > 0 ||
+			companyFilters.length > 0 ||
+			showShortlistedOnly
+		);
+	}, [
+		searchQuery, minRole, experienceRange, sortBy, statusFilter,
+		confidenceRange, dateRange, educationFilter, certificationFilters,
+		skillsFilter, companyFilters, showShortlistedOnly
+	]);
 
 	// Detect if any candidates are still processing
 	const hasProcessingCandidates = useMemo(() => {
@@ -356,11 +387,16 @@ function CandidatesContent() {
 									</button>
 									<button
 										onClick={handleClearFilters}
-										className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+										disabled={!hasActiveFilters}
+										className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+											hasActiveFilters
+												? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+												: "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+										}`}
 									>
-										<Filter className="w-4 h-4" />
+										<X className="w-4 h-4" />
 										<span className="text-sm font-bold">
-											Clear Filters
+											Clear All Filters
 										</span>
 									</button>
 									<button
@@ -399,18 +435,19 @@ function CandidatesContent() {
 											Confidence Score
 										</option>
 									</select>
-									<select
-										value={sortOrder}
-										onChange={(e) =>
-											setSortOrder(e.target.value)
-										}
-										className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-									>
-										<option value="desc">
-											High to Low
-										</option>
-										<option value="asc">Low to High</option>
-									</select>
+									{sortBy && (
+										<button
+											onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+											className="flex items-center justify-center px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+											title={sortOrder === 'asc' ? 'Low to High' : 'High to Low'}
+										>
+											{sortOrder === 'asc' ? (
+												<ArrowUp className="w-4 h-4" />
+											) : (
+												<ArrowDown className="w-4 h-4" />
+											)}
+										</button>
+									)}
 									<div className="relative">
 										<button
 											onClick={() =>
@@ -470,7 +507,7 @@ function CandidatesContent() {
 													e.target.value,
 												)
 											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 										>
 											<option value="">
 												All Status
@@ -497,7 +534,7 @@ function CandidatesContent() {
 													e.target.value,
 												)
 											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 										>
 											<option value="">
 												All Education
@@ -522,6 +559,7 @@ function CandidatesContent() {
 											selectedValues={certificationFilters}
 											onChange={setCertificationFilters}
 											placeholder="Filter by certifications..."
+											disabled={isLoadingFilterOptions}
 										/>
 										{/* Company Filter */}
 										<SearchableMultiSelect
@@ -529,6 +567,7 @@ function CandidatesContent() {
 											selectedValues={companyFilters}
 											onChange={setCompanyFilters}
 											placeholder="Filter by companies..."
+											disabled={isLoadingFilterOptions}
 										/>
 									</div>
 									
@@ -539,6 +578,7 @@ function CandidatesContent() {
 											selectedValues={skillsFilter}
 											onChange={setSkillsFilter}
 											placeholder="Filter by skills..."
+											disabled={isLoadingFilterOptions}
 										/>
 									</div>
 
