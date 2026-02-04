@@ -94,8 +94,12 @@ export class CandidatesService {
 			};
 		}
 
-		// Certification filter
-		if (filters.certification) {
+		// Certification filter - handle both array and single value
+		if (filters.certifications && filters.certifications.length > 0) {
+			query.certifications = {
+				$in: filters.certifications.map(cert => new RegExp(cert, 'i'))
+			};
+		} else if (filters.certification) {
 			query.certifications = {
 				$regex: filters.certification,
 				$options: "i",
@@ -110,8 +114,13 @@ export class CandidatesService {
 				),
 			};
 		}
-		// Previous company filter
-		if (filters.previousCompany) {
+
+		// Previous company filter - handle both array and single value
+		if (filters.companies && filters.companies.length > 0) {
+			query['workExperience.company'] = {
+				$in: filters.companies.map(company => new RegExp(company, 'i'))
+			};
+		} else if (filters.previousCompany) {
 			query["workExperience.company"] = {
 				$regex: filters.previousCompany,
 				$options: "i",
