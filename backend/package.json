@@ -12,7 +12,7 @@
 		"start": "nest start",
 		"start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
 		"start:debug": "nest start --debug --watch",
-		"start:prod": "node dist/src/main",
+		"start:prod": "node dist/src/main.ts",
 		"seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
 		"lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
 		"test": "jest",
