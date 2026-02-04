@@ -19,6 +19,7 @@ import { useCandidates } from "@/hooks/useCandidates";
 import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkeleton";
 import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
+import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
 import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
@@ -52,11 +53,16 @@ function CandidatesContent() {
 	]);
 	const [dateRange, setDateRange] = useState({ start: "", end: "" });
 	const [educationFilter, setEducationFilter] = useState("");
-	const [certificationFilter, setCertificationFilter] = useState("");
+	const [certificationFilters, setCertificationFilters] = useState<string[]>([]);
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState("");
 	const [showAdvanced, setShowAdvanced] = useState(false);
-	const [companyFilter, setCompanyFilter] = useState("");
+	const [companyFilters, setCompanyFilters] = useState<string[]>([]);
+	const [filterOptions, setFilterOptions] = useState<{
+		certifications: string[];
+		companies: string[];
+		skills: string[];
+	}>({ certifications: [], companies: [], skills: [] });
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -88,6 +94,19 @@ function CandidatesContent() {
 		return () => clearTimeout(timer);
 	}, [experienceRange]);
 
+	// Load filter options on mount
+	useEffect(() => {
+		const loadFilterOptions = async () => {
+			try {
+				const options = await candidatesApi.getFilterOptions();
+				setFilterOptions(options);
+			} catch (error) {
+				console.error('Failed to load filter options:', error);
+			}
+		};
+		loadFilterOptions();
+	}, []);
+
 	// Add debounce effect:
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -117,9 +136,9 @@ function CandidatesContent() {
 		if (dateRange.start) filterObj.createdAfter = dateRange.start;
 		if (dateRange.end) filterObj.createdBefore = dateRange.end;
 		if (educationFilter) filterObj.educationLevel = educationFilter;
-		if (certificationFilter) filterObj.certification = certificationFilter;
+		if (certificationFilters.length > 0) filterObj.certifications = certificationFilters;
 		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
-		if (companyFilter) filterObj.previousCompany = companyFilter;
+		if (companyFilters.length > 0) filterObj.companies = companyFilters;
 
 		return filterObj;
 	}, [
@@ -132,9 +151,9 @@ function CandidatesContent() {
 		debouncedConfidenceRange,
 		dateRange,
 		educationFilter,
-		certificationFilter,
+		certificationFilters,
 		skillsFilter,
-		companyFilter,
+		companyFilters,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -221,10 +240,10 @@ function CandidatesContent() {
 		setConfidenceRange([0, 100]);
 		setDateRange({ start: "", end: "" });
 		setEducationFilter("");
-		setCertificationFilter("");
+		setCertificationFilters([]);
 		setSkillsFilter([]);
 		setSkillInput("");
-		setCompanyFilter("");
+		setCompanyFilters([]);
 		toast.success("Filters cleared");
 	};
 
@@ -498,114 +517,29 @@ function CandidatesContent() {
 											</option>
 										</select>
 										{/* Certification Filter */}
-										<input
-											type="text"
-											placeholder="Filter by certificate..."
-											value={certificationFilter}
-											onChange={(e) =>
-												setCertificationFilter(
-													e.target.value,
-												)
-											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										<SearchableMultiSelect
+											options={filterOptions.certifications}
+											selectedValues={certificationFilters}
+											onChange={setCertificationFilters}
+											placeholder="Filter by certifications..."
 										/>
 										{/* Company Filter */}
-										<input
-											type="text"
-											placeholder="Filter by previous company..."
-											value={companyFilter}
-											onChange={(e) =>
-												setCompanyFilter(
-													e.target.value,
-												)
-											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										<SearchableMultiSelect
+											options={filterOptions.companies}
+											selectedValues={companyFilters}
+											onChange={setCompanyFilters}
+											placeholder="Filter by companies..."
 										/>
 									</div>
 									
 									{/* Skills Filter */}
 									<div className="mt-4">
-										<div className="flex gap-2 mb-2">
-											<input
-												type="text"
-												placeholder="Add required skill..."
-												value={skillInput}
-												onChange={(e) =>
-													setSkillInput(
-														e.target.value,
-													)
-												}
-												onKeyPress={(e) => {
-													if (
-														e.key ===
-															"Enter" &&
-														skillInput.trim()
-													) {
-														setSkillsFilter(
-															[
-																...skillsFilter,
-																skillInput.trim(),
-															],
-														);
-														setSkillInput(
-															"",
-														);
-													}
-												}}
-												className="flex-1 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
-											/>
-											<button
-												onClick={() => {
-													if (
-														skillInput.trim()
-													) {
-														setSkillsFilter(
-															[
-																...skillsFilter,
-																skillInput.trim(),
-															],
-														);
-														setSkillInput(
-															"",
-														);
-													}
-												}}
-												className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-											>
-												Add
-											</button>
-										</div>
-										{skillsFilter.length > 0 && (
-											<div className="flex flex-wrap gap-2">
-												{skillsFilter.map(
-													(skill, idx) => (
-														<span
-															key={idx}
-															className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-														>
-															{skill}
-															<button
-																onClick={() =>
-																	setSkillsFilter(
-																		skillsFilter.filter(
-																			(
-																				_,
-																				i,
-																			) =>
-																				i !==
-																				idx,
-																		),
-																	)
-																}
-																className="hover:text-blue-900"
-															>
-																x
-															</button>
-														</span>
-													),
-												)}
-											</div>
-										)}
+										<SearchableMultiSelect
+											options={filterOptions.skills}
+											selectedValues={skillsFilter}
+											onChange={setSkillsFilter}
+											placeholder="Filter by skills..."
+										/>
 									</div>
 
 									{/* Date Range and Confidence Range */}
