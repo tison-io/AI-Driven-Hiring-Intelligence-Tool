@@ -26,6 +26,20 @@ import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 export class CandidatesController {
 	constructor(private candidatesService: CandidatesService) {}
 
+	@Get('filter-options')
+	@ApiOperation({ summary: "Get available filter options from processed candidates" })
+	@ApiResponse({
+		status: 200,
+		description: "Filter options retrieved successfully",
+	})
+	@ApiResponse({ status: 401, description: "Unauthorized" })
+	async getFilterOptions(@Request() req) {
+		return this.candidatesService.getFilterOptions(
+			req.user.id,
+			req.user.role,
+		);
+	}
+
 	@Get()
 	@ApiOperation({ summary: "Get all candidates with optional filters" })
 	@ApiResponse({

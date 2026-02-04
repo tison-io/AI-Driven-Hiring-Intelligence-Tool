@@ -184,4 +184,38 @@ export class CandidatesService {
 		candidate.isShortlisted = !candidate.isShortlisted;
 		return candidate.save();
 	}
+
+	async getFilterOptions(userId: string, userRole: string) {
+		const query = userRole === "admin" ? {} : { createdBy: userId };
+
+		const [certifications, companies, skills] = await Promise.all([
+			this.candidateModel.distinct("certifications", query),
+			this.candidateModel.distinct("workExperience.company", query),
+			this.candidateModel.distinct("skills", query),
+		]);
+
+		return {
+			certifications: [
+				...new Set(
+					certifications
+						.filter(Boolean)
+						.map((c: string) => c.toUpperCase()),
+				),
+			],
+			companies: [
+				...new Set(
+					companies
+						.filter(Boolean)
+						.map((c: string) => c.toUpperCase()),
+				),
+			],
+			skills: [
+				...new Set(
+					skills
+						.filter(Boolean)
+						.map((s: string) => s.toUpperCase()),
+				),
+			],
+		};
+	}
 }
