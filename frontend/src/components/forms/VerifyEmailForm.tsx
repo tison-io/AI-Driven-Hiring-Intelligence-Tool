@@ -117,7 +117,7 @@ export default function VerifyEmailForm() {
           <div className="flex items-center gap-3">
             <div>
               <h1 className="font-bold flex items-center justify-center text-lg">Verification Code</h1>
-              <p className="text-sm font-medium flex-1 align-middle">A verification code has been sent to <span className='text-blue-700'>{email}</span> . Please check the code to proceed. Please check your spam or junk folder</p>
+              <p className="text-sm font-medium flex-1 align-middle">A verification code has been sent to <span className='text-blue-700'>{email}</span> . Please check the code to proceed. If you don't receive the email in a few minutes, please check your spam or junk folder</p>
               
             </div>
           </div>
