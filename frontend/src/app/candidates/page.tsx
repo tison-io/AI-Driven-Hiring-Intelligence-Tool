@@ -11,6 +11,10 @@ import {
 	Eye,
 	Trash2,
 	ChevronDown,
+	ArrowUpDown,
+	ArrowUp,
+	ArrowDown,
+	X,
 } from "lucide-react";
 import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
@@ -19,6 +23,7 @@ import { useCandidates } from "@/hooks/useCandidates";
 import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkeleton";
 import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
+import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
 import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
@@ -52,11 +57,17 @@ function CandidatesContent() {
 	]);
 	const [dateRange, setDateRange] = useState({ start: "", end: "" });
 	const [educationFilter, setEducationFilter] = useState("");
-	const [certificationFilter, setCertificationFilter] = useState("");
+	const [certificationFilters, setCertificationFilters] = useState<string[]>([]);
 	const [skillsFilter, setSkillsFilter] = useState<string[]>([]);
 	const [skillInput, setSkillInput] = useState("");
 	const [showAdvanced, setShowAdvanced] = useState(false);
-	const [companyFilter, setCompanyFilter] = useState("");
+	const [companyFilters, setCompanyFilters] = useState<string[]>([]);
+	const [filterOptions, setFilterOptions] = useState<{
+		certifications: string[];
+		companies: string[];
+		skills: string[];
+	}>({ certifications: [], companies: [], skills: [] });
+	const [isLoadingFilterOptions, setIsLoadingFilterOptions] = useState(true);
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -88,6 +99,23 @@ function CandidatesContent() {
 		return () => clearTimeout(timer);
 	}, [experienceRange]);
 
+	// Load filter options on mount
+	useEffect(() => {
+		const loadFilterOptions = async () => {
+			try {
+				setIsLoadingFilterOptions(true);
+				const options = await candidatesApi.getFilterOptions();
+				setFilterOptions(options);
+			} catch (error) {
+				console.error('Failed to load filter options:', error);
+				toast.error('Failed to load filter options');
+			} finally {
+				setIsLoadingFilterOptions(false);
+			}
+		};
+		loadFilterOptions();
+	}, []);
+
 	// Add debounce effect:
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -117,9 +145,9 @@ function CandidatesContent() {
 		if (dateRange.start) filterObj.createdAfter = dateRange.start;
 		if (dateRange.end) filterObj.createdBefore = dateRange.end;
 		if (educationFilter) filterObj.educationLevel = educationFilter;
-		if (certificationFilter) filterObj.certification = certificationFilter;
+		if (certificationFilters.length > 0) filterObj.certifications = certificationFilters;
 		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
-		if (companyFilter) filterObj.previousCompany = companyFilter;
+		if (companyFilters.length > 0) filterObj.companies = companyFilters;
 
 		return filterObj;
 	}, [
@@ -132,9 +160,9 @@ function CandidatesContent() {
 		debouncedConfidenceRange,
 		dateRange,
 		educationFilter,
-		certificationFilter,
+		certificationFilters,
 		skillsFilter,
-		companyFilter,
+		companyFilters,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -172,6 +200,28 @@ function CandidatesContent() {
 	const shortlistedCount = useMemo(() => {
 		return allCandidates.filter((c) => c.isShortlisted).length;
 	}, [allCandidates]);
+
+	// Check if any filters are active
+	const hasActiveFilters = useMemo(() => {
+		return (
+			searchQuery ||
+			minRole > 0 ||
+			experienceRange[0] > 0 || experienceRange[1] < 10 ||
+			sortBy ||
+			statusFilter ||
+			confidenceRange[0] > 0 || confidenceRange[1] < 100 ||
+			dateRange.start || dateRange.end ||
+			educationFilter ||
+			certificationFilters.length > 0 ||
+			skillsFilter.length > 0 ||
+			companyFilters.length > 0 ||
+			showShortlistedOnly
+		);
+	}, [
+		searchQuery, minRole, experienceRange, sortBy, statusFilter,
+		confidenceRange, dateRange, educationFilter, certificationFilters,
+		skillsFilter, companyFilters, showShortlistedOnly
+	]);
 
 	// Detect if any candidates are still processing
 	const hasProcessingCandidates = useMemo(() => {
@@ -221,10 +271,10 @@ function CandidatesContent() {
 		setConfidenceRange([0, 100]);
 		setDateRange({ start: "", end: "" });
 		setEducationFilter("");
-		setCertificationFilter("");
+		setCertificationFilters([]);
 		setSkillsFilter([]);
 		setSkillInput("");
-		setCompanyFilter("");
+		setCompanyFilters([]);
 		toast.success("Filters cleared");
 	};
 
@@ -337,11 +387,16 @@ function CandidatesContent() {
 									</button>
 									<button
 										onClick={handleClearFilters}
-										className="flex items-center justify-center gap-2 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+										disabled={!hasActiveFilters}
+										className={`flex items-center justify-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+											hasActiveFilters
+												? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300"
+												: "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+										}`}
 									>
-										<Filter className="w-4 h-4" />
+										<X className="w-4 h-4" />
 										<span className="text-sm font-bold">
-											Clear Filters
+											Clear All Filters
 										</span>
 									</button>
 									<button
@@ -380,18 +435,19 @@ function CandidatesContent() {
 											Confidence Score
 										</option>
 									</select>
-									<select
-										value={sortOrder}
-										onChange={(e) =>
-											setSortOrder(e.target.value)
-										}
-										className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
-									>
-										<option value="desc">
-											High to Low
-										</option>
-										<option value="asc">Low to High</option>
-									</select>
+									{sortBy && (
+										<button
+											onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+											className="flex items-center justify-center px-3 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black hover:border-gray-600 transition-colors"
+											title={sortOrder === 'asc' ? 'Low to High' : 'High to Low'}
+										>
+											{sortOrder === 'asc' ? (
+												<ArrowUp className="w-4 h-4" />
+											) : (
+												<ArrowDown className="w-4 h-4" />
+											)}
+										</button>
+									)}
 									<div className="relative">
 										<button
 											onClick={() =>
@@ -451,7 +507,7 @@ function CandidatesContent() {
 													e.target.value,
 												)
 											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 										>
 											<option value="">
 												All Status
@@ -478,7 +534,7 @@ function CandidatesContent() {
 													e.target.value,
 												)
 											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
 										>
 											<option value="">
 												All Education
@@ -498,114 +554,32 @@ function CandidatesContent() {
 											</option>
 										</select>
 										{/* Certification Filter */}
-										<input
-											type="text"
-											placeholder="Filter by certificate..."
-											value={certificationFilter}
-											onChange={(e) =>
-												setCertificationFilter(
-													e.target.value,
-												)
-											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										<SearchableMultiSelect
+											options={filterOptions.certifications}
+											selectedValues={certificationFilters}
+											onChange={setCertificationFilters}
+											placeholder="Filter by certifications..."
+											disabled={isLoadingFilterOptions}
 										/>
 										{/* Company Filter */}
-										<input
-											type="text"
-											placeholder="Filter by previous company..."
-											value={companyFilter}
-											onChange={(e) =>
-												setCompanyFilter(
-													e.target.value,
-												)
-											}
-											className="px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
+										<SearchableMultiSelect
+											options={filterOptions.companies}
+											selectedValues={companyFilters}
+											onChange={setCompanyFilters}
+											placeholder="Filter by companies..."
+											disabled={isLoadingFilterOptions}
 										/>
 									</div>
 									
 									{/* Skills Filter */}
 									<div className="mt-4">
-										<div className="flex gap-2 mb-2">
-											<input
-												type="text"
-												placeholder="Add required skill..."
-												value={skillInput}
-												onChange={(e) =>
-													setSkillInput(
-														e.target.value,
-													)
-												}
-												onKeyPress={(e) => {
-													if (
-														e.key ===
-															"Enter" &&
-														skillInput.trim()
-													) {
-														setSkillsFilter(
-															[
-																...skillsFilter,
-																skillInput.trim(),
-															],
-														);
-														setSkillInput(
-															"",
-														);
-													}
-												}}
-												className="flex-1 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black placeholder-gray-400 focus:outline-none focus:border-gray-500"
-											/>
-											<button
-												onClick={() => {
-													if (
-														skillInput.trim()
-													) {
-														setSkillsFilter(
-															[
-																...skillsFilter,
-																skillInput.trim(),
-															],
-														);
-														setSkillInput(
-															"",
-														);
-													}
-												}}
-												className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-											>
-												Add
-											</button>
-										</div>
-										{skillsFilter.length > 0 && (
-											<div className="flex flex-wrap gap-2">
-												{skillsFilter.map(
-													(skill, idx) => (
-														<span
-															key={idx}
-															className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm"
-														>
-															{skill}
-															<button
-																onClick={() =>
-																	setSkillsFilter(
-																		skillsFilter.filter(
-																			(
-																				_,
-																				i,
-																			) =>
-																				i !==
-																				idx,
-																		),
-																	)
-																}
-																className="hover:text-blue-900"
-															>
-																x
-															</button>
-														</span>
-													),
-												)}
-											</div>
-										)}
+										<SearchableMultiSelect
+											options={filterOptions.skills}
+											selectedValues={skillsFilter}
+											onChange={setSkillsFilter}
+											placeholder="Filter by skills..."
+											disabled={isLoadingFilterOptions}
+										/>
 									</div>
 
 									{/* Date Range and Confidence Range */}

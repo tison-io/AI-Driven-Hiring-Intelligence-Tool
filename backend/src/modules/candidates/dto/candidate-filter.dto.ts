@@ -106,16 +106,29 @@ export class CandidateFilterDto {
 	@IsString()
 	educationLevel?: string;
 
-	@ApiPropertyOptional({ example: "AWS Certified" })
+	@ApiPropertyOptional({ example: ["AWS Certified", "Google Cloud"] })
 	@IsOptional()
-	@IsString()
-	certification?: string;
+	@IsArray()
+	@IsString({ each: true })
+	certifications?: string[];
 
 	@ApiPropertyOptional({ example: ["JavaScript", "Python"] })
 	@IsOptional()
 	@IsArray()
 	@IsString({ each: true })
 	requiredSkills?: string[];
+
+	@ApiPropertyOptional({ example: ["Google", "Microsoft"] })
+	@IsOptional()
+	@IsArray()
+	@IsString({ each: true })
+	companies?: string[];
+
+	// Legacy single-value filters for backward compatibility
+	@ApiPropertyOptional({ example: "AWS Certified" })
+	@IsOptional()
+	@IsString()
+	certification?: string;
 
 	@ApiPropertyOptional({ example: "Google" })
 	@IsOptional()
