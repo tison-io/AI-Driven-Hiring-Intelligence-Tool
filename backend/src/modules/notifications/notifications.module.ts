@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Notification, NotificationSchema } from './entities/notification.entity';
 import { DeviceToken, DeviceTokenSchema } from './entities/device-token.entity';
+import { NotificationsService } from './notifications.service';
+import { NotificationsController } from './notifications.controller';
 
 @Module({
   imports: [
@@ -10,6 +12,8 @@ import { DeviceToken, DeviceTokenSchema } from './entities/device-token.entity';
       { name: DeviceToken.name, schema: DeviceTokenSchema },
     ]),
   ],
-  exports: [MongooseModule],
+  controllers: [NotificationsController],
+  providers: [NotificationsService],
+  exports: [NotificationsService, MongooseModule],
 })
 export class NotificationsModule {}
