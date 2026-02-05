@@ -51,6 +51,10 @@ export default function VerifyEmailForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+      if (!email) {
+            setError('Email is missing. Please register again.');
+            return;
+          }
     if (code.length !== 6) {
       setError('Please enter the complete 6-digit code');
       return;
@@ -71,6 +75,10 @@ export default function VerifyEmailForm() {
   };
 
   const handleResendCode = async () => {
+    if (!email) {
+      setError('Email is missing. Please register again.');
+      return;
+    }
     setIsResending(true);
     setError('');
     
@@ -96,7 +104,7 @@ export default function VerifyEmailForm() {
       </div>
       <div className='justify-center flex'>
       <Image
-          src="../images/rafiki.svg"
+          src="/images/rafiki.svg"
           width={300}
           height={300}
           alt="Email verification"

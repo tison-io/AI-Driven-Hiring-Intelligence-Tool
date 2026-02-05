@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import * as SibApiV3Sdk from 'sib-api-v3-sdk';
 import { BrevoConfig } from '../../config/brevo.config';
+import escapeHtml from "escape-html"
 
 @Injectable()
 export class EmailService {
@@ -63,7 +64,8 @@ export class EmailService {
       <p style="margin: 0 0 12px 0;">
         ${greeting}
       </p>
-      
+      <p style="margin: 0 0 16px 0;>You’re receiving this because an account was created using this email address.</p>
+
       <p style="margin: 0 0 16px 0;">
         Thanks for signing up! To complete your registration, please enter the verification code below:
       </p>

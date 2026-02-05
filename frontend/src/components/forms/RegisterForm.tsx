@@ -61,7 +61,7 @@ export default function RegisterForm() {
       toast.success('Account created successfully!');
       router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Registration failed. Please try again. ';
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
       toast.error(errorMessage);
       setErrors({ email: errorMessage });
 

@@ -133,7 +133,7 @@ export class UsersService {
   }
 
   async createVerificationCode(userId: Types.ObjectId, email: string): Promise<string> {
-    const code = crypto.randomInt(100000, 999999).toString();
+    const code = crypto.randomInt(100000, 1000000).toString();
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
