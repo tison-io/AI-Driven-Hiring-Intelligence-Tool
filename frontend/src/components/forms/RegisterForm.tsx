@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/contexts/AuthContext';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import toast from '@/lib/toast';
 import { RegisterFormData, RegisterFormErrors } from '@/types';
 
 export default function RegisterForm() {
@@ -57,10 +58,13 @@ export default function RegisterForm() {
     try {
       await registerUser(formData.email, formData.password);
       // Registration successful - redirect directly to verification
+      toast.success('Account created successfully!');
       router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed. Please try again. ';
+      toast.error(errorMessage);
       setErrors({ email: errorMessage });
+
     } finally {
       setIsLoading(false);
     }

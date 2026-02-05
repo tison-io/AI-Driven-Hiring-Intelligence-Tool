@@ -46,6 +46,11 @@ export const candidatesApi = {
 		const response = await api.patch(`/api/candidates/${id}/shortlist`);
 		return response.data;
 	},
+
+	getFilterOptions: async () => {
+		const response = await api.get('/api/candidates/filter-options');
+		return response.data;
+	},
 };
 
 // Auth API functions

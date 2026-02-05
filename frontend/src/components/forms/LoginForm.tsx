@@ -57,8 +57,10 @@ export default function LoginForm() {
         router.push('/dashboard');
       }
     }
-    } catch (error) {
-      toast.error('Login failed. Please try again.');
+    } catch (error: any) {
+      // Show specific error message from backend
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      toast.error(errorMessage);
     }
   };
   

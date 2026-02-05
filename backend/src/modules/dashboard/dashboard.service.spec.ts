@@ -65,27 +65,29 @@ describe('DashboardService', () => {
       // Arrange
       const userId = 'user123';
       const userRole = 'recruiter';
-      
+
+      // Create a chainable query mock that can be reused
+      const createMockQuery = (resolveValue: any) => ({
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        select: jest.fn().mockResolvedValue(resolveValue),
+        exec: jest.fn().mockResolvedValue(resolveValue),
+      });
+
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(2) // totalCandidates
         .mockResolvedValueOnce(1) // shortlistCount
-        .mockResolvedValueOnce(0); // processingCount
-
-      const mockQuery = {
-        sort: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        exec: jest.fn(),
-      };
+        .mockResolvedValueOnce(0) // processingCount
+        .mockResolvedValueOnce(0) // highQualityRate - highQuality
+        .mockResolvedValueOnce(2) // highQualityRate - totalCompleted
+        .mockResolvedValueOnce(0) // biasAlerts
+        .mockResolvedValue(0); // any additional calls
 
       mockCandidateModel.find
-        .mockReturnValueOnce([mockCandidates[0], mockCandidates[1]]) // completedCandidates
-        .mockReturnValueOnce(mockQuery) // recentCandidates query
-        .mockReturnValueOnce(mockQuery); // shortlistedCandidates query
-
-      mockQuery.exec
-        .mockResolvedValueOnce([mockCandidates[0], mockCandidates[1]]) // recentCandidates
-        .mockResolvedValueOnce([mockCandidates[0]]); // shortlistedCandidates
+        .mockReturnValueOnce([mockCandidates[0], mockCandidates[1]]) // completedCandidates (for avg score)
+        .mockReturnValueOnce(createMockQuery([mockCandidates[0], mockCandidates[1]])) // recentCandidates
+        .mockReturnValueOnce(createMockQuery([mockCandidates[0]])) // shortlistedCandidates
+        .mockReturnValue(createMockQuery([])); // any additional calls (confidence, processingTime, etc.)
 
       // Act
       const result = await service.getDashboardMetrics(userId, userRole);
@@ -96,7 +98,7 @@ describe('DashboardService', () => {
       expect(result.shortlistCount).toBe(1);
       expect(result.processingCount).toBe(0);
       expect(result.recentCandidates).toHaveLength(2);
-      
+
       // Verify recruiter query includes createdBy filter
       expect(mockCandidateModel.countDocuments).toHaveBeenCalledWith({ createdBy: userId });
     });
@@ -105,27 +107,25 @@ describe('DashboardService', () => {
       // Arrange
       const userId = 'admin123';
       const userRole = 'admin';
-      
+
+      const createMockQuery = (resolveValue: any) => ({
+        sort: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        select: jest.fn().mockResolvedValue(resolveValue),
+        exec: jest.fn().mockResolvedValue(resolveValue),
+      });
+
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(3) // totalCandidates
         .mockResolvedValueOnce(2) // shortlistCount
-        .mockResolvedValueOnce(1); // processingCount
-
-      const mockQuery = {
-        sort: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        exec: jest.fn(),
-      };
+        .mockResolvedValueOnce(1) // processingCount
+        .mockResolvedValue(0); // any additional calls
 
       mockCandidateModel.find
-        .mockReturnValueOnce(mockCandidates) // completedCandidates
-        .mockReturnValueOnce(mockQuery) // recentCandidates query
-        .mockReturnValueOnce(mockQuery); // shortlistedCandidates query
-
-      mockQuery.exec
-        .mockResolvedValueOnce(mockCandidates) // recentCandidates
-        .mockResolvedValueOnce([mockCandidates[0], mockCandidates[2]]); // shortlistedCandidates
+        .mockReturnValueOnce(mockCandidates) // completedCandidates (for avg score)
+        .mockReturnValueOnce(createMockQuery(mockCandidates)) // recentCandidates
+        .mockReturnValueOnce(createMockQuery([mockCandidates[0], mockCandidates[2]])) // shortlistedCandidates
+        .mockReturnValue(createMockQuery([])); // any additional calls
 
       // Act
       const result = await service.getDashboardMetrics(userId, userRole);
@@ -135,7 +135,7 @@ describe('DashboardService', () => {
       expect(result.averageRoleFitScore).toBe(83.33); // (85 + 75 + 90) / 3
       expect(result.shortlistCount).toBe(2);
       expect(result.processingCount).toBe(1);
-      
+
       // Verify admin query has no createdBy filter
       expect(mockCandidateModel.countDocuments).toHaveBeenCalledWith({});
     });
@@ -144,20 +144,19 @@ describe('DashboardService', () => {
       // Arrange
       const userId = 'user123';
       const userRole = 'recruiter';
-      
-      mockCandidateModel.countDocuments.mockResolvedValue(0);
-      
-      const mockQuery = {
+
+      const createMockQuery = (resolveValue: any) => ({
         sort: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        exec: jest.fn().mockResolvedValue([]),
-      };
+        select: jest.fn().mockResolvedValue(resolveValue),
+        exec: jest.fn().mockResolvedValue(resolveValue),
+      });
+
+      mockCandidateModel.countDocuments.mockResolvedValue(0);
 
       mockCandidateModel.find
-        .mockReturnValueOnce([]) // completedCandidates
-        .mockReturnValueOnce(mockQuery) // recentCandidates query
-        .mockReturnValueOnce(mockQuery); // shortlistedCandidates query
+        .mockReturnValueOnce([]) // completedCandidates (for avg score)
+        .mockReturnValue(createMockQuery([])); // any additional calls
 
       // Act
       const result = await service.getDashboardMetrics(userId, userRole);
@@ -182,11 +181,11 @@ describe('DashboardService', () => {
         { roleFitScore: 95 },  // 81-100
         { roleFitScore: 85 },  // 81-100
       ];
-      
+
       const mockQuery = {
         select: jest.fn().mockResolvedValue(candidatesWithScores),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
 
       // Act
@@ -207,7 +206,7 @@ describe('DashboardService', () => {
       const mockQuery = {
         select: jest.fn().mockResolvedValue([]),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
 
       // Act
@@ -232,22 +231,22 @@ describe('DashboardService', () => {
         { processingTime: 2000 },
         { processingTime: 1500 },
       ];
-      
+
       const mockQuery = {
-        select: jest.fn().mockResolvedValue(completedCandidates),
+        select: jest.fn().mockReturnValue(completedCandidates),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
       mockCandidateModel.countDocuments
-        .mockResolvedValueOnce(2) // failedCount
-        .mockResolvedValueOnce(10); // totalProcessed
+        .mockResolvedValueOnce(2) // failedCount24h
+        .mockResolvedValueOnce(8); // completedCount24h
 
       // Act
       const result = await service.getSystemHealthMetrics();
 
       // Assert
       expect(result.averageProcessingTime).toBe(1500); // (1000 + 2000 + 1500) / 3
-      expect(result.successRate).toBe(80); // (10 - 2) / 10 * 100
+      expect(result.successRate).toBe(80); // 8 / (8 + 2) * 100
       expect(result.failedProcessingCount).toBe(2);
     });
 
@@ -256,7 +255,7 @@ describe('DashboardService', () => {
       const mockQuery = {
         select: jest.fn().mockResolvedValue([]),
       };
-      
+
       mockCandidateModel.find.mockReturnValue(mockQuery);
       mockCandidateModel.countDocuments
         .mockResolvedValueOnce(0) // failedCount
