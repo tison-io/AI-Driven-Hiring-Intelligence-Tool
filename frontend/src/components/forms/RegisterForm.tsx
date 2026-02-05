@@ -52,11 +52,15 @@ export default function RegisterForm() {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    setErrors({});
+    
     try {
       await registerUser(formData.email, formData.password);
-      router.push('/complete-profile');
-    } catch (error) {
-      console.error('Registration failed:', error);
+      // Registration successful - redirect directly to verification
+      router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
+      setErrors({ email: errorMessage });
     } finally {
       setIsLoading(false);
     }
