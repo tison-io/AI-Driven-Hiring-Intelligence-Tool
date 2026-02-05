@@ -4,6 +4,7 @@ import { NotFoundException, Logger } from '@nestjs/common';
 import { CandidatesService } from '../../candidates/candidates.service';
 import { AiService } from '../../ai/ai.service';
 import { ProcessingStatus } from '../../../common/enums/processing-status.enum';
+import { NotificationEventService } from '../../notifications/notification-event.service';
 
 @Processor('ai-processing')
 export class AiProcessor {
@@ -12,11 +13,12 @@ export class AiProcessor {
   constructor(
     private candidatesService: CandidatesService,
     private aiService: AiService,
+    private notificationEventService: NotificationEventService,
   ) { }
 
   @Process('process-candidate')
   async handleAIProcessing(job: Job) {
-    const { candidateId, jobRole, jobDescription } = job.data;
+    const { candidateId, jobRole, jobDescription, userId } = job.data;
     const startTime = Date.now();
 
     try {
@@ -26,6 +28,14 @@ export class AiProcessor {
 
       const candidate = await this.candidatesService.findById(candidateId);
       if (!candidate) throw new NotFoundException('Candidate not found');
+
+      // Emit status change event
+      this.notificationEventService.emitStatusChange({
+        candidateId,
+        candidateName: candidate.name || 'Unknown',
+        userId: userId || candidate.createdBy,
+        status: ProcessingStatus.PROCESSING,
+      });
 
       this.logger.log(`Starting Graph Analysis for Candidate ${candidateId}...`);
 
@@ -59,15 +69,48 @@ export class AiProcessor {
         processingTime,
       });
 
+      // Emit AI analysis complete event
+      this.notificationEventService.emitAIAnalysisComplete({
+        candidateId,
+        candidateName: result.name,
+        userId: userId || candidate.createdBy,
+        jobRole,
+        processingTime,
+      });
+
+      // Check for bias and emit alert if detected
+      if (result.biasCheck && result.biasCheck.hasBias) {
+        this.notificationEventService.emitBiasDetected({
+          candidateId,
+          candidateName: result.name,
+          userId: userId || candidate.createdBy,
+          action: 'bias_detected',
+          biasDetails: result.biasCheck,
+        });
+      }
+
       this.logger.log(`Graph Processing Complete for ${candidateId}. Time: ${processingTime}ms`);
       return { success: true, candidateId };
 
     } catch (error) {
       this.logger.error(`Processing failed for candidate ${candidateId}`, error.stack);
       
+      const processingTime = Date.now() - startTime;
       await this.candidatesService.update(candidateId, {
         status: ProcessingStatus.FAILED,
-        processingTime: Date.now() - startTime,
+        processingTime,
+      });
+
+      // Get candidate info for notification
+      const candidate = await this.candidatesService.findById(candidateId);
+      
+      // Emit processing failed event
+      this.notificationEventService.emitProcessingFailed({
+        candidateId,
+        candidateName: candidate?.name || 'Unknown',
+        userId: userId || candidate?.createdBy,
+        error: error.message,
+        processingTime,
       });
 
       throw error;
