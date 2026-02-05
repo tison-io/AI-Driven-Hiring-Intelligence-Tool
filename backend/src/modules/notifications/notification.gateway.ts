@@ -13,6 +13,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { NotificationsService } from './notifications.service';
+import { ConnectionStateService } from './connection-state.service';
 import { NotificationType } from './enums/notification-type.enum';
 
 interface AuthenticatedSocket extends Socket {
