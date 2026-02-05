@@ -18,14 +18,21 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto) {
-    // Check if user already exists
     const existingUser = await this.usersService.findByEmail(registerDto.email);
     if (existingUser) {
       throw new UnauthorizedException('User with this email already exists');
     }
 
     const user = await this.usersService.create(registerDto);
-    return this.generateAuthResponse(user);
+    
+    // Generate and send verification code
+    const code = await this.usersService.createVerificationCode(user._id, user.email);
+    await this.emailService.sendVerificationEmail(user.email, code, user.fullName);
+    
+    // Return user without JWT
+    const userObj = user.toObject();
+    const { password, ...result } = userObj;
+    return { user: result };
   }
 
   async login(loginDto: LoginDto) {
@@ -33,6 +40,13 @@ export class AuthService {
     
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      throw new UnauthorizedException(
+        'Please verify your email before logging in. Check your inbox for the verification code.'
+      );
     }
 
     // Prevent OAuth-only users from using password login
@@ -163,17 +177,19 @@ export class AuthService {
   }) {
     const { email, fullName, userPhoto, googleId } = googleUser;
     
-    // Check if user exists
     let user = await this.usersService.findByEmail(email);
     
     if (user) {
-      // Existing user - link Google account if not already linked
       if (!user.googleId) {
         user.googleId = googleId;
         user.authProvider = user.password ? 'hybrid' : 'google';
       }
       
-      // Update profile photo if not set
+      // Auto-verify OAuth users
+      if (!user.emailVerified) {
+        user.emailVerified = true;
+      }
+      
       if (userPhoto && !user.userPhoto) {
         user.userPhoto = userPhoto;
       }
@@ -182,10 +198,8 @@ export class AuthService {
         await user.save();
       } catch (error) {
         console.error('Failed to update user with Google data:', error);
-        // Continue with existing user data
       }
     } else {
-      // New user - create with OAuth data
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
@@ -197,9 +211,69 @@ export class AuthService {
         googleId,
         authProvider: 'google',
       });
+      
+      // Auto-verify new OAuth users
+      await this.usersService.markEmailVerified(user._id);
+      user = await this.usersService.findById(user._id.toString());
     }
     
     return this.generateAuthResponse(user);
+  }
+
+  async verifyEmail(email: string, code: string): Promise<{ user: any; access_token: string }> {
+    const verificationCode = await this.usersService.findVerificationCode(email);
+    
+    if (!verificationCode) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    // Check verification attempts
+    if (verificationCode.attempts >= 3) {
+      await this.usersService.deleteVerificationCodes(verificationCode.userId);
+      throw new BadRequestException('Too many failed attempts. Please request a new code.');
+    }
+
+    // Hash submitted code and compare
+    const codeHash = crypto.createHash('sha256').update(code).digest('hex');
+    
+    if (codeHash !== verificationCode.codeHash) {
+      await this.usersService.incrementVerificationAttempts(verificationCode._id);
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    // Mark email as verified
+    const user = await this.usersService.markEmailVerified(verificationCode.userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Cleanup verification codes
+    await this.usersService.deleteVerificationCodes(user._id);
+
+    // Issue JWT
+    return this.generateAuthResponse(user);
+  }
+
+  async resendVerificationCode(email: string): Promise<{ message: string }> {
+    const canRequest = await this.usersService.canRequestVerification(email);
+    if (!canRequest) {
+      return { message: 'If an account exists, a verification code was sent' };
+    }
+
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      return { message: 'If an account exists, a verification code was sent' };
+    }
+
+    if (user.emailVerified) {
+      throw new BadRequestException('Email is already verified');
+    }
+
+    // Generate new code
+    const code = await this.usersService.createVerificationCode(user._id, user.email);
+    await this.emailService.sendVerificationEmail(user.email, code, user.fullName);
+
+    return { message: 'If an account exists, a verification code was sent' };
   }
 
   private generateAuthResponse(user: any) {

@@ -81,7 +81,7 @@ describe('AuthController', () => {
       authService.register.mockResolvedValue(mockAuthResponse as any);
 
       // Act
-      const result = await controller.register(registerDto, mockResponse());
+      const result = await controller.register(registerDto);
 
       // Assert
       expect(authService.register).toHaveBeenCalledWith(registerDto);
@@ -95,7 +95,7 @@ describe('AuthController', () => {
       );
 
       // Act & Assert
-      await expect(controller.register(registerDto, mockResponse())).rejects.toThrow(
+      await expect(controller.register(registerDto)).rejects.toThrow(
         new UnauthorizedException('User with this email already exists'),
       );
     });
