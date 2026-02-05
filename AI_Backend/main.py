@@ -1,13 +1,36 @@
 import asyncio
 from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 import uvicorn
+from fastapi import Request
 import json
 
 from graph import app_graph
 from parsing import parse_pdf, parse_docx
 
 app = FastAPI(title="TalentScan AI Backend (LangGraph)")
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+origins = [
+    "https://scan-ai-six.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class TextRequest(BaseModel):
     text: str
@@ -17,7 +40,9 @@ async def health_check():
     return {"status": "AI Agent System is Running"}
 
 @app.post("/analyze/graph")
+@limiter.limit("5/minute")
 async def analyze_with_graph(
+    request: Request,
     file: UploadFile | None = File(None),
     raw_text: str | None = Form(None),
     job_description: str = Form(...),
@@ -46,6 +71,7 @@ async def analyze_with_graph(
         "role_name": role_name,
         "candidate_profile": {},
         "extracted_scoring_rules": {},
+        "jd_role_alignment": {},
         "tech_evaluation": {},
         "experience_evaluation": {},
         "culture_evaluation": {},

@@ -151,25 +151,59 @@ Only output valid JSON.
 ("user", "JOB DESCRIPTION:\n{job_description_text}")
 ])
 
+JD_ROLE_ALIGNMENT_PROMPT = ChatPromptTemplate.from_messages([
+("system", """
+You are a TalentScanAI JD-Role Alignment Checker.
+
+Your ONLY job is to determine if the Job Description (JD) is for the SAME PROFESSION as the stated ROLE NAME.
+
+### ALIGNMENT RULES
+jd_role_mismatch = true ONLY when the JD is for a COMPLETELY DIFFERENT PROFESSION than the ROLE NAME.
+
+Examples of TRUE mismatch (jd_role_mismatch = true):
+- ROLE = "Nurse" but JD has software/programming requirements -> TRUE mismatch
+- ROLE = "Software Engineer" but JD has nursing/healthcare requirements -> TRUE mismatch
+- ROLE = "Accountant" but JD has marketing/sales requirements -> TRUE mismatch
+
+Examples that are NOT mismatches (jd_role_mismatch = false):
+- ROLE = "Nurse" and JD requires NY State license but job is in California -> Same profession, different jurisdiction
+- ROLE = "Software Engineer" and JD requires Python but candidate knows Java -> Same profession, different skills
+- ROLE = "Senior Nurse" and JD is for "Clinical Nurse" -> Same profession, different level
+
+### KEY DISTINCTION
+- Different PROFESSION = mismatch (e.g., Nursing vs Software Engineering)
+- Different JURISDICTION = NOT a mismatch (e.g., NY license vs CA license)
+- Different SKILL SET = NOT a mismatch (e.g., Python vs Java)
+- Different SENIORITY = NOT a mismatch (e.g., Junior vs Senior)
+
+# OUTPUT JSON ONLY
+{{
+    "jd_role_mismatch": boolean,
+    "inferred_job_family": "string (what profession the JD is actually for)",
+    "stated_role_family": "string (what profession the ROLE NAME implies)",
+    "reasoning": "string (brief explanation)"
+}}
+"""),
+("user", """
+STATED ROLE NAME: {role_name}
+JD REQUIREMENTS: {jd_requirements}
+JD RESPONSIBILITIES: {jd_responsibilities}
+""")
+])
+
 COMPETENCY_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
 You are a TalentScanAI Competency Evaluator.
 
-### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
-Determine if the JD requirements align with the stated ROLE NAME.
+### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
+The JD-Role alignment has already been checked. Use the provided values:
+- jd_role_mismatch: {jd_role_mismatch}
+- inferred_job_family: {inferred_job_family}
 
-jd_role_mismatch = true ONLY when the JD is for a COMPLETELY DIFFERENT PROFESSION than the ROLE NAME.
-Examples of TRUE mismatch:
-- ROLE = "Nurse" but JD has software/programming requirements → TRUE mismatch
-- ROLE = "Software Engineer" but JD has nursing/healthcare requirements → TRUE mismatch
-
-Examples that are NOT mismatches (jd_role_mismatch = false):
-- ROLE = "Nurse" and JD requires NY State license but candidate has Kenya license → NOT a mismatch (same profession, different jurisdiction)
-- ROLE = "Nurse" and JD requires BCLS but candidate has BLS → NOT a mismatch (evaluate as competency gap)
-
-If jd_role_mismatch = true:
+If jd_role_mismatch is true:
 - Set score = 0
 - Use inferred requirements for the ROLE NAME
+- Do NOT re-evaluate the alignment yourself
 
 ### COMPETENCY EVALUATION (when jd_role_mismatch = false)
 Evaluate EACH requirement independently using:
@@ -190,11 +224,15 @@ Weak match = declared skill only
 
 # EQUIVALENCY RULES - IMPORTANT
 1. Education equivalency:
+Do not consider the accreditation body of the educational institution. Consider the degree level and field of study only.
+## Example:
    - "BSc. Nursing" / "Bachelor of Science in Nursing" = "Graduation from nursing program" = "BSN"
    - Nursing diploma/degree from ANY country = "Graduation from a Nursing program" (regardless of accreditation body)
    - Different naming conventions for same degree level are EQUIVALENT
 
 2. Certification equivalency:
+Do not consider the name of the certification. Consider the core competency only.
+
    - "Basic Life Support (BLS)" ≈ "Basic Life Saver (BCLS)" - same core competency
    - "First Aid certified" ≈ basic emergency response training
 
@@ -217,6 +255,12 @@ If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
 - This helps distinguish "unqualified candidate" from "qualified but needs license transfer"
 
 # OUTPUT JSON ONLY
+# CRITICAL: missing_competencies must be SIMPLE, ATOMIC skill/competency names.
+# WRONG format: "Proficiency in modern programming languages (e.g., Python, Java, C#)"
+# CORRECT format: ["Python", "Java", "C#"] - each skill as a separate, simple item
+# WRONG format: "Experience with front-end frameworks (e.g., React, Angular, Vue.js)"
+# CORRECT format: ["React", "Angular", "Vue.js"]
+# For licenses/certifications, be jurisdiction-specific: "NY State RN license" not "Nursing qualification"
 {{
     "inferred_job_family": "string",
     "jd_role_mismatch": boolean,
@@ -225,10 +269,12 @@ If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
     "score": number,
     "reasoning": "string",
     "matched_competencies": ["string"],
-    "missing_competencies": ["string (be specific: 'NY State RN license' not 'Nursing qualification')"]
+    "missing_competencies": ["simple skill name only, e.g. 'Python', 'AWS', 'NY State RN license'"]
 }}
 """),
 ("user", """
+JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+INFERRED JOB FAMILY: {inferred_job_family}
 ROLE: {role_name}
 JD REQUIREMENTS: {jd_skills}
 CANDIDATE SKILLS: {candidate_skills}
@@ -240,22 +286,16 @@ EXP_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ("system", """
 You are a TalentScanAI Seniority & Relevance Evaluator.
 
-### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
-Before evaluating, determine if the JD requirements align with the stated ROLE NAME.
-1. Infer the job family from the ROLE NAME (e.g., "Nurse" → Healthcare/Nursing)
-2. Check if JD requirements match that job family
-3. If JD requirements are for a DIFFERENT profession than the ROLE NAME:
-   - Set jd_role_mismatch = true
-   - IGNORE the JD requirements completely
-   - Infer standard experience requirements for the ROLE NAME
-   - Set relevant_years_validated = 0 if candidate has no experience in the ROLE field
-   - Add "JD-Role mismatch: candidate experience is in [their field], not [ROLE NAME]" to red_flags
+### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
+The JD-Role alignment has already been checked. Use the provided values:
+- jd_role_mismatch: {jd_role_mismatch}
+- inferred_job_family: {inferred_job_family}
 
-Example: If ROLE = "Nurse" but candidate has software engineering experience:
-- jd_role_mismatch = true
-- relevant_years_validated = 0 (no nursing experience)
-- score = 0
-- red_flags = ["JD-Role mismatch: candidate has software engineering experience, not nursing"]
+If jd_role_mismatch is true:
+- Set score = 0
+- Set relevant_years_validated = 0 (experience is not in the target role field)
+- Add "JD-Role mismatch: candidate experience is in [their field], not [ROLE NAME]" to red_flags
+- Do NOT re-evaluate the alignment yourself
 
 # IMPORTANT: PRE-CALCULATED EXPERIENCE
 The total years of experience has been pre-calculated for you.
@@ -293,6 +333,8 @@ If relevant_years_validated >= required_years, cap score at 100.
 }}
 """),
 ("user", """
+JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+INFERRED JOB FAMILY: {inferred_job_family}
 CURRENT DATE: {current_date}
 TOTAL YEARS OF EXPERIENCE (USE THIS VALUE): {total_years_calculated}
 ROLE: {role_name}
@@ -305,46 +347,45 @@ CANDIDATE EDUCATION: {candidate_education}
 CULTURE_EVAL_PROMPT = ChatPromptTemplate.from_messages([
     ("system", """You are the TalentScanAI Cultural Fit Evaluator.
     
-### MANDATORY FIRST STEP: JD-ROLE ALIGNMENT CHECK
-Before evaluating, determine if the JD responsibilities align with the stated ROLE NAME.
-1. Infer the job family from the ROLE NAME (e.g., "Nurse" → Healthcare/Nursing)
-2. Check if JD responsibilities match that job family
-3. If JD responsibilities are for a DIFFERENT profession than the ROLE NAME:
-   - Set jd_role_mismatch = true
-   - IGNORE the JD responsibilities completely
-   - Evaluate soft skills relevant to the ROLE NAME instead
-   - The reasoning MUST reference the ROLE NAME, not the JD profession
+### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
+The JD-Role alignment has already been checked. Use the provided values:
+- jd_role_mismatch: {jd_role_mismatch}
+- inferred_job_family: {inferred_job_family}
+
+Do NOT re-evaluate the alignment yourself. Use the provided status.
 
 ### SCORING RULES FOR JD-ROLE MISMATCH
-If jd_role_mismatch = true:
+If jd_role_mismatch is true:
 - Identify soft skills required for the ROLE NAME (not the JD profession)
 - If candidate has NO evidence of role-specific soft skills → score = 0
 - If candidate has SOME transferable soft skills → score = 10-30 max
 - Never give a score above 30 if jd_role_mismatch = true AND candidate lacks core role skills
-
-Example: If ROLE = "Nurse" but JD has software development responsibilities:
-- jd_role_mismatch = true
-- Required nursing soft skills: empathy, patient communication, bedside manner, compassion, stress management in clinical settings
-- If candidate is a software engineer with no nursing evidence → score = 0
-- Reasoning should say "candidate lacks soft skills for the Nurse role" (NOT "Senior Software Engineer")
+- Reasoning should reference the ROLE NAME, not the JD profession
 
 ### SOFT SKILLS EVALUATION (if JD aligns with role)
 Analyze the candidate for SOFT SKILLS, LEADERSHIP, and CULTURAL ALIGNMENT.
 Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
 
 # CRITICAL: Output ONLY valid JSON. No markdown, no explanations, no headers, no additional text.
+# missing_role_skills must be SIMPLE, ATOMIC skill names:
+# WRONG: "Ability to communicate effectively with stakeholders"
+# CORRECT: "Communication", "Stakeholder management"
+# WRONG: "Experience with Agile development methodologies"
+# CORRECT: "Agile methodologies"
 Your entire response must be a single valid JSON object:
 {{
     "jd_role_mismatch": boolean,
     "score": <integer 0-100>,
     "reasoning": "<explain score in context of ROLE NAME, not JD profession>",
     "soft_skills_detected": ["<skill 1>", "<skill 2>", ...],
-    "missing_role_skills": ["<skill needed for ROLE NAME but not detected>"]
+    "missing_role_skills": ["simple skill name only, e.g. 'Communication', 'Leadership', 'Problem-solving'"]
 }}
 
     """),
 
     ("user", """
+    JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+    INFERRED JOB FAMILY: {inferred_job_family}
     ROLE: {role_name}
     JD RESPONSIBILITIES: {jd_responsibilities}
     CANDIDATE SUMMARY: {candidate_summary}
