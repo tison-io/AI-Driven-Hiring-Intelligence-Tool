@@ -12,6 +12,9 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
+import { MultiChannelDeliveryService } from './multi-channel-delivery.service';
+import { OfflineQueueService } from './delivery/offline-queue.service';
+import { DeviceTokenManagementService } from './device-token-management.service';
 import {
   CreateNotificationDto,
   NotificationFiltersDto,
@@ -29,7 +32,12 @@ import { UserRole } from '../../common/enums/user-role.enum';
 @Controller('notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly multiChannelDeliveryService: MultiChannelDeliveryService,
+    private readonly offlineQueueService: OfflineQueueService,
+    private readonly deviceTokenManagementService: DeviceTokenManagementService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.RECRUITER)
@@ -170,5 +178,60 @@ export class NotificationsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getActiveDeviceTokens(@Request() req) {
     return this.notificationsService.getActiveDeviceTokens(req.user.id);
+  }
+
+  @Get('queue/stats')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Get offline queue statistics for current user' })
+  @ApiResponse({ status: 200, description: 'Queue stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getQueueStats(@Request() req) {
+    return this.offlineQueueService.getQueueStats(req.user.id);
+  }
+
+  @Get('queue/pending')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Get pending notifications from offline queue' })
+  @ApiResponse({ status: 200, description: 'Pending notifications retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getPendingNotifications(@Request() req) {
+    return this.offlineQueueService.deliverQueuedNotifications(req.user.id);
+  }
+
+  @Get('delivery/stats')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get multi-channel delivery statistics' })
+  @ApiResponse({ status: 200, description: 'Delivery stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getDeliveryStats() {
+    return this.multiChannelDeliveryService.getDeliveryStats();
+  }
+
+  @Get('device-tokens/stats')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get device token statistics' })
+  @ApiResponse({ status: 200, description: 'Device token stats retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getDeviceTokenStats() {
+    return this.deviceTokenManagementService.getTokenStats();
+  }
+
+  @Delete('device-tokens/:tokenId')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Deactivate a device token' })
+  @ApiResponse({ status: 200, description: 'Device token deactivated successfully' })
+  @ApiResponse({ status: 404, description: 'Device token not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async deactivateDeviceToken(@Param('tokenId') tokenId: string) {
+    return this.deviceTokenManagementService.deactivateToken(tokenId);
+  }
+
+  @Delete('queue/clear')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Clear offline notification queue for current user' })
+  @ApiResponse({ status: 200, description: 'Queue cleared successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async clearQueue(@Request() req) {
+    return this.offlineQueueService.clearUserQueue(req.user.id);
   }
 }

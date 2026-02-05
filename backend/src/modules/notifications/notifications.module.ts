@@ -12,6 +12,12 @@ import { RedisConnectionService } from './redis-connection.service';
 import { NotificationBroadcastService } from './notification-broadcast.service';
 import { ConnectionStateService } from './connection-state.service';
 import { NotificationEventService } from './notification-event.service';
+import { EmailDeliveryService } from './delivery/email-delivery.service';
+import { WebPushDeliveryService } from './delivery/web-push-delivery.service';
+import { OfflineQueueService } from './delivery/offline-queue.service';
+import { DeviceTokenManagementService } from './device-token-management.service';
+import { NotificationFormattingService } from './notification-formatting.service';
+import { MultiChannelDeliveryService } from './multi-channel-delivery.service';
 
 @Module({
   imports: [
@@ -37,6 +43,12 @@ import { NotificationEventService } from './notification-event.service';
     NotificationBroadcastService,
     ConnectionStateService,
     NotificationEventService,
+    EmailDeliveryService,
+    WebPushDeliveryService,
+    OfflineQueueService,
+    DeviceTokenManagementService,
+    NotificationFormattingService,
+    MultiChannelDeliveryService,
   ],
   exports: [
     NotificationsService, 
@@ -45,6 +57,12 @@ import { NotificationEventService } from './notification-event.service';
     NotificationBroadcastService,
     ConnectionStateService,
     NotificationEventService,
+    EmailDeliveryService,
+    WebPushDeliveryService,
+    OfflineQueueService,
+    DeviceTokenManagementService,
+    NotificationFormattingService,
+    MultiChannelDeliveryService,
   ],
 })
 export class NotificationsModule {}

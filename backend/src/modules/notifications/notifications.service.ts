@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Notification, NotificationDocument } from './entities/notification.entity';
 import { DeviceToken, DeviceTokenDocument } from './entities/device-token.entity';
 import { NotificationType } from './enums/notification-type.enum';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { MultiChannelDeliveryService, DeliveryOptions } from './multi-channel-delivery.service';
+import { DeviceTokenManagementService } from './device-token-management.service';
 
 export interface CreateNotificationDto {
   userId: string;
@@ -32,15 +34,19 @@ export interface PaginationOptions {
 
 @Injectable()
 export class NotificationsService {
+  private readonly logger = new Logger(NotificationsService.name);
+
   constructor(
     @InjectModel(Notification.name)
     private notificationModel: Model<NotificationDocument>,
     @InjectModel(DeviceToken.name)
     private deviceTokenModel: Model<DeviceTokenDocument>,
+    private multiChannelDeliveryService: MultiChannelDeliveryService,
+    private deviceTokenManagementService: DeviceTokenManagementService,
   ) {}
 
   // CRUD Operations
-  async create(createNotificationDto: CreateNotificationDto, userRole: UserRole): Promise<Notification> {
+  async create(createNotificationDto: CreateNotificationDto, userRole: UserRole, userEmail?: string): Promise<Notification> {
     // Role-based validation
     if (!this.canCreateNotificationType(createNotificationDto.type, userRole)) {
       throw new Error(`Role ${userRole} cannot create notification type ${createNotificationDto.type}`);
@@ -51,7 +57,30 @@ export class NotificationsService {
       userId: new Types.ObjectId(createNotificationDto.userId),
     });
 
-    return notification.save();
+    const savedNotification = await notification.save();
+
+    // Trigger multi-channel delivery
+    const deliveryOptions: DeliveryOptions = {
+      userId: createNotificationDto.userId,
+      userEmail,
+      notification: {
+        type: createNotificationDto.type,
+        title: createNotificationDto.title,
+        content: createNotificationDto.content,
+        metadata: createNotificationDto.metadata,
+        userId: createNotificationDto.userId,
+      },
+      priority: this.getNotificationPriority(createNotificationDto.type),
+    };
+
+    try {
+      const deliveryResult = await this.multiChannelDeliveryService.deliverNotification(deliveryOptions);
+      this.logger.log(`Notification ${savedNotification._id} delivered via multiple channels`);
+    } catch (error) {
+      this.logger.error(`Failed to deliver notification ${savedNotification._id}: ${error.message}`);
+    }
+
+    return savedNotification;
   }
 
   async findAll(
@@ -222,30 +251,16 @@ export class NotificationsService {
 
   // Device Token Management
   async saveDeviceToken(userId: string, token: string, platform: string, userAgent?: string): Promise<DeviceToken> {
-    // Deactivate existing tokens for this user and platform
-    await this.deviceTokenModel.updateMany(
-      { userId: new Types.ObjectId(userId), platform },
-      { isActive: false }
-    ).exec();
-
-    // Create new active token
-    const deviceToken = new this.deviceTokenModel({
-      userId: new Types.ObjectId(userId),
+    return this.deviceTokenManagementService.registerDeviceToken({
+      userId,
       token,
-      platform,
+      platform: platform as any,
       userAgent,
-      lastUsed: new Date(),
-      isActive: true,
     });
-
-    return deviceToken.save();
   }
 
   async getActiveDeviceTokens(userId: string): Promise<DeviceToken[]> {
-    return this.deviceTokenModel.find({
-      userId: new Types.ObjectId(userId),
-      isActive: true
-    }).exec();
+    return this.deviceTokenManagementService.getActiveTokensForUser(userId);
   }
 
   // Helper Methods
@@ -315,5 +330,31 @@ export class NotificationsService {
     }
 
     return false;
+  }
+
+  private getNotificationPriority(type: NotificationType): 'low' | 'medium' | 'high' | 'critical' {
+    const criticalTypes = [
+      NotificationType.SYSTEM_ERROR,
+      NotificationType.SECURITY_ALERT,
+    ];
+
+    const highTypes = [
+      NotificationType.PERFORMANCE_DEGRADATION,
+      NotificationType.BIAS_ALERT,
+      NotificationType.NEW_APPLICATION,
+      NotificationType.CANDIDATE_SHORTLISTED,
+    ];
+
+    const mediumTypes = [
+      NotificationType.AI_ANALYSIS_COMPLETE,
+      NotificationType.STATUS_CHANGE,
+      NotificationType.BULK_PROCESSING_COMPLETE,
+      NotificationType.HEALTH_METRICS_ALERT,
+    ];
+
+    if (criticalTypes.includes(type)) return 'critical';
+    if (highTypes.includes(type)) return 'high';
+    if (mediumTypes.includes(type)) return 'medium';
+    return 'low';
   }
 }

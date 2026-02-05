@@ -36,6 +36,7 @@
 		"@nestjs/swagger": "^7.1.8",
 		"@nestjs/throttler": "^5.0.0",
 		"@nestjs/websockets": "^10.0.0",
+		"@nestjs/event-emitter": "^2.0.2",
 		"axios": "^1.5.0",
 		"bcryptjs": "^2.4.3",
 		"bull": "^4.11.3",
@@ -60,7 +61,8 @@
 		"reflect-metadata": "^0.1.13",
 		"rxjs": "^7.8.1",
 		"sib-api-v3-sdk": "^8.5.0",
-		"socket.io": "^4.7.2"
+		"socket.io": "^4.7.2",
+		"web-push": "^3.6.7"
 	},
 	"devDependencies": {
 		"@nestjs/schematics": "^10.0.0",
