@@ -95,31 +95,36 @@ export default function VerifyEmailForm() {
   };
 
   return (
-    <div className="space-y-0">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification</h2>
-        {/* <p className="text-gray-600 text-sm">
-          We've sent a 6-digit code to your email address
-        </p> */}
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Verify Your Email</h2>
       </div>
-      <div className='justify-center flex'>
-      <Image
+
+      {/* Illustration - Responsive sizing */}
+      <div className="flex justify-center">
+        <Image
           src="/images/rafiki.svg"
-          width={300}
-          height={300}
+          width={200}
+          height={200}
           alt="Email verification"
-          />
+          className="w-48 h-48 sm:w-56 sm:h-56 md:w-64 md:h-64"
+        />
       </div>
 
       {/* Email Display */}
       {email && (
-        <div className="pt-20 p-4">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="font-bold flex items-center justify-center text-lg">Verification Code</h1>
-              <p className="text-sm font-medium flex-1 align-middle">A verification code has been sent to <span className='text-blue-700'>{email}</span> . Please check the code to proceed. If you don't receive the email in a few minutes, please check your spam or junk folder</p>
-              
-            </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-gray-900 text-sm sm:text-base">Verification Code Sent</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              A verification code has been sent to{' '}
+              <span className="font-medium text-blue-700 break-all">{email}</span>.
+              Please check your inbox to proceed.
+            </p>
+            <p className="text-xs text-gray-600">
+              If you don't receive the email in a few minutes, please check your spam or junk folder.
+            </p>
           </div>
         </div>
       )}
@@ -128,20 +133,20 @@ export default function VerifyEmailForm() {
         {/* Code Input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Verification Code
+            Enter 6-Digit Code
           </label>
           <input
             type="text"
             value={code}
             onChange={handleCodeChange}
             placeholder="000000"
-            className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-3 text-center text-xl sm:text-2xl font-mono tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isLoading}
             maxLength={6}
             autoComplete="one-time-code"
             autoFocus
           />
-          {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
         </div>
 
         {/* Timer */}

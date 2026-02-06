@@ -49,12 +49,12 @@ export default function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a href="#faq" className="text-sm hover:text-white transition-colors">
+                  <a href="/legal/terms" className="text-sm hover:text-white transition-colors">
                     Terms of Use
                   </a>
                 </li>
                 <li>
-                  <a href="" className="text-sm hover:text-white transition-colors">
+                  <a href="/legal/privacy" className="text-sm hover:text-white transition-colors">
                     Privacy Policy
                   </a>
                 </li>
