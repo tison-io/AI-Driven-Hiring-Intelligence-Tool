@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 export default function VerifyEmailPage() {
   return (
     <PublicRoute>
-      <div className="min-h-screen flex relative">
+      <div className="min-h-screen flex flex-col lg:flex-row relative">
         {/* Back to Home Button */}
         <Link 
           href="/"
@@ -18,24 +18,26 @@ export default function VerifyEmailPage() {
         </Link>
 
         {/* Left Side - Hidden on mobile */}
-        <div className="hidden lg:flex flex-1 bg-gradient-to-b from-[#0A1628] to-[#1A2B42] flex-col items-center justify-center px-12">
-          <Image
-            src="/images/logo.png"
-            alt="Hiring Intelligence"
-            width={200}
-            height={200}
-            className="rounded-[75px] mb-8"
-          />
-          <h1 className="text-white text-4xl font-medium text-center mb-4">
-            Almost There!
-          </h1>
-          <p className="text-white text-center text-lg opacity-90 max-w-md">
-            Enter the 6-digit code we sent to your email to complete your registration and start using our platform.
-          </p>
+        <div className="hidden lg:flex lg:w-1/2 bg-[#0F172A] items-center justify-center p-12">
+          <div className="text-center text-white max-w-md">
+            <div className="mb-8">
+              <Image
+                src="/images/logo.png"
+                alt="Hiring Intelligence"
+                width={200}
+                height={200}
+                className="mx-auto rounded-[75px]"
+              />
+            </div>
+            <h1 className="text-3xl mb-4">Almost There!</h1>
+            <p className="text-gray-300 leading-relaxed">
+              Enter the 6-digit code we sent to your email to complete your registration and start using our platform.
+            </p>
+          </div>
         </div>
 
         {/* Right Side - Full width on mobile */}
-        <div className="flex-1 lg:flex-1 bg-white flex items-center justify-center px-6 lg:px-12">
+        <div className="w-full lg:w-1/2 bg-white flex items-center justify-center p-6 sm:p-8 lg:p-12">
           <div className="w-full max-w-md">
             <VerifyEmailForm />
           </div>
