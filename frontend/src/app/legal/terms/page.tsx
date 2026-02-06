@@ -9,22 +9,27 @@ export default function TermsPage() {
     >
       <LegalSection title="1. Acceptance of Terms">
         <p>
-          By accessing and using TalentScan AI, you agree to be bound by these
-          Terms of Service. If you do not agree to these terms, please do not
-          use our platform.
+          These Terms of Use (“Terms”) govern your access to and use of the <strong>TalentScan AI</strong> platform and related services (collectively, the “Service”).
+          By accessing and using TalentScan AI, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform.
         </p>
       </LegalSection>
 
       <LegalSection title="2. Description of Service">
         <p>
-          TalentScan AI provides AI-powered recruitment intelligence services,
-          including candidate evaluation, resume analysis, and bias detection.
-          Our platform is designed to assist recruiters in making informed,
-          unbiased hiring decisions.
+          TalentScan AI is a web-based artificial intelligence platform designed to assist recruitment and talent evaluation workflows.
+          The service analyzes resumes, LinkedIn profiles, and other permission-based data to generate:
         </p>
+        <ol className='pl-5 '>
+          <li>Structured candidate summaries</li>
+          <li>Skills and Experience inferences</li>
+          <li><strong>Role-Fit Scores (0 - 100) </strong></li>
+          <li>Bias and Fairness indicators</li>
+          <li>Hiring intelligence reports</li>
+        </ol>
+        <p>These outputs are intended <strong>solely as descision-support tools</strong> and do not replace human judgement in recruitment or employment decisions</p>
       </LegalSection>
 
-      <LegalSection title="3. User Accounts">
+      <LegalSection title="3. User Roles and Accounts">
         <p>
           You are responsible for:
         </p>
@@ -36,7 +41,8 @@ export default function TermsPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection title="4. Acceptable Use">
+      <LegalSection title="4. Permitted Use and Restrictions">
+        {/* todo: update the details of this section */}
         <p>
           You agree not to:
         </p>
@@ -57,7 +63,7 @@ export default function TermsPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="6. Disclaimers">
+      <LegalSection title="6. AI Evaluations and Disclaimers">
         <p>
           TalentScan AI is provided "as is" without warranties of any kind.
           While we strive for accuracy, AI-generated insights should be used
@@ -94,7 +100,8 @@ export default function TermsPage() {
           For questions about these Terms of Service, please contact us at:
         </p>
         <p className="font-medium">
-          Email: legal@talentscanai.com
+          <strong>TalentScan AI</strong> <br />
+          Email: inquiries@scanai.com
         </p>
       </LegalSection>
     </LegalLayout>
