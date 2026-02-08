@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { EmailService } from '../email/email.service';
+import { NotificationEventService } from '../notifications/notification-event.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -11,10 +12,15 @@ import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
+  private failedLoginAttempts = new Map<string, { count: number; lastAttempt: Date }>();
+  private readonly MAX_FAILED_ATTEMPTS = 5;
+  private readonly LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private emailService: EmailService,
+    private notificationEventService: NotificationEventService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -29,9 +35,24 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await this.usersService.findByEmail(loginDto.email);
+    const { email } = loginDto;
+    
+    // Check if account is locked
+    const lockoutInfo = this.failedLoginAttempts.get(email);
+    if (lockoutInfo && lockoutInfo.count >= this.MAX_FAILED_ATTEMPTS) {
+      const timeSinceLastAttempt = Date.now() - lockoutInfo.lastAttempt.getTime();
+      if (timeSinceLastAttempt < this.LOCKOUT_DURATION) {
+        throw new UnauthorizedException('Account temporarily locked due to multiple failed login attempts');
+      } else {
+        // Reset after lockout duration
+        this.failedLoginAttempts.delete(email);
+      }
+    }
+
+    const user = await this.usersService.findByEmail(email);
     
     if (!user) {
+      this.trackFailedLogin(email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -43,10 +64,36 @@ export class AuthService {
     }
 
     if (!(await bcrypt.compare(loginDto.password, user.password))) {
+      this.trackFailedLogin(email);
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Successful login - clear failed attempts
+    this.failedLoginAttempts.delete(email);
+
     return this.generateAuthResponse(user);
+  }
+
+  private trackFailedLogin(email: string): void {
+    const current = this.failedLoginAttempts.get(email) || { count: 0, lastAttempt: new Date() };
+    current.count++;
+    current.lastAttempt = new Date();
+    this.failedLoginAttempts.set(email, current);
+
+    // Emit security alert after 3 failed attempts
+    if (current.count >= 3) {
+      this.notificationEventService.emitSecurityAlert({
+        type: 'security',
+        severity: current.count >= this.MAX_FAILED_ATTEMPTS ? 'critical' : 'high',
+        message: `Multiple failed login attempts detected for ${email}`,
+        details: {
+          email,
+          attemptCount: current.count,
+          lastAttempt: current.lastAttempt.toISOString(),
+          locked: current.count >= this.MAX_FAILED_ATTEMPTS,
+        },
+      });
+    }
   }
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {

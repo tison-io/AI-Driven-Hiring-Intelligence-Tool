@@ -53,7 +53,7 @@ export class NotificationBroadcastService {
       if (isConnected) {
         // Broadcast via WebSocket
         await this.notificationGateway.broadcastToUser(userId, {
-          id: savedNotification._id.toString(),
+          id: (savedNotification as any)._id.toString(),
           userId,
           type: notification.type,
           title: notification.title,
@@ -65,7 +65,7 @@ export class NotificationBroadcastService {
       } else {
         // Queue for offline user
         await this.redisConnectionService.queueNotificationForOfflineUser(userId, {
-          id: savedNotification._id.toString(),
+          id: (savedNotification as any)._id.toString(),
           type: notification.type,
           title: notification.title,
           content: notification.content,
@@ -173,6 +173,11 @@ export class NotificationBroadcastService {
     totalConnections: number;
     connectionsByRole: Record<string, number>;
   }> {
-    return this.redisConnectionService.getConnectionStats();
+    const stats = await this.redisConnectionService.getConnectionStats();
+    return {
+      connectedUsers: stats.uniqueUsers,
+      totalConnections: stats.totalConnections,
+      connectionsByRole: stats.connectionsByRole,
+    };
   }
 }

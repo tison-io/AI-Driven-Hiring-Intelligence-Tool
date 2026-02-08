@@ -4,6 +4,7 @@ import { Model, FilterQuery } from "mongoose";
 import { Candidate, CandidateDocument } from "./entities/candidate.entity";
 import { CandidateFilterDto } from "./dto/candidate-filter.dto";
 import { NotificationEventService } from '../notifications/notification-event.service';
+import { MilestoneDetectionService } from '../notifications/automation/milestone-detection.service';
 
 @Injectable()
 export class CandidatesService {
@@ -11,6 +12,7 @@ export class CandidatesService {
 		@InjectModel(Candidate.name)
 		private candidateModel: Model<CandidateDocument>,
 		private notificationEventService: NotificationEventService,
+		private milestoneDetectionService: MilestoneDetectionService,
 	) {}
 
 	async findAll(
@@ -172,9 +174,16 @@ export class CandidatesService {
 		id: string,
 		updateData: Partial<Candidate>,
 	): Promise<CandidateDocument | null> {
-		return this.candidateModel
+		const updatedCandidate = await this.candidateModel
 			.findByIdAndUpdate(id, updateData, { new: true })
 			.exec();
+
+		// Check for processing milestone if status changed to completed
+		if (updateData.status === 'completed') {
+			await this.milestoneDetectionService.checkProcessingMilestone();
+		}
+
+		return updatedCandidate;
 	}
 
 	async findByUserId(userId: string): Promise<CandidateDocument[]> {

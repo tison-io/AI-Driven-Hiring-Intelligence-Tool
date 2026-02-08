@@ -222,7 +222,15 @@ export class ConnectionStateService {
     }
   }
 
-  // Health monitoring
+  async isUserOnline(userId: string): Promise<boolean> {
+    try {
+      const roomId = await this.getUserRoom(userId);
+      return roomId !== null;
+    } catch (error) {
+      this.logger.error(`Error checking if user is online: ${error.message}`);
+      return false;
+    }
+  }
   async getConnectionHealth(): Promise<{
     totalRooms: number;
     activeConnections: number;

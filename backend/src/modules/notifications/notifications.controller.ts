@@ -55,7 +55,12 @@ export class NotificationsController {
   @ApiResponse({ status: 200, description: 'Notifications retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findAll(@Query() filters: NotificationFiltersDto, @Query() pagination: PaginationDto) {
-    return this.notificationsService.findAll(filters, pagination);
+    const convertedFilters = {
+      ...filters,
+      startDate: filters.startDate ? new Date(filters.startDate) : undefined,
+      endDate: filters.endDate ? new Date(filters.endDate) : undefined,
+    };
+    return this.notificationsService.findAll(convertedFilters, pagination);
   }
 
   @Get('my')
@@ -64,7 +69,12 @@ export class NotificationsController {
   @ApiResponse({ status: 200, description: 'User notifications retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async findMy(@Request() req, @Query() filters: Omit<NotificationFiltersDto, 'userId'>) {
-    return this.notificationsService.findByUserId(req.user.id, filters);
+    const convertedFilters = {
+      ...filters,
+      startDate: filters.startDate ? new Date(filters.startDate) : undefined,
+      endDate: filters.endDate ? new Date(filters.endDate) : undefined,
+    };
+    return this.notificationsService.findByUserId(req.user.id, convertedFilters);
   }
 
   @Get('unread-count')

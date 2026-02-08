@@ -51,7 +51,7 @@ NotificationSchema.index({ userId: 1, isRead: 1 });
 NotificationSchema.index(
   { createdAt: 1 },
   { 
-    expireAfterSeconds: 30 * 24 * 60 * 60, // 30 days
+    expires: 30 * 24 * 60 * 60, // 30 days
     partialFilterExpression: { isRead: true }
   }
 );

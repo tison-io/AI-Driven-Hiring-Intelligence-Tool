@@ -5,6 +5,7 @@ import { User, UserDocument } from './entities/user.entity';
 import { RegisterDto } from '../auth/dto/register.dto';
 import { CompleteProfileDto } from '../auth/dto/complete-profile.dto';
 import { UserRole } from '../../common/enums/user-role.enum';
+import { MilestoneDetectionService } from '../notifications/automation/milestone-detection.service';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name)
     private userModel: Model<UserDocument>,
+    private milestoneDetectionService: MilestoneDetectionService,
   ) {}
 
   async create(registerDto: RegisterDto): Promise<UserDocument> {
@@ -23,7 +25,12 @@ export class UsersService {
       role: UserRole.RECRUITER,
     });
     
-    return user.save();
+    const savedUser = await user.save();
+    
+    // Check for user milestone after creating new user
+    await this.milestoneDetectionService.checkUserMilestone();
+    
+    return savedUser;
   }
 
   async createAdmin(email: string, password: string): Promise<UserDocument> {
@@ -125,6 +132,11 @@ export class UsersService {
       profileCompleted: false,
     });
     
-    return user.save();
+    const savedUser = await user.save();
+    
+    // Check for user milestone after creating new OAuth user
+    await this.milestoneDetectionService.checkUserMilestone();
+    
+    return savedUser;
   }
 }

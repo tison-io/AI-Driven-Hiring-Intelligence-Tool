@@ -152,7 +152,7 @@ export class NotificationsService {
   }
 
   async markMultipleAsRead(notificationIds: string[]): Promise<{ modifiedCount: number }> {
-    const objectIds = notificationIds.map(id => new Types.ObjectId(id));
+    const objectIds = notificationIds.map(id => id as any);
     const result = await this.notificationModel.updateMany(
       { _id: { $in: objectIds }, isRead: false },
       { isRead: true }
@@ -162,7 +162,7 @@ export class NotificationsService {
   }
 
   async deleteMultiple(notificationIds: string[]): Promise<{ deletedCount: number }> {
-    const objectIds = notificationIds.map(id => new Types.ObjectId(id));
+    const objectIds = notificationIds.map(id => id as any);
     const result = await this.notificationModel.deleteMany({
       _id: { $in: objectIds }
     }).exec();

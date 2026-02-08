@@ -29,7 +29,7 @@ export class DeviceTokenManagementService {
 
       if (existingToken) {
         // Update existing token
-        existingToken.userId = new Types.ObjectId(dto.userId);
+        existingToken.userId = dto.userId as any;
         existingToken.isActive = true;
         existingToken.lastUsed = new Date();
         existingToken.userAgent = dto.userAgent;
@@ -41,7 +41,7 @@ export class DeviceTokenManagementService {
 
       // Create new token
       const deviceToken = new this.deviceTokenModel({
-        userId: new Types.ObjectId(dto.userId),
+        userId: dto.userId as any,
         token: dto.token,
         platform: dto.platform,
         userAgent: dto.userAgent,
@@ -60,7 +60,7 @@ export class DeviceTokenManagementService {
   async getActiveTokensForUser(userId: string, platform?: DevicePlatform): Promise<DeviceToken[]> {
     try {
       const query: any = {
-        userId: new Types.ObjectId(userId),
+        userId: userId as any,
         isActive: true,
         expiresAt: { $gt: new Date() },
       };
@@ -79,7 +79,7 @@ export class DeviceTokenManagementService {
   async deactivateToken(tokenId: string): Promise<boolean> {
     try {
       const result = await this.deviceTokenModel.updateOne(
-        { _id: new Types.ObjectId(tokenId) },
+        { _id: tokenId as any },
         { isActive: false }
       );
 
