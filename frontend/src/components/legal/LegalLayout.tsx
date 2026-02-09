@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Printer } from 'lucide-react';
+import PublicRoute from '../auth/PublicRoute';
 
 export default function LegalLayout({
   title,
@@ -18,7 +19,8 @@ export default function LegalLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+     <PublicRoute>
+        <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-3xl px-6 py-16">
         {/* Back to Home Link */}
         <Link 
@@ -90,5 +92,6 @@ export default function LegalLayout({
         </div>
       </div>
     </div>
+    </PublicRoute>   
   );
 }
