@@ -15,6 +15,7 @@ const PUBLIC_ROUTES = [
 	"/auth/login",
 	"/auth/register",
 	"/auth/forgot-password",
+	"/auth/verify-email",
 ];
 
 const SEMI_PROTECTED_ROUTES = ["/complete-profile"];
@@ -33,13 +34,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 		const isSemiProtectedRoute = SEMI_PROTECTED_ROUTES.includes(pathname);
 		const checkAuth = async () => {
-			// If we're on a public route AND we've already checked auth once, skip
-			if (isPublicRoute && isInitialized.current) {
+			// If we're on a public route, don't make auth calls
+			if (isPublicRoute) {
 				setLoading(false);
+				isInitialized.current = true;
 				return;
 			}
 
-			// On first load OR when entering a protected route, always verify authentication
+			// On protected routes, verify authentication
 			try {
 				setLoading(true);
 				const response = await api.get("/auth/profile");
@@ -95,8 +97,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				password,
 			});
 
-			// Use user data directly from registration response
-			setUser(response.data.user);
+			// Registration successful - no JWT issued yet
+			// User must verify email first
 			return response.data.user;
 		} catch (err: any) {
 			const message =
@@ -132,6 +134,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		}
 	};
 
+	const verifyEmail = async (email: string, code: string) => {
+		try {
+			setError(null);
+			setLoading(true);
+
+			const response = await api.post('/auth/verify-email', { email, code });
+
+			// Email verified successfully - JWT issued and cookie set
+			setUser(response.data.user);
+			return response.data.user;
+		} catch (err: any) {
+			const message =
+				err.response?.data?.message ||
+				(err instanceof Error ? err.message : "Verification failed");
+			setError(message);
+			throw err;
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const resendVerificationCode = async (email: string) => {
+		try {
+			setError(null);
+
+			const response = await api.post('/auth/resend-verification', { email });
+			return response.data;
+		} catch (err: any) {
+			const message =
+				err.response?.data?.message ||
+				(err instanceof Error ? err.message : "Failed to resend code");
+			setError(message);
+			throw err;
+		}
+	};
+
 	return (
 		<AuthContext.Provider
 			value={{
@@ -141,6 +179,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				error,
 				login,
 				register,
+				verifyEmail,
+				resendVerificationCode,
 				logout,
 				refreshUser,
 			}}

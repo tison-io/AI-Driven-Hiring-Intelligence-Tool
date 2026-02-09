@@ -37,6 +37,9 @@ export class User {
   @Prop({ default: false })
   profileCompleted?: boolean;
 
+  @Prop({ default: false })
+  emailVerified?: boolean;
+
   @Prop()
   googleId?: string;
 

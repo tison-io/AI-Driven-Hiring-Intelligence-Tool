@@ -53,15 +53,18 @@ export default function RegisterForm() {
     if (!validateForm()) return;
     
     setIsLoading(true);
+    setErrors({});
+    
     try {
       await registerUser(formData.email, formData.password);
+      // Registration successful - redirect directly to verification
       toast.success('Account created successfully!');
-      router.push('/complete-profile');
+      router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (error: any) {
-      console.error('Registration failed:', error);
-      // Show specific error message from backend
-      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      const errorMessage = error.response?.data?.message || error.message || 'Registration failed. Please try again.';
       toast.error(errorMessage);
+      setErrors({ email: errorMessage });
+
     } finally {
       setIsLoading(false);
     }
