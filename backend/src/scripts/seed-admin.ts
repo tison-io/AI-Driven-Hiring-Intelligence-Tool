@@ -6,8 +6,11 @@ async function seedAdmin() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const usersService = app.get(UsersService);
 
-  const adminEmail = 'admin1@gmail.com';
-  const adminPassword = 'Admin@123';
+  const adminEmail = process.env.ADMIN_EMAIL ?? '';
+  const adminPassword = process.env.ADMIN_PASSWORD ?? '';
+  if(!adminEmail || !adminPassword) {
+      throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in the environment variables.');
+  }
 
   try {
     // Check if admin already exists
