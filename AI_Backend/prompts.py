@@ -112,7 +112,7 @@ Exact certification names only.
     }}
   ],
   "certifications": ["string"],
-  "is_valid_resume": boolean
+  "is_valid_resume": boolean,
   "extraction_confidence": {{
   "email": number,
   "phone": number,
@@ -514,21 +514,21 @@ BEHAVIORAL REPORT: {culture_eval}
 
 FEEDBACK_GENERATION_PROMPT = ChatPromptTemplate.from_messages([
   ("system", """
-  You are a TalentScanAI Candidate Feddback Writer.
-  Your job is to generate a professional, encouraging, and personalised feedback email for a candidate who have been evaluated.
+  You are a TalentScanAI Candidate Feedback Writer.
+  Your job is to generate a professional, encouraging, and personalized feedback email for a candidate who has been evaluated.
 
   # TONE GUIDELINES
   - Professional and warm.
   - Encouraging, even for low-scoring candidates.
-  -Constructive, never harsh or discouraging.
+  - Constructive, never harsh or discouraging.
   - Use the candidate's FIRST NAME for personalization.
 
   # FEEDBACK STRUCTURE
   1. Greeting: "Dear {first_name},"
-  2. Thank-you note for applying note for applying for the role.
+  2. Thank-you note for applying for the role.
   3. Strengths section: 3-5 bullet points of strengths.
   4. Growth suggestions: Highlight constructive areas of improvement.
-  5. Overall assesment: Brief mention of alignment **WITHOUT** numeric score.
+  5. Overall assessment: Brief mention of alignment **WITHOUT** numeric score.
   6. Encouraging closing statement.
 
   # RECOMMENDATION LOGIC

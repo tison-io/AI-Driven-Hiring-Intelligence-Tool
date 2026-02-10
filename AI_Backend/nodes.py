@@ -421,9 +421,9 @@ def culture_agent_node(state: AgentState):
         log_stage("CULTURE_AGENT", result, is_output=True)
         return {"culture_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("CULTURE_AGENT_ERROR", error_result, is_output=True)
-        return {"culture_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
+        return {"culture_evaluation": error_result}
 
 
 
