@@ -35,6 +35,28 @@ Weak signals:
 * Self-descriptions without proof
 
 # SEMANTIC CATEGORIES
+## CONTACT INFORMATION
+Extract candidate contact details:
+- EMAIL: Look in header, footer, contact sections or any other place in the document. Handle formats:
+  * Standard: name@domain.com
+  * Mailto links: mailto:name@domain.com
+  * Obfuscated: name [at] domain [dot] com -> normalize to name@domain.com
+  * Any other variation.
+  * If multiple emails found, use the first/primary one.
+  
+  EMAIL VALIDITY CHECK (set email_valid=false if ANY of these apply.):
+  * Placeholder domains: xxx, yyy, abc, test, example, fake, dummy, temp, placeholder
+  * Suspicious patterns in local part: sample, test, demo, fake, placeholder, yourname, myemail, noreply
+  * Obviously fake: anything@anything.xxx, user@domain.com (too generic)
+  * Single/double letter domains: x.com, xx.com, ab.com
+  * Repeated characters: aaa@bbb.com, xxx@yyy.zzz
+  * Missing TLD or invalid TLD format
+  
+- PHONE: Extract all formats:
+  * US: (555) 123-4567, 555-123-4567, +1-555-123-4567
+  * International: +44 20 7123 4567, +91-9876543210
+  * If multiple phones found, use the first/primary one.
+
 ## CAPABILITY EVIDENCE
 Extract atomic responsibility or achievement statements that could satisfy a job requirement.
 
@@ -43,6 +65,10 @@ Extract explicit tools, technologies, methods, frameworks, platforms, and domain
 
 ## PROFESSIONAL HISTORY
 Extract role timeline data conservatively.
+
+## Current Position
+Extract the most recent job title (if any).
+Don't pick the title at the top of the list instead check for the most recent date and extract the title associated with that date.
 
 ## EDUCATION
 Extract only formal credentials.
@@ -53,7 +79,13 @@ Exact certification names only.
 # OUTPUT SCHEMA (STRICT JSON)
 {{
   "candidate_name": "string",
+  "first_name": "string",
+  "email": "string or null",
+  "email_valid": boolean,
+  "phone_number": "string or null",
+  "current_position": "string or null",
   "total_years_experience": number,
+  "experience_level": "Entry | Mid | Senior",
   "skills": ["string"],
   "capability_evidence": [
     {{
@@ -81,6 +113,11 @@ Exact certification names only.
   ],
   "certifications": ["string"],
   "is_valid_resume": boolean
+  "extraction_confidence": {{
+  "email": number,
+  "phone": number,
+  "experience": number
+  }}
 }}
 
 Only output valid JSON.
@@ -198,14 +235,20 @@ You are a TalentScanAI Competency Evaluator.
 ### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
 The JD-Role alignment has already been checked. Use the provided values:
 - jd_role_mismatch: {jd_role_mismatch}
+- jd_is_vague: {jd_is_vague}
+- use_market_standards: {use_market_standards}
 - inferred_job_family: {inferred_job_family}
 
-If jd_role_mismatch is true:
-- Set score = 0
-- Use inferred requirements for the ROLE NAME
-- Do NOT re-evaluate the alignment yourself
+### MARKET STANDARDS MODE
+If use_market_standards is true (due to JD-Role mismatch OR vague JD):
+- IGNORE the JD requirements provided
+- INFER 7-10 standard market competencies for the ROLE NAME
+- Evaluate the candidate NORMALLY against these inferred requirements
+- Score based on how well the candidate matches the ROLE NAME requirements
+- Do NOT force score to 0 - evaluate fairly against market standards
+- Include reasoning that references the inferred standards
 
-### COMPETENCY EVALUATION (when jd_role_mismatch = false)
+### COMPETENCY EVALUATION (when use_market_standards = false)
 Evaluate EACH requirement independently using:
 * keyword match
 * semantic equivalence
@@ -242,7 +285,7 @@ Do not consider the name of the certification. Consider the core competency only
    - Do NOT list general qualifications as missing if candidate has equivalent from another jurisdiction
 
 # SCORING
-If jd_role_mismatch = true, score MUST be 0.
+If use_market_standards = true: evaluate fairly against inferred role standards (no forced 0).
 If total requirements is 0, set score = 100.
 Otherwise: score = (matched / total) * 100
 Apply penalties:
@@ -264,6 +307,9 @@ If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
 {{
     "inferred_job_family": "string",
     "jd_role_mismatch": boolean,
+    "jd_is_vague": boolean,
+    "use_market_standards": boolean,
+    "inferred_requirements": ["list of inferred market requirements used for evaluation (only if use_market_standards=true)"],
     "jurisdiction_issue": boolean,
     "critical_success_factors": ["string"],
     "score": number,
@@ -274,6 +320,8 @@ If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
 """),
 ("user", """
 JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+JD IS VAGUE: {jd_is_vague}
+USE MARKET STANDARDS: {use_market_standards}
 INFERRED JOB FAMILY: {inferred_job_family}
 ROLE: {role_name}
 JD REQUIREMENTS: {jd_skills}
@@ -289,23 +337,28 @@ You are a TalentScanAI Seniority & Relevance Evaluator.
 ### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
 The JD-Role alignment has already been checked. Use the provided values:
 - jd_role_mismatch: {jd_role_mismatch}
+- jd_is_vague: {jd_is_vague}
+- use_market_standards: {use_market_standards}
 - inferred_job_family: {inferred_job_family}
 
-If jd_role_mismatch is true:
-- Set score = 0
-- Set relevant_years_validated = 0 (experience is not in the target role field)
-- Add "JD-Role mismatch: candidate experience is in [their field], not [ROLE NAME]" to red_flags
-- Do NOT re-evaluate the alignment yourself
+### MARKET STANDARDS MODE
+If use_market_standards is true (due to JD-Role mismatch OR vague JD):
+- INFER typical experience requirements for the ROLE NAME
+- Use PRESERVED requirements if provided (required_years, education_requirement) from the JD
+- If preserved_required_years is provided, use that instead of inferring
+- If preserved_education_requirement is provided, use that instead of inferring
+- Evaluate the candidate NORMALLY against these requirements
+- Score based on how well the candidate's experience matches the ROLE NAME
+- Do NOT force score to 0 - evaluate fairly
 
-# IMPORTANT: PRE-CALCULATED EXPERIENCE
+### IMPORTANT: PRE-CALCULATED EXPERIENCE
 The total years of experience has been pre-calculated for you.
-ONLY use this value if the experience is RELEVANT to the ROLE NAME.
-If candidate's experience is in a different field than the ROLE, relevant_years = 0.
+Use total_years_calculated as the candidate's verified years of experience.
 
-# EVALUATION CRITERIA (only if JD aligns with role)
+### EVALUATION CRITERIA
 Evaluate:
-* Compare total_years_calculated vs required years (from JD or inferred)
-* Role similarity and relevance
+* Compare total_years_calculated vs required years (from preserved JD requirements OR inferred market standard)
+* Role similarity and relevance to the ROLE NAME
 * Career progression
 * Domain continuity
 
@@ -316,15 +369,18 @@ Penalize:
 - Title inflation without scope
 - Regressions without reason
 
-# SCORING GUIDE
-If jd_role_mismatch = true and experience is unrelated, score = 0.
-If required_years is 0 or missing, set score = 100 (no requirement means full match).
+### SCORING GUIDE
+If use_market_standards = true: evaluate fairly against role standards (no forced 0).
+If required_years is 0 or missing, infer typical market standard for the role.
 Otherwise: Score = (relevant_years_validated / required_years) * 100
 If relevant_years_validated >= required_years, cap score at 100.
 
 # Return strict JSON.
 {{
     "jd_role_mismatch": boolean,
+    "jd_is_vague": boolean,
+    "use_market_standards": boolean,
+    "inferred_required_years": number or null,
     "score": number,
     "reasoning": "string",
     "relevant_years_validated": number,
@@ -334,9 +390,13 @@ If relevant_years_validated >= required_years, cap score at 100.
 """),
 ("user", """
 JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+JD IS VAGUE: {jd_is_vague}
+USE MARKET STANDARDS: {use_market_standards}
 INFERRED JOB FAMILY: {inferred_job_family}
 CURRENT DATE: {current_date}
 TOTAL YEARS OF EXPERIENCE (USE THIS VALUE): {total_years_calculated}
+PRESERVED REQUIRED YEARS (use if provided): {preserved_required_years}
+PRESERVED EDUCATION REQUIREMENT (use if provided): {preserved_education_requirement}
 ROLE: {role_name}
 JD REQUIREMENTS: {jd_experience_rules}
 CANDIDATE EXPERIENCE: {candidate_experience}
@@ -350,21 +410,23 @@ CULTURE_EVAL_PROMPT = ChatPromptTemplate.from_messages([
 ### JD-ROLE ALIGNMENT STATUS (PRE-DETERMINED)
 The JD-Role alignment has already been checked. Use the provided values:
 - jd_role_mismatch: {jd_role_mismatch}
+- jd_is_vague: {jd_is_vague}
+- use_market_standards: {use_market_standards}
 - inferred_job_family: {inferred_job_family}
 
 Do NOT re-evaluate the alignment yourself. Use the provided status.
 
-### SCORING RULES FOR JD-ROLE MISMATCH
-If jd_role_mismatch is true:
-- Identify soft skills required for the ROLE NAME (not the JD profession)
-- If candidate has NO evidence of role-specific soft skills → score = 0
-- If candidate has SOME transferable soft skills → score = 10-30 max
-- Never give a score above 30 if jd_role_mismatch = true AND candidate lacks core role skills
-- Reasoning should reference the ROLE NAME, not the JD profession
+### MARKET STANDARDS MODE
+If use_market_standards is true (due to JD-Role mismatch OR vague JD):
+- INFER typical soft skills required for the ROLE NAME
+- Evaluate the candidate NORMALLY against these inferred requirements
+- Score based on how well the candidate matches the ROLE NAME's typical soft skill requirements
+- Do NOT cap scores artificially - evaluate fairly against role standards
 
-### SOFT SKILLS EVALUATION (if JD aligns with role)
+### SOFT SKILLS EVALUATION
 Analyze the candidate for SOFT SKILLS, LEADERSHIP, and CULTURAL ALIGNMENT.
 Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
+Evaluate against the ROLE NAME requirements (not the JD profession if mismatched).
 
 # CRITICAL: Output ONLY valid JSON. No markdown, no explanations, no headers, no additional text.
 # missing_role_skills must be SIMPLE, ATOMIC skill names:
@@ -375,6 +437,9 @@ Look for evidence of: Communication, Teamwork, Leadership, Problem Solving.
 Your entire response must be a single valid JSON object:
 {{
     "jd_role_mismatch": boolean,
+    "jd_is_vague": boolean,
+    "use_market_standards": boolean,
+    "inferred_soft_skills": ["list of inferred soft skills used for evaluation (only if use_market_standards=true)"],
     "score": <integer 0-100>,
     "reasoning": "<explain score in context of ROLE NAME, not JD profession>",
     "soft_skills_detected": ["<skill 1>", "<skill 2>", ...],
@@ -385,6 +450,8 @@ Your entire response must be a single valid JSON object:
 
     ("user", """
     JD-ROLE MISMATCH STATUS: {jd_role_mismatch}
+    JD IS VAGUE: {jd_is_vague}
+    USE MARKET STANDARDS: {use_market_standards}
     INFERRED JOB FAMILY: {inferred_job_family}
     ROLE: {role_name}
     JD RESPONSIBILITIES: {jd_responsibilities}
