@@ -25,6 +25,7 @@ import { PrivacyModule } from './modules/privacy/privacy.module';
 import { ErrorLogsModule } from './modules/error-logs/error-logs.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { JobPostingsModule } from './modules/job-postings/job-postings.module';
+import { ResultsTokensModule } from './modules/results-tokens/results-tokens.module';
 import { ErrorLoggingInterceptor } from './common/interceptors/error-logging.interceptor';
 import { AuditLoggingInterceptor } from './common/interceptors/audit-logging.interceptor';
 
@@ -66,6 +67,7 @@ import { AuditLoggingInterceptor } from './common/interceptors/audit-logging.int
     ErrorLogsModule,
     AuditLogsModule,
     JobPostingsModule,
+    ResultsTokensModule,
   ],
   providers: [
     {
