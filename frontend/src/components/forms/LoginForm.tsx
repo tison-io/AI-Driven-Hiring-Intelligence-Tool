@@ -137,7 +137,6 @@ export default function LoginForm() {
         {isLoading ? (
           <>
             <LoadingSpinner size="sm" color="white" className="-ml-1 mr-3" />
-            Logging in...
           </>
         ) : (
           'Login'

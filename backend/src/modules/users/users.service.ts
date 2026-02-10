@@ -38,6 +38,7 @@ export class UsersService {
       password: hashedPassword,
       role: UserRole.ADMIN,
       profileCompleted: true,
+      emailVerified: true,
     });
     
     return user.save();
