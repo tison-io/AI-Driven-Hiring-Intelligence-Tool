@@ -98,6 +98,11 @@ def extract_resume_node(state: AgentState):
             print(f"[RESUME_EXTRACTION] Overriding total_years_experience with calculated value: {calculated_years:.2f}")
         
         years = result.get("total_years_experience", 0)
+        try:
+            years = float(years) if years is not None else 0
+        except (TypeError, ValueError):
+            years = 0
+        result["total_years_experience"] = years
         if years <= 2:
             result["experience_level"] = "Entry"
         elif years <= 5:
@@ -134,7 +139,7 @@ def extract_resume_node(state: AgentState):
                     is_fake = True
                     print(f"[RESUME_EXTRACTION] Suspicious domain detected: {domain}")
                 
-                if local_part in fake_local or any(f in local_part for f in fake_local):
+                if local_part in fake_local:
                     is_fake = True
                     print(f"[RESUME_EXTRACTION] Suspicious email pattern: {local_part}")
                 
@@ -163,7 +168,7 @@ def extract_resume_node(state: AgentState):
         
         if not result.get("current_position") and work_experience:
             for exp in work_experience:
-                if exp.get("end_date", "").lower() == "present":
+                if (exp.get("end_date") or "").lower() == "present":
                     result["current_position"] = exp.get("job_title")
                     break
             if not result.get("current_position") and work_experience:
@@ -205,8 +210,8 @@ def jd_role_alignment_node(state: AgentState):
     jd = state.get("extracted_scoring_rules", {})
     role_name = state.get("role_name", "")
     
-    primary_requirements = jd.get("primary_requirements", [])
-    responsibilities = jd.get("responsibilities", [])
+    primary_requirements = jd.get("primary_requirements") or []
+    responsibilities = jd.get("responsibilities") or []
     jd_is_vague = len(primary_requirements) < 3 and len(responsibilities) < 3
     
     input_data = {
