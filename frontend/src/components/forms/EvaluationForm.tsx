@@ -176,115 +176,115 @@ export default function EvaluationForm({
 
       {/* Candidate Source */}
       <div>
-        <fieldset>
-          <legend className="block text-sm font-medium text-gray-700 mb-3">
-            Candidate Source
-          </legend>
-          
-          {/* Tab Buttons */}
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab('upload')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'upload'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Upload size={18} />
-              Upload Resume
-            </button>
-            <button
-              type="button"
-              onClick={handleLinkedInClick}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                activeTab === 'linkedin'
-                  ? 'bg-gray-100 text-gray-900'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <LinkIcon size={18} />
-              LinkedIn URL
-            </button>
-          </div>
+        <label className="block text-sm font-medium text-gray-700 mb-4">
+          How would you like to add the candidate?
+        </label>
+        
+        {/* Minimalistic Tab Selection */}
+        <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50 mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab('upload')}
+            className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'upload'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Upload Resume
+          </button>
+          <button
+            type="button"
+            onClick={handleLinkedInClick}
+            className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === 'linkedin'
+                ? 'bg-blue-500 text-white shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            LinkedIn URL
+          </button>
+        </div>
 
-          {/* Upload Area */}
-          {activeTab === 'upload' && (
-            <div
-              onClick={!resumeFile ? handleBrowseClick : undefined}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                !resumeFile ? 'cursor-pointer' : ''
-              } ${
-                isDragging
-                  ? 'border-blue-400 bg-blue-50'
-                  : resumeFile
-                  ? 'border-green-400 bg-green-50'
-                  : 'border-gray-300 bg-white hover:bg-gray-50'
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-                accept=".pdf,.doc,.docx"
-              />
+        {activeTab === 'upload' && (
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${
+              isDragging
+                ? 'border-blue-500 bg-blue-50'
+                : resumeFile
+                ? 'border-green-500 bg-green-50'
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx"
+            />
+            {resumeFile ? (
               <div className="flex flex-col items-center gap-3">
-                {resumeFile ? (
-                  <>
-                    <FileText size={32} className="text-green-600" />
-                    <p className="text-sm text-gray-900 font-medium">{resumeFile.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
+                <FileText size={40} className="text-green-600" />
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{resumeFile.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={removeFile}
+                  className="mt-2 text-sm text-red-600 hover:text-red-700 font-medium"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleBrowseClick}
+                  className="w-16 h-16 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                  title="Click to upload"
+                >
+                  <Upload size={32} className="text-gray-600" />
+                </button>
+                <div>
+                  <p className="text-sm font-medium text-gray-900 mb-1">
+                    Click icon to upload or drop file here
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Or{' '}
                     <button
                       type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFile();
-                      }}
-                      className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium flex items-center gap-2"
+                      onClick={handleBrowseClick}
+                      className="text-blue-600 hover:text-blue-700 font-medium"
                     >
-                      <X size={16} />
-                      Remove file
+                      browse files
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                      <Upload size={24} className="text-gray-400" />
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      Drag and drop your resume here, or{' '}
-                      <span className="text-blue-500 font-medium hover:text-blue-600">
-                        browse
-                      </span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Supported formats: PDF, DOC, DOCX
-                    </p>
-                  </>
-                )}
+                    {' '}• PDF, DOC, DOCX • Max 10MB
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {activeTab === 'linkedin' && (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-              <input
-                type="url"
-                placeholder="https://linkedin.com/in/username"
-                value={linkedinUrl}
-                onChange={(e) => setLinkedinUrl(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          )}
-        </fieldset>
+        {activeTab === 'linkedin' && (
+          <div>
+            <input
+              type="url"
+              placeholder="https://linkedin.com/in/username"
+              value={linkedinUrl}
+              onChange={(e) => setLinkedinUrl(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        )}
       </div>
 
       {/* Disclaimer */}
