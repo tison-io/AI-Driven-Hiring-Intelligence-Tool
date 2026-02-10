@@ -48,6 +48,16 @@ export default function Footer() {
                     FAQ
                   </a>
                 </li>
+                <li>
+                  <a href="/legal/terms" className="text-sm hover:text-white transition-colors">
+                    Terms of Use
+                  </a>
+                </li>
+                <li>
+                  <a href="/legal/privacy" className="text-sm hover:text-white transition-colors">
+                    Privacy Policy
+                  </a>
+                </li>
               </ul>
             </div>
   

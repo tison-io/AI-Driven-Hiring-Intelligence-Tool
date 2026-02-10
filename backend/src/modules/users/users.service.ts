@@ -26,11 +26,19 @@ export class UsersService {
 	async create(registerDto: RegisterDto): Promise<UserDocument> {
 		const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-		const user = new this.userModel({
-			...registerDto,
-			password: hashedPassword,
-			role: UserRole.RECRUITER,
-		});
+  async createAdmin(email: string, password: string): Promise<UserDocument> {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    const user = new this.userModel({
+      email,
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+      profileCompleted: true,
+      emailVerified: true,
+    });
+    
+    return user.save();
+  }
 
 		const savedUser = await user.save();
 
