@@ -147,9 +147,11 @@ def extract_resume_node(state: AgentState):
                     is_fake = True
                     print(f"[RESUME_EXTRACTION] Repeated character pattern detected: {email}")
                 
-                if len(domain_name) <= 2:
+                tld = domain.rsplit('.', 1)[-1] if '.' in domain else ''
+                has_valid_tld = bool(tld) and tld.isalpha() and len(tld) >= 2
+                if not has_valid_tld:
                     is_fake = True
-                    print(f"[RESUME_EXTRACTION] Suspiciously short domain: {domain}")
+                    print(f"[RESUME_EXTRACTION] Invalid domain TLD: {domain}")
                 
                 result["email_valid"] = not is_fake
                 result["email"] = email
