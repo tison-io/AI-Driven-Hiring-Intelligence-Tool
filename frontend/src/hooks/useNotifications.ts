@@ -18,7 +18,7 @@ export const useNotifications = () => {
 
   const markAllAsRead = async () => {
     try {
-      await api.patch('/api/notifications/read-all');
+      await api.patch('/api/notifications/mark-all-read');
       store.markAllAsRead();
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);

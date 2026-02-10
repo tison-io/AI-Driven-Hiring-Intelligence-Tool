@@ -4,6 +4,8 @@ import { createContext, useState, useEffect, useContext, useRef } from "react";
 import { usePathname } from "next/navigation";
 import api from "../lib/api";
 import { User, AuthContextType, AuthProviderProps } from "../types";
+import { notificationWebSocket } from "@/services/notificationWebSocket";
+import { useNotificationStore } from "@/stores/notificationStore";
 
 export const AuthContext = createContext<AuthContextType | undefined>(
 	undefined,
@@ -33,33 +35,45 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			pathname.startsWith("/auth/reset-password");
 
 		const isSemiProtectedRoute = SEMI_PROTECTED_ROUTES.includes(pathname);
+		
 		const checkAuth = async () => {
-			// If we're on a public route, don't make auth calls
-			if (isPublicRoute) {
+			// If we're on a public route and not initialized, just mark as initialized
+			if (isPublicRoute && !isInitialized.current) {
 				setLoading(false);
 				isInitialized.current = true;
 				return;
 			}
 
 			// On protected routes, verify authentication
-			try {
-				setLoading(true);
-				const response = await api.get("/auth/profile");
-				setUser(response.data);
-			} catch (error: any) {
-				setUser(null);
-				// Handle auth errors by redirecting to login (client-side only)
-				if (
-					error.isAuthError &&
-					typeof window !== "undefined" &&
-					!isPublicRoute &&
-					!isSemiProtectedRoute
-				) {
-					window.location.href = "/auth/login";
+			if (!isPublicRoute) {
+				try {
+					setLoading(true);
+					const response = await api.get("/auth/profile");
+					setUser(response.data);
+					
+					// Initialize WebSocket connection
+					if (response.data?._id) {
+						notificationWebSocket.connect(response.data._id);
+						
+						// Setup notification listeners
+						notificationWebSocket.onNotification((notification) => {
+							useNotificationStore.getState().addNotification(notification);
+						});
+					}
+				} catch (error: any) {
+					setUser(null);
+					// Handle auth errors by redirecting to login (client-side only)
+					if (
+						error.isAuthError &&
+						typeof window !== "undefined" &&
+						!isSemiProtectedRoute
+					) {
+						window.location.href = "/auth/login";
+					}
+				} finally {
+					setLoading(false);
+					isInitialized.current = true;
 				}
-			} finally {
-				setLoading(false);
-				isInitialized.current = true;
 			}
 		};
 
@@ -75,6 +89,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 			// Use user data directly from login response
 			setUser(response.data.user);
+			
+			// Initialize WebSocket connection
+			if (response.data.user?._id) {
+				notificationWebSocket.connect(response.data.user._id);
+				
+				// Setup notification listeners
+				notificationWebSocket.onNotification((notification) => {
+					useNotificationStore.getState().addNotification(notification);
+				});
+			}
+			
 			return response.data.user;
 		} catch (err: any) {
 			const message =
@@ -118,6 +143,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		} catch (error) {
 			console.error("Logout API call failed:", error);
 		} finally {
+			// Disconnect WebSocket
+			notificationWebSocket.disconnect();
+			
 			// Clear local state
 			setUser(null);
 			setError(null);
@@ -143,6 +171,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 			// Email verified successfully - JWT issued and cookie set
 			setUser(response.data.user);
+			
+			// Initialize WebSocket connection
+			if (response.data.user?._id) {
+				notificationWebSocket.connect(response.data.user._id);
+				
+				// Setup notification listeners
+				notificationWebSocket.onNotification((notification) => {
+					useNotificationStore.getState().addNotification(notification);
+				});
+			}
+			
 			return response.data.user;
 		} catch (err: any) {
 			const message =

@@ -2,6 +2,7 @@
 
 import { Menu } from 'lucide-react'
 import { MobileHeaderProps } from '@/types'
+import NotificationDropdown from '@/components/notifications/NotificationDropdown'
 
 export default function MobileHeader({ onMenuClick, user }: MobileHeaderProps) {
   return (
@@ -15,8 +16,9 @@ export default function MobileHeader({ onMenuClick, user }: MobileHeaderProps) {
         <Menu className="w-6 h-6" />
       </button>
 
-      {/* User Avatar */}
-      <div className="flex items-center">
+      {/* Notifications and User Avatar */}
+      <div className="flex items-center gap-3">
+        <NotificationDropdown />
         {user?.userPhoto ? (
           <img 
             src={user.userPhoto} 

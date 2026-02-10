@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import Cookies from 'js-cookie';
 import { Notification } from '@/types/notification.types';
+import api from '@/lib/api';
 
 class NotificationWebSocket {
   private socket: Socket | null = null;
@@ -8,27 +8,38 @@ class NotificationWebSocket {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isManualDisconnect = false;
+  private authToken: string | null = null;
 
-  connect(userId: string) {
+  async connect(userId: string) {
     if (this.socket?.connected) return;
 
-    const token = Cookies.get('token');
-    if (!token) {
-      console.error('No auth token found');
-      return;
+    // Get token from backend
+    if (!this.authToken) {
+      try {
+        const response = await api.get('/auth/ws-token');
+        this.authToken = response.data.token;
+      } catch (error) {
+        console.error('Failed to get WebSocket token:', error);
+        return;
+      }
     }
 
     this.isManualDisconnect = false;
-    this.socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000', {
-      auth: { token },
-      transports: ['websocket'],
-      reconnection: false, // Handle reconnection manually
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    this.socket = io(`${baseUrl}/notifications`, {
+      auth: { token: this.authToken },
+      transports: ['websocket', 'polling'],
+      reconnection: false,
+      withCredentials: true,
     });
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected');
       this.reconnectAttempts = 0;
-      this.socket?.emit('join', { userId });
+    });
+
+    this.socket.on('connected', (data) => {
+      console.log('WebSocket authenticated:', data);
     });
 
     this.socket.on('disconnect', () => {
@@ -65,10 +76,11 @@ class NotificationWebSocket {
     this.isManualDisconnect = true;
     this.socket?.disconnect();
     this.socket = null;
+    this.authToken = null;
   }
 
   onNotification(callback: (notification: Notification) => void) {
-    this.socket?.on('notification:new', callback);
+    this.socket?.on('notification', callback);
   }
 
   onNotificationRead(callback: (notificationId: string) => void) {
@@ -79,8 +91,8 @@ class NotificationWebSocket {
     this.socket?.on('notification:deleted', callback);
   }
 
-  onConnectionHealth(callback: (data: any) => void) {
-    this.socket?.on('connection:health', callback);
+  onMissedNotifications(callback: (data: any) => void) {
+    this.socket?.on('missed-notifications', callback);
   }
 
   markAsRead(notificationId: string) {
