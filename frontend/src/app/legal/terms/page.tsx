@@ -26,7 +26,7 @@ export default function TermsPage() {
           <li>Bias and Fairness indicators</li>
           <li>Hiring intelligence reports</li>
         </ol>
-        <p>These outputs are intended <strong>solely as descision-support tools</strong> and do not replace human judgement in recruitment or employment decisions</p>
+        <p>These outputs are intended <strong>solely as decision-support tools</strong> and do not replace human judgement in recruitment or employment decisions</p>
       </LegalSection>
 
       <LegalSection title="3. User Roles and Accounts">

@@ -8,7 +8,11 @@ export default function NotFound() {
   const router = useRouter();
 
   const handleGoBack = () => {
-    router.back();
+    if(window.history.length > 1){
+      router.back(); 
+    }else{
+      router.push('/');
+  }
   };
 
   return (
