@@ -313,7 +313,7 @@ def tech_agent_node(state: AgentState):
         log_stage("TECH_AGENT", result, is_output=True)
         return {"tech_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("TECH_AGENT_ERROR", error_result, is_output=True)
         return {"tech_evaluation": error_result}
 
@@ -376,7 +376,7 @@ def experience_agent_node(state: AgentState):
         log_stage("EXPERIENCE_AGENT", result, is_output=True)
         return {"experience_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("EXPERIENCE_AGENT_ERROR", error_result, is_output=True)
         return {"experience_evaluation": error_result}
 
@@ -472,7 +472,7 @@ def aggregator_node(state: AgentState):
     except Exception as e:
         error_result = {"final_score": 0, "final_reasoning": str(e), "error": True}
         log_stage("AGGREGATOR_ERROR", error_result, is_output=True)
-        return {"final_evaluation": {"final_score": 0, "final_reasoning": str(e)}}
+        return {"final_evaluation": error_result}
 
 def feedback_node(state: AgentState):
     print("STAGE: CANDIDATE FEEDBACK GENERATION") 
@@ -510,11 +510,21 @@ def feedback_node(state: AgentState):
         return {"candidate_feedback": result}
 
     except Exception as e:
+        role = state.get("role_name", "the position")
         error_result={
             "recommendation": "Maybe",
             "feedback_email": {
-                "subject": "Your Application Results - " + state.get("role_name", ""),
-                "body": f"Dear {first_name},\n\nThank you..."
+                "subject": f"Your Application Results - {role}",
+                "body": (
+                    f"Dear {first_name},\n\n"
+                    f"Thank you for your interest in the {role} position and for taking the time to submit your application.\n\n"
+                    f"We have received your application and our team is currently reviewing it. "
+                    f"Unfortunately, we were unable to generate detailed feedback at this time.\n\n"
+                    f"A member of our recruitment team will follow up with you shortly with more information about your application status and next steps.\n\n"
+                    f"If you have any questions in the meantime, please don't hesitate to reach out to our recruitment team.\n\n"
+                    f"We appreciate your interest and wish you all the best.\n\n"
+                    f"Warm regards,\nThe TalentScan AI Team"
+                )
             },
             "strengths": [],
             "improvement_areas": [],
