@@ -10,7 +10,6 @@ async function seedAdmin() {
   const adminPassword = process.env.ADMIN_PASSWORD ?? '';
   if(!adminEmail || !adminPassword) {
       throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be set in the environment variables.');
-    process.exit(1);
   }
 
   try {
