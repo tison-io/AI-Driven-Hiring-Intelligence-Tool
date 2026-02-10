@@ -32,4 +32,4 @@ export class ResultsToken {
 }
 
 export const ResultsTokenSchema = SchemaFactory.createForClass(ResultsToken);
-ResultsTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+ResultsTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 } as any);

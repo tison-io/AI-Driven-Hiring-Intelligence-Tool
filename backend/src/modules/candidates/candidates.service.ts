@@ -233,4 +233,8 @@ export class CandidatesService {
 	private escapeRegex(string: string): string {
 		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	}
+
+	async updateMany(filter: any, update: any): Promise<any> {
+		return this.candidateModel.updateMany(filter, update).exec();
+	}
 }
