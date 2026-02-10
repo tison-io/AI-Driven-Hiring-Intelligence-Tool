@@ -8,7 +8,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, UseGuards, Logger } from '@nestjs/common';
+import { Injectable, UseGuards, Logger, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { UserRole } from '../../common/enums/user-role.enum';
@@ -50,7 +50,9 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
   constructor(
     private jwtService: JwtService,
+    @Inject(forwardRef(() => NotificationsService))
     private notificationsService: NotificationsService,
+    private connectionStateService: ConnectionStateService,
   ) {}
 
   async handleConnection(client: AuthenticatedSocket) {

@@ -5,6 +5,7 @@ import { OfflineQueueService, QueuedNotification } from './delivery/offline-queu
 import { DeviceTokenManagementService } from './device-token-management.service';
 import { NotificationFormattingService, NotificationData } from './notification-formatting.service';
 import { ConnectionStateService } from './connection-state.service';
+import { NotificationGateway } from './notification.gateway';
 import { NotificationType } from './enums/notification-type.enum';
 import { DevicePlatform } from './entities/device-token.entity';
 
@@ -34,6 +35,7 @@ export class MultiChannelDeliveryService {
     private deviceTokenManagementService: DeviceTokenManagementService,
     private notificationFormattingService: NotificationFormattingService,
     private connectionStateService: ConnectionStateService,
+    private notificationGateway: NotificationGateway,
   ) {}
 
   async deliverNotification(options: DeliveryOptions): Promise<DeliveryResult> {
@@ -73,8 +75,15 @@ export class MultiChannelDeliveryService {
 
   private async deliverViaWebSocket(options: DeliveryOptions): Promise<{ success: boolean; error?: string }> {
     try {
-      // This would integrate with the WebSocket gateway
-      // For now, we'll assume it's handled by the broadcast service
+      await this.notificationGateway.broadcastToUser(options.userId, {
+        id: options.notification.metadata?.notificationId || `${Date.now()}`,
+        userId: options.userId,
+        type: options.notification.type,
+        title: options.notification.title,
+        content: options.notification.content,
+        metadata: options.notification.metadata,
+        createdAt: new Date(),
+      });
       return { success: true };
     } catch (error) {
       this.logger.error(`WebSocket delivery failed: ${error.message}`);

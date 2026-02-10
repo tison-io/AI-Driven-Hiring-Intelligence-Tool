@@ -29,7 +29,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 
 @ApiTags('Notifications')
 @ApiBearerAuth('JWT-auth')
-@Controller('notifications')
+@Controller('api/notifications')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class NotificationsController {
   constructor(
@@ -243,5 +243,39 @@ export class NotificationsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async clearQueue(@Request() req) {
     return this.offlineQueueService.clearUserQueue(req.user.id);
+  }
+
+  @Get('analytics')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get notification analytics' })
+  @ApiQuery({ name: 'range', required: false, enum: ['7d', '30d', '90d'] })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getAnalytics(@Query('range') range: string = '7d') {
+    return this.notificationsService.getAnalytics(range);
+  }
+
+  @Get('preferences')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Get user notification preferences' })
+  @ApiResponse({ status: 200, description: 'Preferences retrieved successfully' })
+  async getPreferences(@Request() req) {
+    return this.notificationsService.getPreferences(req.user.id);
+  }
+
+  @Patch('preferences')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Update notification preferences' })
+  @ApiResponse({ status: 200, description: 'Preferences updated successfully' })
+  async updatePreferences(@Request() req, @Body() body: any) {
+    return this.notificationsService.updatePreferences(req.user.id, body.type, body.preferences);
+  }
+
+  @Patch('preferences/bulk')
+  @Roles(UserRole.ADMIN, UserRole.RECRUITER)
+  @ApiOperation({ summary: 'Bulk update notification preferences' })
+  @ApiResponse({ status: 200, description: 'Bulk preferences updated successfully' })
+  async updateBulkPreferences(@Request() req, @Body() body: { enabled: boolean }) {
+    return this.notificationsService.updateBulkPreferences(req.user.id, body.enabled);
   }
 }

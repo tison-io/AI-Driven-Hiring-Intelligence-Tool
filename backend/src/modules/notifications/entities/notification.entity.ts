@@ -53,5 +53,5 @@ NotificationSchema.index(
   { 
     expires: 30 * 24 * 60 * 60, // 30 days
     partialFilterExpression: { isRead: true }
-  }
+  } as any
 );

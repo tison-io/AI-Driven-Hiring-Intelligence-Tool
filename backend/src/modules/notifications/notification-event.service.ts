@@ -19,7 +19,7 @@ export interface CandidateManagementEvent {
   candidateId: string;
   candidateName: string;
   userId: string;
-  action: 'shortlisted' | 'bias_detected' | 'duplicate_found';
+  action: 'shortlisted' | 'removed_from_shortlist' | 'deleted' | 'bias_detected' | 'duplicate_found';
   biasDetails?: any;
   duplicateDetails?: any;
 }
@@ -170,6 +170,48 @@ export class NotificationEventService {
       this.logger.log(`Candidate shortlisted notification sent for ${event.candidateId}`);
     } catch (error) {
       this.logger.error('Failed to send candidate shortlisted notification', error);
+    }
+  }
+
+  @OnEvent('candidate.removed.from.shortlist')
+  async handleCandidateRemovedFromShortlist(event: CandidateManagementEvent) {
+    try {
+      await this.notificationsService.create({
+        userId: event.userId,
+        type: NotificationType.CANDIDATE_SHORTLISTED,
+        title: 'Candidate Removed from Shortlist',
+        content: `Candidate "${event.candidateName}" has been removed from your shortlist`,
+        metadata: {
+          candidateId: event.candidateId,
+          action: event.action,
+          timestamp: new Date(),
+        },
+      }, UserRole.RECRUITER);
+
+      this.logger.log(`Candidate removed from shortlist notification sent for ${event.candidateId}`);
+    } catch (error) {
+      this.logger.error('Failed to send candidate removed from shortlist notification', error);
+    }
+  }
+
+  @OnEvent('candidate.deleted')
+  async handleCandidateDeleted(event: CandidateManagementEvent) {
+    try {
+      await this.notificationsService.create({
+        userId: event.userId,
+        type: NotificationType.STATUS_CHANGE,
+        title: 'Candidate Deleted',
+        content: `Candidate "${event.candidateName}" has been permanently deleted from the system`,
+        metadata: {
+          candidateId: event.candidateId,
+          action: event.action,
+          timestamp: new Date(),
+        },
+      }, UserRole.RECRUITER);
+
+      this.logger.log(`Candidate deleted notification sent for ${event.candidateId}`);
+    } catch (error) {
+      this.logger.error('Failed to send candidate deleted notification', error);
     }
   }
 
@@ -442,6 +484,14 @@ export class NotificationEventService {
 
   emitCandidateShortlisted(event: CandidateManagementEvent) {
     this.eventEmitter.emit('candidate.shortlisted', event);
+  }
+
+  emitCandidateRemovedFromShortlist(event: CandidateManagementEvent) {
+    this.eventEmitter.emit('candidate.removed.from.shortlist', event);
+  }
+
+  emitCandidateDeleted(event: CandidateManagementEvent) {
+    this.eventEmitter.emit('candidate.deleted', event);
   }
 
   emitBiasDetected(event: CandidateManagementEvent) {

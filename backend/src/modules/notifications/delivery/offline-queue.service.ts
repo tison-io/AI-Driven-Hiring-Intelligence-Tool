@@ -37,16 +37,16 @@ export class OfflineQueueService {
       };
 
       // Add to user's queue
-      await this.redisConnectionService['client'].lPush(
+      await this.redisConnectionService.getClient().lPush(
         queueKey,
         JSON.stringify(queuedNotification)
       );
 
       // Trim queue to max size
-      await this.redisConnectionService['client'].lTrim(queueKey, 0, this.MAX_QUEUE_SIZE - 1);
+      await this.redisConnectionService.getClient().lTrim(queueKey, 0, this.MAX_QUEUE_SIZE - 1);
       
       // Set TTL
-      await this.redisConnectionService['client'].expire(queueKey, this.QUEUE_TTL);
+      await this.redisConnectionService.getClient().expire(queueKey, this.QUEUE_TTL);
 
       this.logger.debug(`Queued notification ${notification.id} for offline user ${notification.userId}`);
     } catch (error) {
@@ -57,7 +57,7 @@ export class OfflineQueueService {
   async getQueuedNotifications(userId: string, limit: number = 50): Promise<QueuedNotification[]> {
     try {
       const queueKey = `${this.QUEUE_PREFIX}${userId}`;
-      const notifications = await this.redisConnectionService['client'].lRange(queueKey, 0, limit - 1);
+      const notifications = await this.redisConnectionService.getClient().lRange(queueKey, 0, limit - 1);
       
       return notifications.map(n => JSON.parse(n));
     } catch (error) {
@@ -73,7 +73,7 @@ export class OfflineQueueService {
       
       if (notifications.length > 0) {
         // Clear the queue after retrieving
-        await this.redisConnectionService['client'].del(queueKey);
+        await this.redisConnectionService.getClient().del(queueKey);
         this.logger.log(`Delivered ${notifications.length} queued notifications to user ${userId}`);
       }
       
@@ -123,16 +123,16 @@ export class OfflineQueueService {
         attempts: notification.attempts + 1,
       };
 
-      await this.redisConnectionService['client'].lPush(
+      await this.redisConnectionService.getClient().lPush(
         failedKey,
         JSON.stringify(failedNotification)
       );
 
       // Trim failed queue
-      await this.redisConnectionService['client'].lTrim(failedKey, 0, 49); // Keep last 50
+      await this.redisConnectionService.getClient().lTrim(failedKey, 0, 49); // Keep last 50
       
       // Set TTL for failed queue (30 days)
-      await this.redisConnectionService['client'].expire(failedKey, 30 * 24 * 60 * 60);
+      await this.redisConnectionService.getClient().expire(failedKey, 30 * 24 * 60 * 60);
 
       this.logger.warn(`Moved notification ${notification.id} to failed queue for user ${notification.userId}`);
     } catch (error) {
@@ -143,7 +143,7 @@ export class OfflineQueueService {
   async getFailedNotifications(userId: string): Promise<any[]> {
     try {
       const failedKey = `${this.FAILED_QUEUE_PREFIX}${userId}`;
-      const notifications = await this.redisConnectionService['client'].lRange(failedKey, 0, -1);
+      const notifications = await this.redisConnectionService.getClient().lRange(failedKey, 0, -1);
       
       return notifications.map(n => JSON.parse(n));
     } catch (error) {
@@ -155,7 +155,7 @@ export class OfflineQueueService {
   async clearUserQueue(userId: string): Promise<void> {
     try {
       const queueKey = `${this.QUEUE_PREFIX}${userId}`;
-      await this.redisConnectionService['client'].del(queueKey);
+      await this.redisConnectionService.getClient().del(queueKey);
       this.logger.log(`Cleared notification queue for user ${userId}`);
     } catch (error) {
       this.logger.error(`Failed to clear user queue: ${error.message}`);
@@ -169,14 +169,14 @@ export class OfflineQueueService {
   }> {
     try {
       const pattern = `${this.QUEUE_PREFIX}*`;
-      const keys = await this.redisConnectionService['client'].keys(pattern);
+      const keys = await this.redisConnectionService.getClient().keys(pattern);
       
       if (keys.length === 0) {
         return { totalUsers: 0, totalNotifications: 0, averageQueueSize: 0 };
       }
 
       const queueSizes = await Promise.all(
-        keys.map(key => this.redisConnectionService['client'].lLen(key))
+        keys.map(key => this.redisConnectionService.getClient().lLen(key))
       );
 
       const totalNotifications = queueSizes.reduce((sum, size) => sum + size, 0);

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { NotificationType } from '../enums/notification-type.enum';
-import { DevicePlatform } from '../entities/device-token.entity';
+import { NotificationType } from './enums/notification-type.enum';
+import { DevicePlatform } from './entities/device-token.entity';
 
 export interface NotificationData {
   type: NotificationType;

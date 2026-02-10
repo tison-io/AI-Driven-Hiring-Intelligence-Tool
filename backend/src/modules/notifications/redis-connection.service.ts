@@ -1,221 +1,166 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { createClient, RedisClientType } from 'redis';
+import { UserRole } from '../../common/enums/user-role.enum';
 
 export interface ConnectionState {
   userId: string;
   socketId: string;
-  userRole: string;
+  userRole: UserRole;
   connectedAt: Date;
   lastActivity: Date;
+}
+
+export interface ConnectionStats {
+  totalConnections: number;
+  connectionsByRole: Record<UserRole, number>;
+  averageConnectionTime: number;
+  uniqueUsers: number;
 }
 
 @Injectable()
 export class RedisConnectionService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(RedisConnectionService.name);
   private client: RedisClientType;
-  private readonly CONNECTION_PREFIX = 'ws:connection:';
-  private readonly USER_CONNECTIONS_PREFIX = 'ws:user:';
-  private readonly CONNECTION_TTL = 3600; // 1 hour
+
+  constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
+    const redisHost = this.configService.get<string>('REDIS_HOST', 'localhost');
+    const redisPort = this.configService.get<number>('REDIS_PORT', 6379);
+    const redisPassword = this.configService.get<string>('REDIS_PASSWORD');
+
     this.client = createClient({
-      url: process.env.REDIS_URL || 'redis://localhost:6379',
+      socket: {
+        host: redisHost,
+        port: redisPort,
+        tls: redisHost.includes('upstash.io'),
+      },
+      password: redisPassword,
     });
 
     this.client.on('error', (err) => {
-      this.logger.error('Redis connection error:', err);
+      this.logger.error(`Redis Client Error: ${err.message}`);
     });
 
     this.client.on('connect', () => {
-      this.logger.log('Connected to Redis');
+      this.logger.log('Redis client connected');
     });
 
-    await this.client.connect();
+    this.client.on('ready', () => {
+      this.logger.log('Redis client ready');
+    });
+
+    try {
+      await this.client.connect();
+    } catch (error) {
+      this.logger.error(`Failed to connect to Redis: ${error.message}`);
+    }
   }
 
   async onModuleDestroy() {
     if (this.client) {
       await this.client.quit();
+      this.logger.log('Redis client disconnected');
     }
   }
 
-  // Connection state management
-  async saveConnectionState(socketId: string, state: ConnectionState): Promise<void> {
-    try {
-      const key = `${this.CONNECTION_PREFIX}${socketId}`;
-      await this.client.setEx(key, this.CONNECTION_TTL, JSON.stringify(state));
+  getClient(): RedisClientType {
+    return this.client;
+  }
 
-      // Also track user connections
-      const userKey = `${this.USER_CONNECTIONS_PREFIX}${state.userId}`;
-      await this.client.sAdd(userKey, socketId);
-      await this.client.expire(userKey, this.CONNECTION_TTL);
-
-      this.logger.debug(`Saved connection state for socket ${socketId}`);
-    } catch (error) {
-      this.logger.error(`Error saving connection state: ${error.message}`);
-    }
+  async saveConnectionState(socketId: string, connectionState: ConnectionState): Promise<void> {
+    const key = `connection:${socketId}`;
+    await this.client.setEx(key, 3600, JSON.stringify(connectionState));
   }
 
   async getConnectionState(socketId: string): Promise<ConnectionState | null> {
-    try {
-      const key = `${this.CONNECTION_PREFIX}${socketId}`;
-      const data = await this.client.get(key);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      this.logger.error(`Error getting connection state: ${error.message}`);
-      return null;
-    }
+    const key = `connection:${socketId}`;
+    const data = await this.client.get(key);
+    return data ? JSON.parse(data) : null;
   }
 
   async removeConnectionState(socketId: string): Promise<void> {
-    try {
-      // Get connection state first to remove from user connections
-      const state = await this.getConnectionState(socketId);
-      
-      if (state) {
-        const userKey = `${this.USER_CONNECTIONS_PREFIX}${state.userId}`;
-        await this.client.sRem(userKey, socketId);
-      }
-
-      // Remove connection state
-      const key = `${this.CONNECTION_PREFIX}${socketId}`;
-      await this.client.del(key);
-
-      this.logger.debug(`Removed connection state for socket ${socketId}`);
-    } catch (error) {
-      this.logger.error(`Error removing connection state: ${error.message}`);
-    }
+    const key = `connection:${socketId}`;
+    await this.client.del(key);
   }
 
   async updateLastActivity(socketId: string): Promise<void> {
-    try {
-      const state = await this.getConnectionState(socketId);
-      if (state) {
-        state.lastActivity = new Date();
-        await this.saveConnectionState(socketId, state);
+    const connectionState = await this.getConnectionState(socketId);
+    if (connectionState) {
+      connectionState.lastActivity = new Date();
+      await this.saveConnectionState(socketId, connectionState);
+    }
+  }
+
+  async getUserConnections(userId: string): Promise<ConnectionState[]> {
+    const pattern = 'connection:*';
+    const keys = await this.client.keys(pattern);
+    const connections: ConnectionState[] = [];
+    
+    for (const key of keys) {
+      const data = await this.client.get(key);
+      if (data) {
+        const connection = JSON.parse(data);
+        if (connection.userId === userId) {
+          connections.push(connection);
+        }
       }
-    } catch (error) {
-      this.logger.error(`Error updating last activity: ${error.message}`);
     }
+    
+    return connections;
   }
 
-  // User connection tracking
-  async getUserConnections(userId: string): Promise<string[]> {
-    try {
-      const userKey = `${this.USER_CONNECTIONS_PREFIX}${userId}`;
-      return await this.client.sMembers(userKey);
-    } catch (error) {
-      this.logger.error(`Error getting user connections: ${error.message}`);
-      return [];
-    }
-  }
-
-  async isUserConnected(userId: string): Promise<boolean> {
-    try {
-      const connections = await this.getUserConnections(userId);
-      return connections.length > 0;
-    } catch (error) {
-      this.logger.error(`Error checking user connection: ${error.message}`);
-      return false;
-    }
-  }
-
-  // Notification queue for offline users
-  async queueNotificationForOfflineUser(userId: string, notification: any): Promise<void> {
-    try {
-      const queueKey = `notification:queue:${userId}`;
-      const notificationData = {
-        ...notification,
-        queuedAt: new Date().toISOString(),
-      };
-      
-      await this.client.lPush(queueKey, JSON.stringify(notificationData));
-      await this.client.expire(queueKey, 7 * 24 * 60 * 60); // 7 days TTL
-      
-      this.logger.debug(`Queued notification for offline user ${userId}`);
-    } catch (error) {
-      this.logger.error(`Error queuing notification: ${error.message}`);
-    }
-  }
-
-  async getQueuedNotifications(userId: string): Promise<any[]> {
-    try {
-      const queueKey = `notification:queue:${userId}`;
-      const notifications = await this.client.lRange(queueKey, 0, -1);
-      
-      // Clear the queue after retrieving
-      await this.client.del(queueKey);
-      
-      return notifications.map(n => JSON.parse(n));
-    } catch (error) {
-      this.logger.error(`Error getting queued notifications: ${error.message}`);
-      return [];
-    }
-  }
-
-  // Connection health monitoring
-  async getConnectionStats(): Promise<{
-    totalConnections: number;
-    uniqueUsers: number;
-    connectionsByRole: Record<string, number>;
-  }> {
-    try {
-      const connectionKeys = await this.client.keys(`${this.CONNECTION_PREFIX}*`);
-      const connections = await Promise.all(
-        connectionKeys.map(key => this.client.get(key))
-      );
-
-      const validConnections = connections
-        .filter(Boolean)
-        .map(data => JSON.parse(data));
-
-      const uniqueUsers = new Set(validConnections.map(c => c.userId)).size;
-      
-      const connectionsByRole = validConnections.reduce((acc, conn) => {
-        acc[conn.userRole] = (acc[conn.userRole] || 0) + 1;
-        return acc;
-      }, {});
-
-      return {
-        totalConnections: validConnections.length,
-        uniqueUsers,
-        connectionsByRole,
-      };
-    } catch (error) {
-      this.logger.error(`Error getting connection stats: ${error.message}`);
-      return {
-        totalConnections: 0,
-        uniqueUsers: 0,
-        connectionsByRole: {},
-      };
-    }
-  }
-
-  // Rate limiting support
-  async incrementNotificationCount(userId: string): Promise<number> {
-    try {
-      const key = `notification:rate:${userId}`;
-      const count = await this.client.incr(key);
-      
-      if (count === 1) {
-        await this.client.expire(key, 60); // 1 minute window
+  async getConnectionStats(): Promise<ConnectionStats> {
+    const pattern = 'connection:*';
+    const keys = await this.client.keys(pattern);
+    const connectionsByRole: Record<UserRole, number> = {
+      [UserRole.ADMIN]: 0,
+      [UserRole.RECRUITER]: 0,
+    };
+    
+    let totalConnectionTime = 0;
+    const now = new Date();
+    const uniqueUserIds = new Set<string>();
+    
+    for (const key of keys) {
+      const data = await this.client.get(key);
+      if (data) {
+        const connection = JSON.parse(data);
+        connectionsByRole[connection.userRole]++;
+        totalConnectionTime += now.getTime() - new Date(connection.connectedAt).getTime();
+        uniqueUserIds.add(connection.userId);
       }
-      
-      return count;
-    } catch (error) {
-      this.logger.error(`Error incrementing notification count: ${error.message}`);
-      return 0;
     }
+    
+    return {
+      totalConnections: keys.length,
+      connectionsByRole,
+      averageConnectionTime: keys.length > 0 ? totalConnectionTime / keys.length : 0,
+      uniqueUsers: uniqueUserIds.size,
+    };
   }
 
   async getNotificationCount(userId: string): Promise<number> {
-    try {
-      const key = `notification:rate:${userId}`;
-      const count = await this.client.get(key);
-      return count ? parseInt(count, 10) : 0;
-    } catch (error) {
-      this.logger.error(`Error getting notification count: ${error.message}`);
-      return 0;
-    }
+    const key = `notification_count:${userId}`;
+    const count = await this.client.get(key);
+    return count ? parseInt(count, 10) : 0;
+  }
+
+  async incrementNotificationCount(userId: string): Promise<void> {
+    const key = `notification_count:${userId}`;
+    await this.client.incr(key);
+    await this.client.expire(key, 3600); // 1 hour TTL
+  }
+
+  async isUserConnected(userId: string): Promise<boolean> {
+    const connections = await this.getUserConnections(userId);
+    return connections.length > 0;
+  }
+
+  async queueNotificationForOfflineUser(userId: string, notification: any): Promise<void> {
+    const key = `offline_notifications:${userId}`;
+    await this.client.lPush(key, JSON.stringify(notification));
+    await this.client.expire(key, 86400); // 24 hours TTL
   }
 }
