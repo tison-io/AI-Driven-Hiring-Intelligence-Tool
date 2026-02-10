@@ -15,6 +15,7 @@ from prompts import (
     EXP_EVAL_PROMPT,
     CULTURE_EVAL_PROMPT,
     AGGREGATOR_PROMPT,
+    FEEDBACK_GENERATION_PROMPT,
 )
 
 dotenv.load_dotenv()
@@ -472,3 +473,53 @@ def aggregator_node(state: AgentState):
         error_result = {"final_score": 0, "final_reasoning": str(e), "error": True}
         log_stage("AGGREGATOR_ERROR", error_result, is_output=True)
         return {"final_evaluation": {"final_score": 0, "final_reasoning": str(e)}}
+
+def feedback_node(state: AgentState):
+    print("STAGE: CANDIDATE FEEDBACK GENERATION") 
+
+    candidate=state.get("candidate_profile", {})
+    final_eval=state.get("final_evaluation", {})
+    tech_eval=state.get("tech_evaluation", {})
+
+    first_name=candidate.get("first_name", "Candidate")
+    final_score=final_eval.get("final_score", 0)
+
+    input_data={
+        "first_name": first_name,
+        "role_name": state.get("role_name", ""),
+        "final_score": final_score,
+    }      
+    log_stage("FEEDBACK_GENERATION", input_data, is_output=False)
+
+    chain = FEEDBACK_GENERATION_PROMPT | llm | JsonOutputParser()
+
+    try:
+        result=chain.invoke({
+            "first_name": first_name,
+            "role_name": state.get("role_name", ""),
+            "final_score": final_score,
+            "category_scores": json.dumps(final_eval.get("category_scores", {})),
+            "strengths": json.dumps(final_eval.get("strengths", [])),
+            "weaknesses": json.dumps(final_eval.get("weaknesses", [])),
+            "matched_competencies": json.dumps(tech_eval.get("matched_competencies", [])),
+            "missing_competencies": json.dumps(tech_eval.get("missing_competencies", [])),
+            "experience_level": candidate.get("experience_level", "Unknown")
+        })
+
+        log_stage("FEEDBACK_GENERATION", result, is_output=True)
+        return {"candidate_feedback": result}
+
+    except Exception as e:
+        error_result={
+            "recommendation": "Maybe",
+            "feedback_email": {
+                "subject": "Your Application Results - " + state.get("role_name", ""),
+                "body": f"Dear {first_name},\n\nThank you..."
+            },
+            "strengths": [],
+            "improvement_areas": [],
+            "error": str(e)
+        }
+
+        log_stage("FEEDBACK_GENERATION_ERROR", error_result, is_output=True)
+        return {"candidate_feedback": error_result}

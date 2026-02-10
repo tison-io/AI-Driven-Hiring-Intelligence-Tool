@@ -9,7 +9,8 @@ from nodes import(
     tech_agent_node,
     experience_agent_node,
     culture_agent_node,
-    aggregator_node    
+    aggregator_node,
+    feedback_node    
 )
 
 
@@ -22,6 +23,7 @@ workflow.add_node("tech_agent", tech_agent_node)
 workflow.add_node("exp_agent", experience_agent_node)
 workflow.add_node("culture_agent", culture_agent_node)
 workflow.add_node("aggregator", aggregator_node)
+workflow.add_node("feedback", feedback_node)
 
 workflow.add_edge(START, "jd_parser")
 workflow.add_edge("jd_parser", "alignment_check")
@@ -32,6 +34,7 @@ workflow.add_edge("extractor", "culture_agent")
 workflow.add_edge("tech_agent", "aggregator")
 workflow.add_edge("exp_agent", "aggregator")
 workflow.add_edge("culture_agent", "aggregator")
-workflow.add_edge("aggregator", END)
+workflow.add_edge("aggregator", "feedback")
+workflow.add_edge("feedback", END)
 
 app_graph = workflow.compile()

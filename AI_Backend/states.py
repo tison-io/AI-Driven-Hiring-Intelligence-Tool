@@ -23,3 +23,5 @@ class AgentState(InputState):
     culture_evaluation: Annotated[Optional[Dict[str, Any]], merge_dict]
     
     final_evaluation: Optional[Dict[str, Any]]
+
+    candidate_feedback: Optional[Dict[str, Any]]

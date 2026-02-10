@@ -75,6 +75,7 @@ async def analyze_with_graph(
         "tech_evaluation": {},
         "experience_evaluation": {},
         "culture_evaluation": {},
+        "candidate_feedback": {},
         "final_evaluation": {}
     }
 
@@ -86,13 +87,15 @@ async def analyze_with_graph(
             "success": True,
             "role": role_name,
             "final_score": final_state["final_evaluation"].get("final_score", 0),
+            "recommendation": final_state.get("candidate_feedback", {}).get("recommendation", "Maybe"),
             "summary": final_state["final_evaluation"],
             "agent_reports": {
-                "competency_agent": final_state["tech_evaluation"], # Mapped to tech_eval key in state
+                "competency_agent": final_state["tech_evaluation"],
                 "experience_agent": final_state["experience_evaluation"],
                 "behavioral_agent": final_state["culture_evaluation"]
             },
-            "parsed_profile": final_state["candidate_profile"]
+            "parsed_profile": final_state["candidate_profile"],
+            "candidate_feedback": final_state.get("candidate_feedback", {})
         }
     except Exception as e:
         print(f"Graph Execution Error: {e}")
