@@ -7,7 +7,7 @@ export default function PrivacyPolicyPage() {
       title="Privacy Policy"
       lastUpdated="January 2025"
     >
-      <LegalSection title="">
+      <LegalSection title="Overview">
         <p>
         This Privacy Policy explains how <strong>TalentScan AI</strong> (“we,” “us,” or “our”) collects, uses, discloses, and safeguards personal information when you access or use our AI-powered recruitment and hiring intelligence platform (the “Service”). <br></br>
         By using the Service, you acknowledge that you have read and understood this Privacy Policy.
@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
         This Privacy Policy applies to all individuals interacting with the Service, including:
         </p>
          <ul className='pt-1 pl-5'>
-          <li><strong>Candidates:</strong> Individuals whose resumes are uploaded or whose proffesional data is accessed for evaluation.</li>
+          <li><strong>Candidates:</strong> Individuals whose resumes are uploaded or whose professional data is accessed for evaluation.</li>
           <li><strong>Recriuters:</strong> Hiring managers, HR professionals, or authorized personnel who upload candidate information and access analytical insights.</li>
           <li><strong>Administrators:</strong> Authorized personnel responsible for platform operations, maintenance, compliance, and security oversight.</li>
          </ul>
@@ -30,7 +30,7 @@ export default function PrivacyPolicyPage() {
         <h6>
         We collect information only from <strong>lawful, ethical, and permission-based sources</strong> necessary to provide the Service.
         </h6>
-        <ol className='list-item pl-3 spac-y-2'>
+        <ol className='list-item pl-3 space-y-2'>
           <li className='pb-2'>
             <h6><strong>a. Information Provided by Users</strong></h6>
             <p className='pl-2'>
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
           <li className='pb-2'>
             <h6><strong>b. Public Professional Information</strong></h6>
             <p className='pl-2'>
-              Data from publicly accessible proffesional profile URLs (e.g., LinkedIn) where legally permissible and authorized.
+              Data from publicly accessible professional profile URLs (e.g., LinkedIn) where legally permissible and authorized.
             </p>
           </li>
           <li className='pb-2'>
@@ -60,7 +60,7 @@ export default function PrivacyPolicyPage() {
             <p className='pl-2 '>
               Log files, timestamps, and access records<br></br>
               Authentication and session metadata<br></br>
-              Audit records related to veiwing, exporting, or deleting personal data
+              Audit records related to viewing, exporting, or deleting personal data
             </p>
           </li>
         </ol>
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
         </p>
         <ul className='pl-2'>
           <li><strong>User consent</strong></li>
-          <li><strong>Legitimate interest</strong> in recruitment optimization and fraud pevention</li>
+          <li><strong>Legitimate interest</strong> in recruitment optimization and fraud prevention</li>
           <li><strong>Contractual necessity</strong> to provide the service</li>
           <li><strong>Legal obligations</strong> under applicable laws</li>
         </ul>
@@ -135,7 +135,7 @@ export default function PrivacyPolicyPage() {
           <li><strong>Ethical Compliance:</strong> We adhere to ethical AI principles and do not use data in ways that could cause harm.</li>
         </ol>
         <p>
-          AI output are <strong>advisory only</strong> and must not be the sole basis for employment desicions.
+          AI outputs are <strong>advisory only</strong> and must not be the sole basis for employment desicions.
         </p>
       </LegalSection>
       <LegalSection title="8. Cookies and Tracking Technologies">
