@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import datetime
 from langchain_openai import ChatOpenAI
 import dotenv
@@ -14,6 +15,7 @@ from prompts import (
     EXP_EVAL_PROMPT,
     CULTURE_EVAL_PROMPT,
     AGGREGATOR_PROMPT,
+    FEEDBACK_GENERATION_PROMPT,
 )
 
 dotenv.load_dotenv()
@@ -95,6 +97,85 @@ def extract_resume_node(state: AgentState):
             result["total_years_experience"] = round(calculated_years, 2)
             print(f"[RESUME_EXTRACTION] Overriding total_years_experience with calculated value: {calculated_years:.2f}")
         
+        years = result.get("total_years_experience", 0)
+        try:
+            years = float(years) if years is not None else 0
+        except (TypeError, ValueError):
+            years = 0
+        result["total_years_experience"] = years
+        if years <= 2:
+            result["experience_level"] = "Entry"
+        elif years <= 5:
+            result["experience_level"] = "Mid"
+        else:
+            result["experience_level"] = "Senior"
+        print(f"[RESUME_EXTRACTION] Experience level: {result['experience_level']} ({years} years)")
+        
+        candidate_name = result.get("candidate_name", "")
+        if candidate_name and isinstance(candidate_name, str):
+            result["first_name"] = candidate_name.split()[0] if candidate_name.split() else ""
+        else:
+            result["first_name"] = ""
+        
+        email = result.get("email")
+        if email and isinstance(email, str):
+            email = email.strip().lower()
+            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            
+            format_valid = bool(re.match(email_pattern, email))
+            
+            if format_valid:
+                local_part, domain = email.rsplit('@', 1)
+                domain_name = domain.rsplit('.', 1)[0] if '.' in domain else domain
+                
+                fake_domains = {'xxx', 'yyy', 'zzz', 'abc', 'test', 'example', 'fake', 
+                               'dummy', 'temp', 'placeholder', 'domain', 'email', 'mail'}
+                
+                fake_local = {'sample', 'test', 'demo', 'fake', 'placeholder', 'yourname',
+                             'myemail', 'noreply', 'user', 'name', 'email', 'example'}
+                
+                is_fake = False
+                if domain_name in fake_domains:
+                    is_fake = True
+                    print(f"[RESUME_EXTRACTION] Suspicious domain detected: {domain}")
+                
+                if local_part in fake_local:
+                    is_fake = True
+                    print(f"[RESUME_EXTRACTION] Suspicious email pattern: {local_part}")
+                
+                if re.match(r'^(.)\1{2,}', domain_name) or re.match(r'^(.)\1{2,}', local_part):
+                    is_fake = True
+                    print(f"[RESUME_EXTRACTION] Repeated character pattern detected: {email}")
+                
+                tld = domain.rsplit('.', 1)[-1] if '.' in domain else ''
+                has_valid_tld = bool(tld) and tld.isalpha() and len(tld) >= 2
+                if not has_valid_tld:
+                    is_fake = True
+                    print(f"[RESUME_EXTRACTION] Invalid domain TLD: {domain}")
+                
+                result["email_valid"] = not is_fake
+                result["email"] = email
+                
+                if is_fake:
+                    print(f"[RESUME_EXTRACTION] Warning: Placeholder/fake email detected: {email}")
+            else:
+                result["email_valid"] = False
+                print(f"[RESUME_EXTRACTION] Warning: Invalid email format: {email}")
+        else:
+            result["email_valid"] = False
+            result["email"] = None
+        
+        if not result.get("phone_number"):
+            result["phone_number"] = None
+        
+        if not result.get("current_position") and work_experience:
+            for exp in work_experience:
+                if (exp.get("end_date") or "").lower() == "present":
+                    result["current_position"] = exp.get("job_title")
+                    break
+            if not result.get("current_position") and work_experience:
+                result["current_position"] = work_experience[0].get("job_title")
+        
         log_stage("RESUME_EXTRACTION", result, is_output=True)
         return {"candidate_profile": result}
     except Exception as e:
@@ -126,16 +207,20 @@ def parse_jd_node(state: AgentState):
         return {"extracted_scoring_rules": {}}
 
 def jd_role_alignment_node(state: AgentState):
-    """Centralized JD-Role alignment check - runs ONCE after JD parsing."""
     print("STAGE: JD-ROLE ALIGNMENT CHECK")
     
     jd = state.get("extracted_scoring_rules", {})
     role_name = state.get("role_name", "")
     
+    primary_requirements = jd.get("primary_requirements") or []
+    responsibilities = jd.get("responsibilities") or []
+    jd_is_vague = len(primary_requirements) < 3 and len(responsibilities) < 3
+    
     input_data = {
         "role_name": role_name,
-        "jd_requirements_count": len(jd.get("primary_requirements", [])),
-        "jd_responsibilities_count": len(jd.get("responsibilities", []))
+        "jd_requirements_count": len(primary_requirements),
+        "jd_responsibilities_count": len(responsibilities),
+        "jd_is_vague": jd_is_vague
     }
     log_stage("JD_ROLE_ALIGNMENT", input_data, is_output=False)
     
@@ -144,18 +229,42 @@ def jd_role_alignment_node(state: AgentState):
     try:
         result = chain.invoke({
             "role_name": role_name,
-            "jd_requirements": json.dumps(jd.get("primary_requirements", [])),
-            "jd_responsibilities": json.dumps(jd.get("responsibilities", []))
+            "jd_requirements": json.dumps(primary_requirements),
+            "jd_responsibilities": json.dumps(responsibilities)
         })
+        
+        result["jd_is_vague"] = jd_is_vague
+        
+        jd_role_mismatch = result.get("jd_role_mismatch", False)
+        use_market_standards = jd_role_mismatch or jd_is_vague
+        result["use_market_standards"] = use_market_standards
+        
+        result["preserved_jd_requirements"] = {
+            "required_years": jd.get("required_years"),
+            "education_requirement": jd.get("education_requirement"),
+            "required_certifications": jd.get("required_certifications", [])
+        }
+        
+        if use_market_standards:
+            reason = "JD-Role mismatch" if jd_role_mismatch else "Vague/insufficient JD"
+            print(f"[JD_ROLE_ALIGNMENT] {reason} detected - will use market standards for {role_name}")
+        
         log_stage("JD_ROLE_ALIGNMENT", result, is_output=True)
         return {"jd_role_alignment": result}
     except Exception as e:
         error_result = {
             "jd_role_mismatch": False,
+            "jd_is_vague": jd_is_vague,
+            "use_market_standards": jd_is_vague,
             "inferred_job_family": "Unknown",
             "stated_role_family": role_name,
             "reasoning": f"Error during alignment check: {str(e)}",
-            "error": True
+            "error": True,
+            "preserved_jd_requirements": {
+                "required_years": jd.get("required_years"),
+                "education_requirement": jd.get("education_requirement"),
+                "required_certifications": jd.get("required_certifications", [])
+            }
         }
         log_stage("JD_ROLE_ALIGNMENT_ERROR", error_result, is_output=True)
         return {"jd_role_alignment": error_result}
@@ -165,14 +274,17 @@ def tech_agent_node(state: AgentState):
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
     alignment = state.get("jd_role_alignment", {})
-    
-    # Get pre-determined alignment status
+
     jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    jd_is_vague = alignment.get("jd_is_vague", False)
+    use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
     input_data = {
         "role_name": state["role_name"],
         "jd_role_mismatch": jd_role_mismatch,
+        "jd_is_vague": jd_is_vague,
+        "use_market_standards": use_market_standards,
         "inferred_job_family": inferred_job_family,
         "jd_skills": jd.get("primary_requirements", []),
         "candidate_skills": candidate.get("skills", []),
@@ -193,20 +305,24 @@ def tech_agent_node(state: AgentState):
         result = chain.invoke({
             "role_name": state["role_name"],
             "jd_role_mismatch": jd_role_mismatch,
+            "jd_is_vague": jd_is_vague,
+            "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
             "jd_skills": json.dumps(jd.get("primary_requirements", [])),
             "candidate_skills": json.dumps(candidate.get("skills", [])),
             "candidate_evidence": json.dumps(combined_evidence)
         })
-        # Ensure the result reflects the centralized mismatch status
+
         result["jd_role_mismatch"] = jd_role_mismatch
+        result["jd_is_vague"] = jd_is_vague
+        result["use_market_standards"] = use_market_standards
         result["inferred_job_family"] = inferred_job_family
         log_stage("TECH_AGENT", result, is_output=True)
         return {"tech_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("TECH_AGENT_ERROR", error_result, is_output=True)
-        return {"tech_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
+        return {"tech_evaluation": error_result}
 
 
 def experience_agent_node(state: AgentState):
@@ -218,17 +334,24 @@ def experience_agent_node(state: AgentState):
     current_dt = datetime.now()
     calculated_years = calculate_total_years(work_experience, current_dt)
     
-    # Get pre-determined alignment status
     jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    jd_is_vague = alignment.get("jd_is_vague", False)
+    use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
+    preserved_reqs = alignment.get("preserved_jd_requirements", {})
+    
+    required_years = preserved_reqs.get("required_years") or jd.get("required_years")
+    education_requirement = preserved_reqs.get("education_requirement") or jd.get("education_requirement")
     
     input_data = {
         "role_name": state["role_name"],
         "jd_role_mismatch": jd_role_mismatch,
+        "jd_is_vague": jd_is_vague,
+        "use_market_standards": use_market_standards,
         "inferred_job_family": inferred_job_family,
         "jd_experience_rules": {
-            "required_years": jd.get("required_years"),
-            "education_requirement": jd.get("education_requirement")
+            "required_years": required_years,
+            "education_requirement": education_requirement
         },
         "candidate_experience": candidate.get("work_experience", []),
         "candidate_education": candidate.get("education", []),
@@ -242,21 +365,27 @@ def experience_agent_node(state: AgentState):
         result = chain.invoke({
             "role_name": state["role_name"],
             "jd_role_mismatch": jd_role_mismatch,
+            "jd_is_vague": jd_is_vague,
+            "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
             "current_date": current_date,
             "total_years_calculated": calculated_years,
+            "preserved_required_years": required_years,
+            "preserved_education_requirement": json.dumps(education_requirement) if education_requirement else "null",
             "jd_experience_rules": json.dumps(jd),
             "candidate_experience": json.dumps(candidate.get("work_experience", [])),
             "candidate_education": json.dumps(candidate.get("education", [])) 
         })
-        # Ensure the result reflects the centralized mismatch status
+
         result["jd_role_mismatch"] = jd_role_mismatch
+        result["jd_is_vague"] = jd_is_vague
+        result["use_market_standards"] = use_market_standards
         log_stage("EXPERIENCE_AGENT", result, is_output=True)
         return {"experience_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("EXPERIENCE_AGENT_ERROR", error_result, is_output=True)
-        return {"experience_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
+        return {"experience_evaluation": error_result}
 
 def culture_agent_node(state: AgentState):
     print("STAGE: CULTURE/BEHAVIORAL AGENT")
@@ -264,13 +393,16 @@ def culture_agent_node(state: AgentState):
     jd = state.get("extracted_scoring_rules", {})
     alignment = state.get("jd_role_alignment", {})
     
-    # Get pre-determined alignment status
     jd_role_mismatch = alignment.get("jd_role_mismatch", False)
+    jd_is_vague = alignment.get("jd_is_vague", False)
+    use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
     input_data = {
         "role_name": state.get("role_name", ""),
         "jd_role_mismatch": jd_role_mismatch,
+        "jd_is_vague": jd_is_vague,
+        "use_market_standards": use_market_standards,
         "jd_responsibilities": jd.get("responsibilities", []),
         "candidate_summary": candidate.get("summary", ""),
         "candidate_evidence_count": len(candidate.get("capability_evidence", []))
@@ -282,19 +414,25 @@ def culture_agent_node(state: AgentState):
         result = chain.invoke({
             "role_name": state.get("role_name", ""),
             "jd_role_mismatch": jd_role_mismatch,
+            "jd_is_vague": jd_is_vague,
+            "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
             "jd_responsibilities": json.dumps(jd.get("responsibilities", [])),
             "candidate_summary": candidate.get("summary", ""),
             "candidate_evidence": json.dumps(candidate.get("capability_evidence", []))
         })
-        # Ensure the result reflects the centralized mismatch status
+
         result["jd_role_mismatch"] = jd_role_mismatch
+        result["jd_is_vague"] = jd_is_vague
+        result["use_market_standards"] = use_market_standards
         log_stage("CULTURE_AGENT", result, is_output=True)
         return {"culture_evaluation": result}
     except Exception as e:
-        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch}
+        error_result = {"score": 0, "reasoning": str(e), "error": True, "jd_role_mismatch": jd_role_mismatch, "jd_is_vague": jd_is_vague, "use_market_standards": use_market_standards}
         log_stage("CULTURE_AGENT_ERROR", error_result, is_output=True)
-        return {"culture_evaluation": {"score": 0, "reasoning": str(e), "jd_role_mismatch": jd_role_mismatch}}
+        return {"culture_evaluation": error_result}
+
+
 
 def aggregator_node(state: AgentState):
     print("STAGE: FINAL AGGREGATOR")
@@ -341,4 +479,64 @@ def aggregator_node(state: AgentState):
     except Exception as e:
         error_result = {"final_score": 0, "final_reasoning": str(e), "error": True}
         log_stage("AGGREGATOR_ERROR", error_result, is_output=True)
-        return {"final_evaluation": {"final_score": 0, "final_reasoning": str(e)}}
+        return {"final_evaluation": error_result}
+
+def feedback_node(state: AgentState):
+    print("STAGE: CANDIDATE FEEDBACK GENERATION") 
+
+    candidate=state.get("candidate_profile", {})
+    final_eval=state.get("final_evaluation", {})
+    tech_eval=state.get("tech_evaluation", {})
+
+    first_name=candidate.get("first_name", "Candidate")
+    final_score=final_eval.get("final_score", 0)
+
+    input_data={
+        "first_name": first_name,
+        "role_name": state.get("role_name", ""),
+        "final_score": final_score,
+    }      
+    log_stage("FEEDBACK_GENERATION", input_data, is_output=False)
+
+    chain = FEEDBACK_GENERATION_PROMPT | llm | JsonOutputParser()
+
+    try:
+        result=chain.invoke({
+            "first_name": first_name,
+            "role_name": state.get("role_name", ""),
+            "final_score": final_score,
+            "category_scores": json.dumps(final_eval.get("category_scores", {})),
+            "strengths": json.dumps(final_eval.get("strengths", [])),
+            "weaknesses": json.dumps(final_eval.get("weaknesses", [])),
+            "matched_competencies": json.dumps(tech_eval.get("matched_competencies", [])),
+            "missing_competencies": json.dumps(tech_eval.get("missing_competencies", [])),
+            "experience_level": candidate.get("experience_level", "Unknown")
+        })
+
+        log_stage("FEEDBACK_GENERATION", result, is_output=True)
+        return {"candidate_feedback": result}
+
+    except Exception as e:
+        role = state.get("role_name", "the position")
+        error_result={
+            "recommendation": "Maybe",
+            "feedback_email": {
+                "subject": f"Your Application Results - {role}",
+                "body": (
+                    f"Dear {first_name},\n\n"
+                    f"Thank you for your interest in the {role} position and for taking the time to submit your application.\n\n"
+                    f"We have received your application and our team is currently reviewing it. "
+                    f"Unfortunately, we were unable to generate detailed feedback at this time.\n\n"
+                    f"A member of our recruitment team will follow up with you shortly with more information about your application status and next steps.\n\n"
+                    f"If you have any questions in the meantime, please don't hesitate to reach out to our recruitment team.\n\n"
+                    f"We appreciate your interest and wish you all the best.\n\n"
+                    f"Warm regards,\nThe TalentScan AI Team"
+                )
+            },
+            "strengths": [],
+            "improvement_areas": [],
+            "error": str(e)
+        }
+
+        log_stage("FEEDBACK_GENERATION_ERROR", error_result, is_output=True)
+        return {"candidate_feedback": error_result}
