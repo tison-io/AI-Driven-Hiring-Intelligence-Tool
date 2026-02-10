@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JobPosting, JobPostingDocument } from './entities/job-posting.entity';
@@ -44,5 +44,15 @@ export class JobPostingsService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async findOne(id: string): Promise<JobPostingDocument> {
+    const jobPosting = await this.jobPostingModel.findById(id).exec();
+    
+    if (!jobPosting) {
+      throw new NotFoundException(`Job posting with ID ${id} not found`);
+    }
+    
+    return jobPosting;
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { JobPostingsService } from './job-postings.service';
@@ -21,5 +21,10 @@ export class JobPostingsController {
       limit: parseInt(limit),
       search
     });
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.jobPostingsService.findOne(id);
   }
 }
