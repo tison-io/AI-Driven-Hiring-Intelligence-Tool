@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JobPosting, JobPostingSchema } from './entities/job-posting.entity';
+import { JobPostingsController } from './job-postings.controller';
+import { JobPostingsService } from './job-postings.service';
 
 @Module({
   imports: [
@@ -8,6 +10,8 @@ import { JobPosting, JobPostingSchema } from './entities/job-posting.entity';
       { name: JobPosting.name, schema: JobPostingSchema },
     ]),
   ],
-  exports: [MongooseModule],
+  controllers: [JobPostingsController],
+  providers: [JobPostingsService],
+  exports: [MongooseModule, JobPostingsService],
 })
 export class JobPostingsModule {}
