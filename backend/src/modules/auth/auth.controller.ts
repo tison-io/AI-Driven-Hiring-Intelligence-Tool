@@ -84,6 +84,22 @@ export class AuthController {
     return this.authService.getProfile(req.user.id);
   }
 
+  @Get('ws-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get WebSocket authentication token' })
+  @ApiResponse({ status: 200, description: 'WebSocket token generated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getWebSocketToken(@Request() req) {
+    const payload = { 
+      sub: req.user.id.toString(), // Convert ObjectId to string
+      email: req.user.email,
+      role: req.user.role 
+    };
+    const token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    return { token };
+  }
+
   @Put('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')

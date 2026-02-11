@@ -79,7 +79,7 @@ export class AiProcessor {
       });
 
       // Check for bias and emit alert if detected
-      if (result.biasCheck && result.biasCheck.hasBias) {
+      if (result.biasCheck && typeof result.biasCheck === 'string' && result.biasCheck.includes('REVIEW REQUIRED')) {
         this.notificationEventService.emitBiasDetected({
           candidateId,
           candidateName: result.name,

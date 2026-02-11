@@ -9,7 +9,6 @@ import {
 import { RegisterDto } from "../auth/dto/register.dto";
 import { CompleteProfileDto } from "../auth/dto/complete-profile.dto";
 import { UserRole } from "../../common/enums/user-role.enum";
-import { MilestoneDetectionService } from "../notifications/automation/milestone-detection.service";
 import * as bcrypt from "bcryptjs";
 import * as crypto from "crypto";
 
@@ -20,32 +19,18 @@ export class UsersService {
 		private userModel: Model<UserDocument>,
 		@InjectModel(VerificationCode.name)
 		private verificationCodeModel: Model<VerificationCodeDocument>,
-		private milestoneDetectionService: MilestoneDetectionService,
 	) {}
 
 	async create(registerDto: RegisterDto): Promise<UserDocument> {
 		const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-  async createAdmin(email: string, password: string): Promise<UserDocument> {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    const user = new this.userModel({
-      email,
-      password: hashedPassword,
-      role: UserRole.ADMIN,
-      profileCompleted: true,
-      emailVerified: true,
-    });
-    
-    return user.save();
-  }
+		const user = new this.userModel({
+			...registerDto,
+			password: hashedPassword,
+			role: UserRole.RECRUITER,
+		});
 
-		const savedUser = await user.save();
-
-		// Check for user milestone after creating new user
-		await this.milestoneDetectionService.checkUserMilestone();
-
-		return savedUser;
+		return user.save();
 	}
 
 	async createAdmin(email: string, password: string): Promise<UserDocument> {
@@ -56,6 +41,7 @@ export class UsersService {
 			password: hashedPassword,
 			role: UserRole.ADMIN,
 			profileCompleted: true,
+			emailVerified: true,
 		});
 
 		return user.save();
@@ -183,80 +169,7 @@ export class UsersService {
 			profileCompleted: false,
 		});
 
-		const savedUser = await user.save();
-
-		// Check for user milestone after creating new OAuth user
-		await this.milestoneDetectionService.checkUserMilestone();
-
-		return savedUser;
-	}
-
-	async createVerificationCode(
-		userId: Types.ObjectId,
-		email: string,
-	): Promise<string> {
-		const code = crypto.randomInt(100000, 1000000).toString();
-		const codeHash = crypto.createHash("sha256").update(code).digest("hex");
-		const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-		await this.deleteVerificationCodes(userId);
-
-		await this.verificationCodeModel.create({
-			userId,
-			codeHash,
-			expiresAt,
-			attempts: 0,
-		});
-
-		return code;
-	}
-
-	async findVerificationCode(
-		email: string,
-	): Promise<VerificationCodeDocument | null> {
-		const user = await this.findByEmail(email);
-		if (!user) return null;
-
-		return this.verificationCodeModel
-			.findOne({
-				userId: user._id,
-				expiresAt: { $gt: new Date() },
-			})
-			.sort({ createdAt: -1 })
-			.exec();
-	}
-
-	async deleteVerificationCodes(userId: Types.ObjectId): Promise<void> {
-		await this.verificationCodeModel.deleteMany({ userId }).exec();
-	}
-
-	async markEmailVerified(
-		userId: Types.ObjectId,
-	): Promise<UserDocument | null> {
-		return this.userModel
-			.findByIdAndUpdate(userId, { emailVerified: true }, { new: true })
-			.exec();
-	}
-
-	async canRequestVerification(email: string): Promise<boolean> {
-		const user = await this.findByEmail(email);
-		if (!user) return true;
-
-		const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-		const count = await this.verificationCodeModel
-			.countDocuments({
-				userId: user._id,
-				createdAt: { $gte: oneHourAgo },
-			})
-			.exec();
-
-		return count < 3;
-	}
-
-	async incrementVerificationAttempts(codeId: Types.ObjectId): Promise<void> {
-		await this.verificationCodeModel
-			.findByIdAndUpdate(codeId, { $inc: { attempts: 1 } })
-			.exec();
+		return user.save();
 	}
 
 	async createVerificationCode(
