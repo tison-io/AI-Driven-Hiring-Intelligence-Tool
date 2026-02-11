@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import * as bcrypt from 'bcryptjs';
 
 export type ResultsTokenDocument = ResultsToken & Document;
 

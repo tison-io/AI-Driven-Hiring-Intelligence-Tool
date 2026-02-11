@@ -243,10 +243,6 @@ export class CandidatesService {
 		const allowedFilterKeys = ['status', 'jobPostingId'];
 		const allowedUpdateKeys = ['status', 'isShortlisted'];
 
-		if (Object.keys(filter).length === 0 && userRole !== 'admin') {
-			throw new BadRequestException('Empty filter not allowed');
-		}
-
 		const sanitizedFilter: any = {};
 		for (const key of Object.keys(filter)) {
 			if (allowedFilterKeys.includes(key)) {
@@ -262,12 +258,12 @@ export class CandidatesService {
 			}
 		}
 
-		if (userRole !== 'admin') {
-			sanitizedFilter.createdBy = userId;
-		}
-
 		if (Object.keys(sanitizedFilter).length === 0) {
 			throw new BadRequestException('Empty filter not allowed');
+		}
+
+		if (userRole !== 'admin') {
+			sanitizedFilter.createdBy = userId;
 		}
 
 		const sanitizedUpdate: any = {};
