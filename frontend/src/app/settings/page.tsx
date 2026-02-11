@@ -8,6 +8,7 @@ import SecuritySection from '@/components/settings/SecuritySection';
 import DeleteAccountSection from '@/components/settings/DeleteAccountSection';
 import ChangePasswordModal from '@/components/modals/ChangePasswordModal';
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
+import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/api';
 import { CheckCircle, XCircle } from 'lucide-react';
@@ -126,25 +127,30 @@ export default function AccountSettings() {
       <Layout>
         <div className="p-6 md:p-8">
           <div className="max-w-3xl mx-auto">
-            <header className="mb-8">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-                Account Settings
-              </h1>
-              <p className="text-sm text-gray-600">
-                Manage your profile information, security settings, and account preferences
-              </p>
-              {error && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
-                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                  <span className="text-sm text-red-600">{error}</span>
-                </div>
-              )}
-              {success && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
-                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  <span className="text-sm text-green-600">{success}</span>
-                </div>
-              )}
+            <header className="mb-8 flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-2">
+                  Account Settings
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your profile information, security settings, and account preferences
+                </p>
+                {error && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md flex items-center gap-2">
+                    <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <span className="text-sm text-red-600">{error}</span>
+                  </div>
+                )}
+                {success && (
+                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    <span className="text-sm text-green-600">{success}</span>
+                  </div>
+                )}
+              </div>
+              <div className="hidden md:block">
+                <NotificationDropdown />
+              </div>
             </header>
 
             <div className="space-y-6">
