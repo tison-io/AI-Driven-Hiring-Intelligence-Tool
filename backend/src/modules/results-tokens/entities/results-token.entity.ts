@@ -38,10 +38,3 @@ export class ResultsToken {
 export const ResultsTokenSchema = SchemaFactory.createForClass(ResultsToken);
 ResultsTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 } as any);
 ResultsTokenSchema.index({ tokenId: 1, expiresAt: 1, isUsed: 1 });
-
-ResultsTokenSchema.pre('save', async function(next) {
-  if (this.isModified('token') && !/^\$2[aby]\$/.test(this.token)) {
-    this.token = await bcrypt.hash(this.token, 10);
-  }
-  next();
-});

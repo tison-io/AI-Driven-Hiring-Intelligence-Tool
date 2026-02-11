@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model, FilterQuery, Types } from "mongoose";
 import { Candidate, CandidateDocument } from "./entities/candidate.entity";
 import { CandidateFilterDto } from "./dto/candidate-filter.dto";
 
@@ -243,15 +243,23 @@ export class CandidatesService {
 		const allowedFilterKeys = ['status', 'jobPostingId'];
 		const allowedUpdateKeys = ['status', 'isShortlisted'];
 
+		if (Object.keys(filter).length === 0 && userRole !== 'admin') {
+			throw new BadRequestException('Empty filter not allowed');
+		}
+
 		const sanitizedFilter: any = {};
 		for (const key of Object.keys(filter)) {
 			if (allowedFilterKeys.includes(key)) {
-				sanitizedFilter[key] = filter[key];
+				const value = filter[key];
+				if (value !== undefined) {
+					if (key === 'jobPostingId') {
+						if (!Types.ObjectId.isValid(value)) {
+							throw new BadRequestException('Invalid jobPostingId');
+						}
+					}
+					sanitizedFilter[key] = value;
+				}
 			}
-		}
-
-		if (Object.keys(sanitizedFilter).length === 0 && userRole !== 'admin') {
-			throw new BadRequestException('Empty filter not allowed');
 		}
 
 		if (userRole !== 'admin') {
@@ -265,7 +273,10 @@ export class CandidatesService {
 		const sanitizedUpdate: any = {};
 		for (const key of Object.keys(update)) {
 			if (allowedUpdateKeys.includes(key)) {
-				sanitizedUpdate[key] = update[key];
+				const value = update[key];
+				if (value !== undefined) {
+					sanitizedUpdate[key] = value;
+				}
 			}
 		}
 

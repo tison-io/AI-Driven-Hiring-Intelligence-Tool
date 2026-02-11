@@ -1,4 +1,5 @@
-import { IsNumber, IsString, Min, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate, registerDecorator, ValidationOptions } from 'class-validator';
+import { IsNumber, IsString, Min, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate, registerDecorator, ValidationOptions, IsIn } from 'class-validator';
+import { CURRENCY_ENUM } from '../entities/job-posting.entity';
 
 @ValidatorConstraint({ name: 'MinLessThanOrEqualMax', async: false })
 export class MinLessThanOrEqualMaxConstraint implements ValidatorConstraintInterface {
@@ -27,13 +28,14 @@ function MinLessThanOrEqualMax(validationOptions?: ValidationOptions) {
 export class SalaryDto {
   @IsNumber()
   @Min(0)
-  @MinLessThanOrEqualMax()
   min: number;
 
   @IsNumber()
   @Min(0)
+  @MinLessThanOrEqualMax()
   max: number;
 
   @IsString()
+  @IsIn(CURRENCY_ENUM)
   currency: string;
 }
