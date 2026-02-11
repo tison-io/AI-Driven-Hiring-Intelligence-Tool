@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, FilterQuery } from "mongoose";
 import { Candidate, CandidateDocument } from "./entities/candidate.entity";
@@ -234,7 +234,41 @@ export class CandidatesService {
 		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 	}
 
-	async updateMany(filter: any, update: any): Promise<any> {
-		return this.candidateModel.updateMany(filter, update).exec();
+	async updateMany(
+		filter: Partial<{ status: string; jobPostingId: string }>,
+		update: Partial<{ status: string; isShortlisted: boolean }>,
+		userId: string,
+		userRole: string,
+	): Promise<any> {
+		const allowedFilterKeys = ['status', 'jobPostingId'];
+		const allowedUpdateKeys = ['status', 'isShortlisted'];
+
+		const sanitizedFilter: any = {};
+		for (const key of Object.keys(filter)) {
+			if (allowedFilterKeys.includes(key)) {
+				sanitizedFilter[key] = filter[key];
+			}
+		}
+
+		if (userRole !== 'admin') {
+			sanitizedFilter.createdBy = userId;
+		}
+
+		if (Object.keys(sanitizedFilter).length === 0) {
+			throw new BadRequestException('Empty filter not allowed');
+		}
+
+		const sanitizedUpdate: any = {};
+		for (const key of Object.keys(update)) {
+			if (allowedUpdateKeys.includes(key)) {
+				sanitizedUpdate[key] = update[key];
+			}
+		}
+
+		if (Object.keys(sanitizedUpdate).length === 0) {
+			throw new BadRequestException('No valid update fields provided');
+		}
+
+		return this.candidateModel.updateMany(sanitizedFilter, { $set: sanitizedUpdate }).exec();
 	}
 }

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { JobPosting, JobPostingDocument } from './entities/job-posting.entity';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 
@@ -20,15 +20,17 @@ export class JobPostingsService {
   }
 
   async findAll(options: { page: number; limit: number; search?: string }) {
-    const { page, limit, search } = options;
+    const page = Math.max(1, options.page || 1);
+    const limit = Math.max(1, Math.min(100, options.limit || 10));
     const skip = (page - 1) * limit;
     
     const query: any = {};
-    if (search) {
+    if (options.search) {
+      const sanitized = this.escapeRegex(options.search.substring(0, 100));
       query.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } },
-        { location: { $regex: search, $options: 'i' } },
+        { title: { $regex: sanitized, $options: 'i' } },
+        { description: { $regex: sanitized, $options: 'i' } },
+        { location: { $regex: sanitized, $options: 'i' } },
       ];
     }
 
@@ -47,6 +49,10 @@ export class JobPostingsService {
   }
 
   async findOne(id: string): Promise<JobPostingDocument> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new NotFoundException(`Job posting with ID ${id} not found`);
+    }
+
     const jobPosting = await this.jobPostingModel.findById(id).exec();
     
     if (!jobPosting) {
@@ -54,5 +60,9 @@ export class JobPostingsService {
     }
     
     return jobPosting;
+  }
+
+  private escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

@@ -6,6 +6,7 @@ import {
   ResultsTokenDocument,
 } from '../results-tokens/entities/results-token.entity';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class TokensService {
@@ -22,26 +23,44 @@ export class TokensService {
     candidateId: string,
     jobPostingId: string,
   ): Promise<string> {
-    const token = this.generateSecureToken();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const rawToken = this.generateSecureToken();
+    const tokenId = rawToken.substring(0, 16);
+    const hashedToken = await bcrypt.hash(rawToken, 10);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await this.resultsTokenModel.create({
-      token,
+      tokenId,
+      token: hashedToken,
       candidateId,
       jobPostingId,
       expiresAt,
     });
 
-    return token;
+    return rawToken;
   }
 
-  async validateToken(token: string): Promise<ResultsTokenDocument | null> {
-    return this.resultsTokenModel
+  async validateToken(rawToken: string): Promise<ResultsTokenDocument | null> {
+    if (!rawToken || typeof rawToken !== 'string' || rawToken.length < 32) {
+      return null;
+    }
+    
+    const normalizedToken = rawToken.trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(normalizedToken)) {
+      return null;
+    }
+    
+    const tokenId = normalizedToken.substring(0, 16);
+    const tokenDoc = await this.resultsTokenModel
       .findOne({
-        token,
+        tokenId,
         expiresAt: { $gt: new Date() },
         isUsed: false,
       })
       .exec();
+
+    if (!tokenDoc) return null;
+
+    const isValid = await bcrypt.compare(rawToken, tokenDoc.token);
+    return isValid ? tokenDoc : null;
   }
 }

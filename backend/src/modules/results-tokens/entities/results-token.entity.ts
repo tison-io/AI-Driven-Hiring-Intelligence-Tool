@@ -1,11 +1,15 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 
 export type ResultsTokenDocument = ResultsToken & Document;
 
 @Schema({ timestamps: true })
 export class ResultsToken {
-  @Prop({ required: true, unique: true, index: true })
+  @Prop({ required: true, index: true, unique: true })
+  tokenId: string;
+
+  @Prop({ required: true })
   token: string;
 
   @Prop({
@@ -33,3 +37,11 @@ export class ResultsToken {
 
 export const ResultsTokenSchema = SchemaFactory.createForClass(ResultsToken);
 ResultsTokenSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 } as any);
+ResultsTokenSchema.index({ tokenId: 1, expiresAt: 1, isUsed: 1 });
+
+ResultsTokenSchema.pre('save', async function(next) {
+  if (this.isModified('token') && !this.token.startsWith('$2b$')) {
+    this.token = await bcrypt.hash(this.token, 10);
+  }
+  next();
+});

@@ -2,9 +2,11 @@ import {
   IsString,
   IsArray,
   IsOptional,
-  IsObject,
   IsBoolean,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { SalaryDto } from './salary.dto';
 
 export class CreateJobPostingDto {
   @IsString()
@@ -21,12 +23,9 @@ export class CreateJobPostingDto {
   location: string;
 
   @IsOptional()
-  @IsObject()
-  salary?: {
-    min: number;
-    max: number;
-    currency: string;
-  };
+  @ValidateNested()
+  @Type(() => SalaryDto)
+  salary?: SalaryDto;
 
   @IsOptional()
   @IsBoolean()
