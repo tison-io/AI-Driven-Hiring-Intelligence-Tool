@@ -1,4 +1,4 @@
-import { IsNumber, IsString, Min, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate } from 'class-validator';
+import { IsNumber, IsString, Min, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate, registerDecorator, ValidationOptions } from 'class-validator';
 
 @ValidatorConstraint({ name: 'MinLessThanOrEqualMax', async: false })
 export class MinLessThanOrEqualMaxConstraint implements ValidatorConstraintInterface {
@@ -12,12 +12,22 @@ export class MinLessThanOrEqualMaxConstraint implements ValidatorConstraintInter
   }
 }
 
-const MinLessThanOrEqualMax = () => Validate(MinLessThanOrEqualMaxConstraint);
+function MinLessThanOrEqualMax(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      constraints: [],
+      validator: MinLessThanOrEqualMaxConstraint,
+    });
+  };
+}
 
-@MinLessThanOrEqualMax()
 export class SalaryDto {
   @IsNumber()
   @Min(0)
+  @MinLessThanOrEqualMax()
   min: number;
 
   @IsNumber()

@@ -3,7 +3,9 @@ import { Document, Types } from 'mongoose';
 
 export type JobPostingDocument = JobPosting & Document;
 
-const CURRENCY_ENUM = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'BRL', 'MXN', 'ZAR', 'SGD', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'RUB', 'TRY', 'KRW', 'THB', 'MYR', 'IDR', 'PHP', 'VND', 'EGP', 'NGN', 'KES', 'GHS', 'MAD', 'TND', 'DZD', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'JOD', 'LBP', 'ILS', 'PKR', 'BDT', 'LKR', 'NPR', 'MMK', 'KHR', 'LAK', 'UZS', 'KZT', 'KGS', 'TJS', 'TMT', 'AFN', 'IRR', 'IQD', 'SYP', 'YER', 'ETB', 'UGX', 'TZS', 'RWF', 'MWK', 'ZMW', 'BWP', 'SZL', 'LSL', 'NAD', 'MZN', 'AOA', 'CDF', 'XAF', 'XOF', 'XPF', 'FJD', 'PGK', 'SBD', 'TOP', 'VUV', 'WST', 'TVD', 'KID', 'NRU', 'AUD'];
+const CURRENCY_ENUM = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'BRL', 'MXN', 'ZAR', 'SGD', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF', 'RUB', 'TRY', 'KRW', 'THB', 'MYR', 'IDR', 'PHP', 'VND', 'EGP', 'NGN', 'KES', 'GHS', 'MAD', 'TND', 'DZD', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'JOD', 'LBP', 'ILS', 'PKR', 'BDT', 'LKR', 'NPR', 'MMK', 'KHR', 'LAK', 'UZS', 'KZT', 'KGS', 'TJS', 'TMT', 'AFN', 'IRR', 'IQD', 'SYP', 'YER', 'ETB', 'UGX', 'TZS', 'RWF', 'MWK', 'ZMW', 'BWP', 'SZL', 'LSL', 'NAD', 'MZN', 'AOA', 'CDF', 'XAF', 'XOF', 'XPF', 'FJD', 'PGK', 'SBD', 'TOP', 'VUV', 'WST', 'TVD', 'KID', 'NRU'] as const;
+
+type Currency = typeof CURRENCY_ENUM[number];
 
 @Schema()
 class Salary {

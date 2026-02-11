@@ -250,6 +250,10 @@ export class CandidatesService {
 			}
 		}
 
+		if (Object.keys(sanitizedFilter).length === 0 && userRole !== 'admin') {
+			throw new BadRequestException('Empty filter not allowed');
+		}
+
 		if (userRole !== 'admin') {
 			sanitizedFilter.createdBy = userId;
 		}

@@ -4,15 +4,18 @@ import {
   IsOptional,
   IsBoolean,
   ValidateNested,
+  IsNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { SalaryDto } from './salary.dto';
 
 export class CreateJobPostingDto {
   @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()
+  @IsNotEmpty()
   description: string;
 
   @IsArray()
@@ -20,6 +23,7 @@ export class CreateJobPostingDto {
   requirements: string[];
 
   @IsString()
+  @IsNotEmpty()
   location: string;
 
   @IsOptional()

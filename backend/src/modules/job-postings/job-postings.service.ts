@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, isValidObjectId } from 'mongoose';
 import { JobPosting, JobPostingDocument } from './entities/job-posting.entity';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 
@@ -49,7 +49,7 @@ export class JobPostingsService {
   }
 
   async findOne(id: string): Promise<JobPostingDocument> {
-    if (!Types.ObjectId.isValid(id)) {
+    if (!isValidObjectId(id)) {
       throw new NotFoundException(`Job posting with ID ${id} not found`);
     }
 

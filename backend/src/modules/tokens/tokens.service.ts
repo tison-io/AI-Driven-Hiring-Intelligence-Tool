@@ -60,7 +60,7 @@ export class TokensService {
 
     if (!tokenDoc) return null;
 
-    const isValid = await bcrypt.compare(rawToken, tokenDoc.token);
+    const isValid = await bcrypt.compare(normalizedToken, tokenDoc.token);
     return isValid ? tokenDoc : null;
   }
 }
