@@ -21,19 +21,36 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   isConnected: false,
   isLoading: false,
 
-  addNotification: (notification) =>
-    set((state) => ({
-      notifications: [notification, ...state.notifications],
-      unreadCount: state.unreadCount + 1,
-    })),
+  addNotification: (notification) => {
+    // Normalize id to _id for consistency
+    const normalizedNotification = {
+      ...notification,
+      _id: notification._id || (notification as any).id,
+    };
+    set((state) => {
+      // Check if notification already exists
+      const exists = state.notifications.some(n => n._id === normalizedNotification._id);
+      if (exists) return state;
+      
+      return {
+        notifications: [normalizedNotification, ...state.notifications],
+        unreadCount: state.unreadCount + 1,
+      };
+    });
+  },
 
   markAsRead: (notificationId) =>
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n._id === notificationId ? { ...n, isRead: true } : n
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    })),
+    set((state) => {
+      const notification = state.notifications.find(n => n._id === notificationId);
+      const wasUnread = notification && !notification.isRead;
+      
+      return {
+        notifications: state.notifications.map((n) =>
+          n._id === notificationId ? { ...n, isRead: true } : n
+        ),
+        unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
+      };
+    }),
 
   markAllAsRead: () =>
     set((state) => ({

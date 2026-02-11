@@ -198,9 +198,37 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
 
   // Authentication helpers
   private extractTokenFromSocket(client: Socket): string | null {
-    const token = client.handshake.auth?.token || 
-                 client.handshake.headers?.authorization?.replace('Bearer ', '');
-    return token || null;
+    // Check auth.token first (for explicit token passing)
+    if (client.handshake.auth?.token) {
+      return client.handshake.auth.token;
+    }
+    
+    // Check authorization header
+    const authHeader = client.handshake.headers?.authorization;
+    if (authHeader) {
+      return authHeader.replace('Bearer ', '');
+    }
+    
+    // Check HTTP-only cookie (primary method)
+    const cookieHeader = client.handshake.headers?.cookie;
+    if (cookieHeader) {
+      const cookies = this.parseCookies(cookieHeader);
+      if (cookies.access_token) {
+        return cookies.access_token;
+      }
+    }
+    
+    return null;
+  }
+
+  private parseCookies(cookieHeader: string): Record<string, string> {
+    return cookieHeader.split(';').reduce((cookies, cookie) => {
+      const [name, value] = cookie.trim().split('=');
+      if (name && value) {
+        cookies[name] = decodeURIComponent(value);
+      }
+      return cookies;
+    }, {} as Record<string, string>);
   }
 
   private async validateToken(token: string): Promise<any> {
@@ -231,7 +259,7 @@ export class NotificationGateway implements OnGatewayConnection, OnGatewayDiscon
       if (missedNotifications.length > 0) {
         client.emit('missed-notifications', {
           count: missedNotifications.length,
-          notifications: missedNotifications.slice(0, 10), // Send only latest 10
+          notifications: missedNotifications, // Send all
         });
         this.logger.log(`Sent ${missedNotifications.length} missed notifications to user ${client.userId}`);
       }

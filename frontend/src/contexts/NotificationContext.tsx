@@ -34,39 +34,54 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   useEffect(() => {
     if (!user?._id) return;
 
+    // Fetch initial notifications only once
+    fetchNotifications();
+
     // Connect WebSocket
     notificationWebSocket.connect(user._id);
     setConnected(true);
 
-    // Fetch initial notifications
-    fetchNotifications();
-
     // Listen for new notifications
-    notificationWebSocket.onNotification((notification) => {
+    const handleNotification = (notification: any) => {
       addNotification(notification);
-      toast.success(notification.title, {
-        duration: 4000,
-      });
-    });
+      // Don't show toast for shortlist notifications (already shown by action)
+      if (notification.type !== 'CANDIDATE_SHORTLISTED') {
+        toast.success(notification.title, {
+          duration: 4000,
+        });
+      }
+    };
 
     // Listen for read notifications
-    notificationWebSocket.onNotificationRead((notificationId) => {
+    const handleNotificationRead = (notificationId: string) => {
       markAsRead(notificationId);
-    });
+    };
 
     // Listen for deleted notifications
-    notificationWebSocket.onNotificationDeleted((notificationId) => {
+    const handleNotificationDeleted = (notificationId: string) => {
       deleteNotification(notificationId);
-    });
+    };
 
-    // Request missed notifications on reconnect
-    const lastNotification = notifications[0];
-    if (lastNotification) {
-      notificationWebSocket.requestMissedNotifications(lastNotification.createdAt);
-    }
+    // Listen for missed notifications
+    const handleMissedNotifications = (data: any) => {
+      if (data.notifications && data.notifications.length > 0) {
+        data.notifications.forEach((notification: any) => {
+          addNotification(notification);
+        });
+      }
+    };
+
+    notificationWebSocket.onNotification(handleNotification);
+    notificationWebSocket.onNotificationRead(handleNotificationRead);
+    notificationWebSocket.onNotificationDeleted(handleNotificationDeleted);
+    notificationWebSocket.onMissedNotifications(handleMissedNotifications);
 
     // Cleanup on unmount
     return () => {
+      notificationWebSocket.off('notification', handleNotification);
+      notificationWebSocket.off('notification:read', handleNotificationRead);
+      notificationWebSocket.off('notification:deleted', handleNotificationDeleted);
+      notificationWebSocket.off('missed-notifications', handleMissedNotifications);
       notificationWebSocket.disconnect();
       setConnected(false);
     };

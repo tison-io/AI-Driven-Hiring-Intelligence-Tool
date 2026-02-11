@@ -47,7 +47,7 @@ export class MultiChannelDeliveryService {
     };
 
     const channels = options.channels || this.getDefaultChannels(options.priority, options.notification.type);
-    const isUserOnline = await this.connectionStateService.isUserOnline(options.userId);
+    const isUserOnline = this.notificationGateway.isUserConnected(options.userId);
 
     // WebSocket delivery (if user is online)
     if (channels.includes('websocket') && isUserOnline) {
@@ -75,15 +75,21 @@ export class MultiChannelDeliveryService {
 
   private async deliverViaWebSocket(options: DeliveryOptions): Promise<{ success: boolean; error?: string }> {
     try {
+      const notificationId = options.notification.metadata?.notificationId;
+      if (!notificationId) {
+        this.logger.warn('No notification ID provided for WebSocket delivery');
+        return { success: false, error: 'No notification ID' };
+      }
+      
       await this.notificationGateway.broadcastToUser(options.userId, {
-        id: options.notification.metadata?.notificationId || `${Date.now()}`,
+        _id: notificationId,
         userId: options.userId,
         type: options.notification.type,
         title: options.notification.title,
         content: options.notification.content,
         metadata: options.notification.metadata,
         createdAt: new Date(),
-      });
+      } as any);
       return { success: true };
     } catch (error) {
       this.logger.error(`WebSocket delivery failed: ${error.message}`);

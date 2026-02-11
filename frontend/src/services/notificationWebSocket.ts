@@ -8,42 +8,35 @@ class NotificationWebSocket {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private isManualDisconnect = false;
-  private authToken: string | null = null;
 
   async connect(userId: string) {
-    if (this.socket?.connected) return;
+    if (this.socket?.connected) {
+      return;
+    }
 
-    // Get token from backend
-    if (!this.authToken) {
-      try {
-        const response = await api.get('/auth/ws-token');
-        this.authToken = response.data.token;
-      } catch (error) {
-        console.error('Failed to get WebSocket token:', error);
-        return;
-      }
+    // Prevent duplicate connections
+    if (this.socket) {
+      this.socket.disconnect();
+      this.socket = null;
     }
 
     this.isManualDisconnect = false;
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     this.socket = io(`${baseUrl}/notifications`, {
-      auth: { token: this.authToken },
       transports: ['websocket', 'polling'],
       reconnection: false,
       withCredentials: true,
     });
 
     this.socket.on('connect', () => {
-      console.log('WebSocket connected');
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('connected', (data) => {
-      console.log('WebSocket authenticated:', data);
+      // Connection authenticated
     });
 
     this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected');
       if (!this.isManualDisconnect) {
         this.handleReconnect(userId);
       }
@@ -67,7 +60,6 @@ class NotificationWebSocket {
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
 
     setTimeout(() => {
-      console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`);
       this.connect(userId);
     }, delay);
   }
@@ -76,7 +68,6 @@ class NotificationWebSocket {
     this.isManualDisconnect = true;
     this.socket?.disconnect();
     this.socket = null;
-    this.authToken = null;
   }
 
   onNotification(callback: (notification: Notification) => void) {

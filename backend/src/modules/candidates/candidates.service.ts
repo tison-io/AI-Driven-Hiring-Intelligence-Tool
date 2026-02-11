@@ -220,13 +220,22 @@ export class CandidatesService {
 		candidate.isShortlisted = !candidate.isShortlisted;
 		const savedCandidate = await candidate.save();
 
-		// Emit shortlisted event only when adding to shortlist (not removing)
+		// Emit shortlisted event when adding to shortlist
 		if (!wasShortlisted && savedCandidate.isShortlisted) {
 			this.notificationEventService.emitCandidateShortlisted({
 				candidateId: savedCandidate._id.toString(),
 				candidateName: savedCandidate.name || 'Candidate',
 				userId: savedCandidate.createdBy,
 				action: 'shortlisted',
+			});
+		}
+		// Emit event when removing from shortlist
+		else if (wasShortlisted && !savedCandidate.isShortlisted) {
+			this.notificationEventService.emitCandidateRemovedFromShortlist({
+				candidateId: savedCandidate._id.toString(),
+				candidateName: savedCandidate.name || 'Candidate',
+				userId: savedCandidate.createdBy,
+				action: 'removed_from_shortlist',
 			});
 		}
 

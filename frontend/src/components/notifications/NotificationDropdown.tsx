@@ -44,7 +44,7 @@ export default function NotificationDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+        className="relative p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
       >
         <Bell className="w-6 h-6" />
         {unreadCount > 0 && (
@@ -55,7 +55,7 @@ export default function NotificationDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-[#F3F4F6] rounded-lg shadow-lg border z-50">
+        <div className="fixed md:absolute left-0 md:left-auto right-0 mt-2 md:w-96 bg-[#F3F4F6] rounded-lg shadow-lg border z-50">
           {/* Header */}
           <div className="p-4 border-b border-gray-300 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -91,8 +91,8 @@ export default function NotificationDropdown() {
                         style={{ backgroundColor: getNotificationColor(notification.type) }}
                       />
                     )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 leading-relaxed">
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900 leading-relaxed break-words">
                         {notification.content}
                       </p>
                       <p className="text-xs text-gray-500 mt-1">

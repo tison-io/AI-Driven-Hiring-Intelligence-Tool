@@ -67,7 +67,10 @@ export class NotificationsService {
         type: createNotificationDto.type,
         title: createNotificationDto.title,
         content: createNotificationDto.content,
-        metadata: createNotificationDto.metadata,
+        metadata: {
+          ...createNotificationDto.metadata,
+          notificationId: savedNotification._id.toString(),
+        },
         userId: createNotificationDto.userId,
       },
       priority: this.getNotificationPriority(createNotificationDto.type),
@@ -119,8 +122,9 @@ export class NotificationsService {
     return this.notificationModel.findById(id).exec();
   }
 
-  async findByUserId(userId: string, filters: Omit<NotificationFilters, 'userId'> = {}): Promise<Notification[]> {
-    const query = this.buildFilterQuery({ ...filters, userId });
+  async findByUserId(userId: string | Types.ObjectId, filters: Omit<NotificationFilters, 'userId'> = {}): Promise<Notification[]> {
+    const userIdString = userId.toString();
+    const query = this.buildFilterQuery({ ...filters, userId: userIdString });
     return this.notificationModel.find(query).sort({ createdAt: -1 }).exec();
   }
 
@@ -144,7 +148,7 @@ export class NotificationsService {
   // Bulk Operations
   async markAllAsRead(userId: string): Promise<{ modifiedCount: number }> {
     const result = await this.notificationModel.updateMany(
-      { userId: userId as any, isRead: false },
+      { userId: userId.toString(), isRead: false },
       { isRead: true }
     ).exec();
 
@@ -173,7 +177,7 @@ export class NotificationsService {
   // Unread Count Tracking
   async getUnreadCount(userId: string): Promise<number> {
     return this.notificationModel.countDocuments({
-      userId: userId as any,
+      userId: userId.toString(),
       isRead: false
     }).exec();
   }
@@ -182,7 +186,7 @@ export class NotificationsService {
     const pipeline = [
       {
         $match: {
-          userId: userId as any,
+          userId: userId.toString(),
           isRead: false
         }
       },
@@ -231,7 +235,7 @@ export class NotificationsService {
     };
 
     if (userId) {
-      searchQuery.userId = userId as any;
+      searchQuery.userId = userId.toString();
     }
 
     const sort: any = { [sortBy]: sortOrder === 'desc' ? -1 : 1 };
@@ -268,7 +272,8 @@ export class NotificationsService {
     const query: any = {};
 
     if (filters.userId) {
-      query.userId = filters.userId as any;
+      // Keep as string since notifications are stored with string userId
+      query.userId = filters.userId.toString();
     }
 
     if (filters.type) {
