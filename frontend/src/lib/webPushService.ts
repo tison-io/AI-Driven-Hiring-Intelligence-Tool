@@ -1,5 +1,8 @@
+'use client';
+
 // Web Push Service for Frontend
 import { toast } from 'react-hot-toast';
+import { useState, useEffect } from 'react';
 
 export interface PushSubscriptionData {
   endpoint: string;
@@ -294,7 +297,7 @@ class WebPushService {
   }
 
   // Convert VAPID key to Uint8Array
-  private urlBase64ToUint8Array(base64String: string): Uint8Array {
+  private urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
       .replace(/-/g, '+')
