@@ -231,9 +231,11 @@ export class AuthController {
       
       // Redirect to frontend (no token in URL)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
-      const redirectUrl = result.user.profileCompleted 
-        ? `${frontendUrl}/dashboard`
-        : `${frontendUrl}/complete-profile`;
+      const redirectUrl = result.user.role === 'admin'
+        ? `${frontendUrl}/admin/dashboard`
+        : result.user.profileCompleted 
+          ? `${frontendUrl}/dashboard`
+          : `${frontendUrl}/complete-profile`;
       
       return res.redirect(redirectUrl);
     } catch (error) {
