@@ -228,7 +228,11 @@ export class JobPostingsController {
   }
 
   @Post('apply/:id')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max
+    },
+  }))
   @ApiTags('Public Application')
   @ApiOperation({ summary: 'Submit application (No Auth)' })
   @ApiConsumes('multipart/form-data')
@@ -258,6 +262,7 @@ export class JobPostingsController {
       jobPosting.title,
       jobPosting['companyId']?.toString() || 'public',
       jobPosting.description,
+      applyDto,
     );
     return {
       candidateId: result.candidateId,
