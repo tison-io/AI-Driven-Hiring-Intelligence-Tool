@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Users,   X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users,   X, Settings, FileText, ChevronLeft, AlertCircle, FileSearch, LogOut, Briefcase, LucideBriefcase } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -23,6 +23,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const recruiterNavItems = [
     { id: 'new-evaluations', label: 'New Evaluations', icon: FileText, href: '/evaluations/new' },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
+    { id: 'job-posting', label: 'Job Posting', icon: LucideBriefcase, href: '/job-posting' },
     { id: 'candidate-pipeline', label: 'Candidate Pipeline', icon: Users, href: '/candidates' },
     { id: 'settings', label: 'Settings', icon: Settings, href: '/settings' },
     { id: 'logout', label: 'Logout', icon: LogOut, href: '#' },
