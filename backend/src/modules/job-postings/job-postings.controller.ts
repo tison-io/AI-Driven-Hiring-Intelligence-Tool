@@ -1,21 +1,90 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, Put, Delete, Patch, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
+import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
 import { FindAllJobPostingsDto } from './dto/find-all-job-postings.dto';
+import { ApplyJobDto } from './dto/apply-job.dto';
 import { JobPostingsService } from './job-postings.service';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+import { FileValidationPipe } from '../../common/pipes/file-validation.pipe';
+import { UploadService } from '../upload/upload.service';
 
+@ApiTags('Job Postings')
 @Controller('api/job-postings')
-@UseGuards(JwtAuthGuard)
 export class JobPostingsController {
-  constructor(private jobPostingsService: JobPostingsService) {}
+  constructor(
+    private jobPostingsService: JobPostingsService,
+    private uploadService: UploadService,
+  ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Create a new job posting',
+    description: 'Creates a new job posting. The companyId is automatically set from the authenticated user.',
+  })
+  @ApiBody({ type: CreateJobPostingDto })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Job posting created successfully',
+    schema: {
+      example: {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Senior Backend Engineer',
+        description: 'We are looking for an experienced backend engineer...',
+        requirements: ['5+ years of Node.js experience', 'Experience with MongoDB'],
+        location: 'San Francisco, CA',
+        salary: { min: 120000, max: 180000, currency: 'USD' },
+        companyId: '507f191e810c19729de860ea',
+        isActive: true,
+        createdAt: '2024-01-15T10:30:00.000Z',
+        updatedAt: '2024-01-15T10:30:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid input data' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
   async create(@Body() createDto: CreateJobPostingDto, @Request() req: any) {
-    return this.jobPostingsService.create(createDto, req.user._id);
+    return this.jobPostingsService.create(createDto, req.user.id);
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Get all job postings',
+    description: 'Retrieves a paginated list of job postings with optional search filtering by title, description, or location.',
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10, max: 100)' })
+  @ApiQuery({ name: 'search', required: false, type: String, description: 'Search term for title, description, or location' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Job postings retrieved successfully',
+    schema: {
+      example: {
+        data: [
+          {
+            _id: '507f1f77bcf86cd799439011',
+            title: 'Senior Backend Engineer',
+            description: 'We are looking for an experienced backend engineer...',
+            requirements: ['5+ years of Node.js experience'],
+            location: 'San Francisco, CA',
+            isActive: true,
+            createdAt: '2024-01-15T10:30:00.000Z',
+          },
+        ],
+        total: 25,
+        page: 1,
+        limit: 10,
+        totalPages: 3,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
   async findAll(@Query() query: FindAllJobPostingsDto) {
     return this.jobPostingsService.findAll({
       page: query.page,
@@ -25,7 +94,175 @@ export class JobPostingsController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Get a single job posting by ID',
+    description: 'Retrieves detailed information about a specific job posting.',
+  })
+  @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the job posting', example: '507f1f77bcf86cd799439011' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Job posting retrieved successfully',
+    schema: {
+      example: {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Senior Backend Engineer',
+        description: 'We are looking for an experienced backend engineer...',
+        requirements: ['5+ years of Node.js experience', 'Experience with MongoDB'],
+        location: 'San Francisco, CA',
+        salary: { min: 120000, max: 180000, currency: 'USD' },
+        companyId: '507f191e810c19729de860ea',
+        isActive: true,
+        createdAt: '2024-01-15T10:30:00.000Z',
+        updatedAt: '2024-01-15T10:30:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Job posting not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return this.jobPostingsService.findOne(id);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Update a job posting',
+    description: 'Updates an existing job posting. Only the owner (recruiter who created it) or an admin can update the posting.',
+  })
+  @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the job posting', example: '507f1f77bcf86cd799439011' })
+  @ApiBody({ type: UpdateJobPostingDto })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Job posting updated successfully',
+    schema: {
+      example: {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Senior Backend Engineer (Updated)',
+        description: 'Updated description...',
+        requirements: ['5+ years of Node.js experience'],
+        location: 'San Francisco, CA',
+        isActive: true,
+        updatedAt: '2024-01-15T11:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - You can only update your own job postings' })
+  @ApiResponse({ status: 404, description: 'Job posting not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
+  async update(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() updateDto: UpdateJobPostingDto,
+    @Request() req: any,
+  ) {
+    return this.jobPostingsService.update(id, updateDto, req.user.id, req.user.role);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Delete a job posting',
+    description: 'Permanently deletes a job posting. Only the owner (recruiter who created it) or an admin can delete the posting.',
+  })
+  @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the job posting', example: '507f1f77bcf86cd799439011' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Job posting deleted successfully',
+    schema: {
+      example: {
+        success: true,
+        message: 'Job posting deleted successfully',
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - You can only delete your own job postings' })
+  @ApiResponse({ status: 404, description: 'Job posting not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
+  async delete(@Param('id', ParseObjectIdPipe) id: string, @Request() req: any) {
+    return this.jobPostingsService.delete(id, req.user.id, req.user.role);
+  }
+
+  @Patch(':id/toggle')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Toggle job posting active status',
+    description: 'Toggles the isActive field between true and false. Use this to activate/deactivate job postings without deleting them. Only the owner or an admin can toggle the status.',
+  })
+  @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the job posting', example: '507f1f77bcf86cd799439011' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Job posting status toggled successfully',
+    schema: {
+      example: {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Senior Backend Engineer',
+        isActive: false,
+        updatedAt: '2024-01-15T11:30:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - You can only toggle your own job postings' })
+  @ApiResponse({ status: 404, description: 'Job posting not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
+  async toggleActive(@Param('id', ParseObjectIdPipe) id: string, @Request() req: any) {
+    return this.jobPostingsService.toggleActive(id, req.user.id, req.user.role);
+  }
+
+  // PUBLIC ENDPOINTS
+
+  @Get('apply/:id')
+  @ApiTags('Public Application')
+  @ApiOperation({ 
+    summary: 'Get job posting for public application (No Auth)',
+    description: 'Public endpoint to fetch job details for candidates.',
+  })
+  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiResponse({ status: 200, description: 'Job details retrieved' })
+  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
+  async getPublicJobPosting(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.jobPostingsService.getPublicJobPosting(id);
+  }
+
+  @Post('apply/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiTags('Public Application')
+  @ApiOperation({ summary: 'Submit application (No Auth)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'John Doe' },
+        file: { type: 'string', format: 'binary' },
+        source: { type: 'string', example: 'resume', enum: ['resume', 'linkedin'] },
+      },
+      required: ['name', 'file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Application submitted' })
+  @ApiResponse({ status: 400, description: 'Invalid file or data' })
+  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
+  async submitApplication(
+    @Param('id', ParseObjectIdPipe) jobId: string,
+    @Body() applyDto: ApplyJobDto,
+    @UploadedFile(FileValidationPipe) file: Express.Multer.File,
+  ) {
+    const jobPosting = await this.jobPostingsService.getPublicJobPosting(jobId);
+    const result = await this.uploadService.processResume(
+      file,
+      jobPosting.title,
+      jobPosting['companyId']?.toString() || 'public',
+      jobPosting.description,
+    );
+    return {
+      candidateId: result.candidateId,
+      message: 'Application submitted successfully. We\'re evaluating your profile and will email results shortly.',
+      status: result.status,
+    };
   }
 }

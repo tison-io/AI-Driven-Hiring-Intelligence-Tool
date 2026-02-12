@@ -1,4 +1,5 @@
 import { IsNumber, IsString, Min, ValidatorConstraint, ValidatorConstraintInterface, ValidationArguments, Validate, registerDecorator, ValidationOptions, IsIn } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 import { CURRENCY_ENUM } from '../entities/job-posting.entity';
 
 @ValidatorConstraint({ name: 'MinLessThanOrEqualMax', async: false })
@@ -26,15 +27,30 @@ function MinLessThanOrEqualMax(validationOptions?: ValidationOptions) {
 }
 
 export class SalaryDto {
+  @ApiProperty({
+    description: 'Minimum salary amount',
+    example: 120000,
+    minimum: 0,
+  })
   @IsNumber()
   @Min(0)
   min: number;
 
+  @ApiProperty({
+    description: 'Maximum salary amount (must be >= min)',
+    example: 180000,
+    minimum: 0,
+  })
   @IsNumber()
   @Min(0)
   @MinLessThanOrEqualMax()
   max: number;
 
+  @ApiProperty({
+    description: 'Currency code (ISO 4217)',
+    example: 'USD',
+    enum: CURRENCY_ENUM,
+  })
   @IsString()
   @IsIn(CURRENCY_ENUM)
   currency: string;
