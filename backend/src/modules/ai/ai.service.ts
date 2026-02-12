@@ -44,12 +44,9 @@ export class AiService {
   }
 
   private transformGraphResponse(finalScore: number, summary: any, agentReports: any, profile: any) {
-    // Defensive null checks - use safe defaults for all response-derived objects
     const safeSummary = summary || {};
     const safeAgentReports = agentReports || {};
     const safeProfile = profile || {};
-
-    // Initialize categoryScores with safe defaults and validate expected keys
     const categoryScores = safeSummary?.category_scores || {};
     const scoringBreakdown = {
       skill_match: categoryScores?.competency ?? 0,
@@ -58,26 +55,19 @@ export class AiService {
       certifications: safeAgentReports?.competency_agent?.score ?? categoryScores?.competency ?? 0
     };
 
-    // Get candidate's actual skills (normalized to lowercase for comparison)
     const candidateSkills = (safeProfile?.skills || []).map((s: string) => s.toLowerCase().trim());
 
-    // Combine missing skills from both competency agent and behavioral/culture agent
     const missingCompetencies = safeAgentReports?.competency_agent?.missing_competencies || [];
     const missingRoleSkills = safeAgentReports?.behavioral_agent?.missing_role_skills || [];
 
-    // Merge both sources of missing skills, removing duplicates
     const allReportedMissingSkills = [...new Set([...missingCompetencies, ...missingRoleSkills])];
 
-    // Filter out "missing" skills that the candidate actually has
     const actuallyMissingSkills = allReportedMissingSkills.filter((skill: string) => {
       const normalizedSkill = skill.toLowerCase().trim();
-      // Check if candidate has this skill (exact match or partial match)
       return !candidateSkills.some((candidateSkill: string) =>
         candidateSkill.includes(normalizedSkill) || normalizedSkill.includes(candidateSkill)
       );
     });
-
-    // Guard all profile field accesses with optional chaining and fallback arrays
     const workExperience = (safeProfile?.work_experience || []).map((job: any) => ({
       company: job?.company || '',
       jobTitle: job?.job_title || '',
@@ -86,7 +76,6 @@ export class AiService {
       description: job?.description || ''
     }));
 
-    // Calculate dynamic confidence score based on profile completeness
     const profileFields = [
       safeProfile?.candidate_name,
       safeProfile?.skills?.length > 0,
@@ -97,66 +86,85 @@ export class AiService {
     const filledFields = profileFields.filter(Boolean).length;
     const profileCompleteness = (filledFields / profileFields.length) * 100;
 
-    // Get evaluation scores for bias detection
+    const extractionConfidence = safeProfile?.extraction_confidence || {};
+    const avgExtractionConfidence = (() => {
+      const values = Object.values(extractionConfidence)
+        .filter((v): v is number => Number.isFinite(v))
+        .map(v => Math.max(0, Math.min(1, v))); // Clamp each value to [0, 1]
+      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0.5;
+    })();
+
+    // Ensure inputs are finite with safe defaults
+    const safeProfileCompleteness = Number.isFinite(profileCompleteness) ? profileCompleteness : 0;
+    const safeAvgConfidence = Number.isFinite(avgExtractionConfidence) ? avgExtractionConfidence : 0.5;
+
+    const confidenceScore = Math.max(0, Math.min(100,
+      Math.round((safeProfileCompleteness + safeAvgConfidence * 100) / 2)
+    ));
     const competencyScore = categoryScores?.competency ?? 0;
     const experienceScore = categoryScores?.experience ?? 0;
     const softSkillsScore = categoryScores?.soft_skills ?? 0;
     const inferredJobFamily = safeAgentReports?.competency_agent?.inferred_job_family || '';
 
-    // Check for explicit JD-Role mismatch from competency agent
-    const explicitJdRoleMismatch = safeAgentReports?.competency_agent?.jd_role_mismatch === true;
-
-    // Check for jurisdiction/licensing issues (qualified but wrong jurisdiction)
-    const hasJurisdictionIssue = safeAgentReports?.competency_agent?.jurisdiction_issue === true;
-
-    // Fallback detection: high experience/culture but zero/very low competency indicates mismatch
-    // BUT only if there's no jurisdiction issue (jurisdiction issues aren't true mismatches)
-    const hasHighExperienceOrCulture = experienceScore >= 70 || softSkillsScore >= 70;
-    const hasVeryLowCompetency = competencyScore <= 10;
-    const inferredJdRoleMismatch = hasHighExperienceOrCulture && hasVeryLowCompetency && !hasJurisdictionIssue;
-
-    // Use explicit flag if available, otherwise use inferred detection
-    const isJdRoleMismatch = explicitJdRoleMismatch || inferredJdRoleMismatch;
-
-    // Detect other bias signals
-    const hasMissingCriticalSkills = actuallyMissingSkills.length > 3;
-    const hasVeryLowFinalScore = (finalScore ?? 0) < 40;
-
-    // Calculate bias penalty
-    let biasPenalty = 0;
     let biasReasons: string[] = [];
 
-    if (isJdRoleMismatch) {
-      biasPenalty = 70; // Maximum penalty for JD-Role mismatch
-      biasReasons.push(`JD-Role mismatch detected (inferred: ${inferredJobFamily || 'unknown'})`);
-    } else if (hasJurisdictionIssue) {
-      // Jurisdiction issues get moderate penalty - candidate is qualified but needs license transfer
-      biasPenalty = 50;
+    const explicitJdRoleMismatch = safeAgentReports?.competency_agent?.jd_role_mismatch === true;
+    if (explicitJdRoleMismatch) {
+      biasReasons.push(`JD-Role mismatch detected (inferred: ${inferredJobFamily || 'unknown'}) — candidate may be evaluated against wrong criteria`);
+    }
+
+    const competencyAgent = safeAgentReports?.competency_agent || {};
+    const matchedCount = (competencyAgent?.matched_competencies || []).length;
+    const missingCount = (competencyAgent?.missing_competencies || []).length;
+    const totalReqs = matchedCount + missingCount;
+    if (totalReqs > 0) {
+      const expectedCompetencyScore = Math.round((matchedCount / totalReqs) * 100);
+      if (Math.abs(expectedCompetencyScore - competencyScore) > 15) {
+        biasReasons.push(
+          `Competency score (${competencyScore}) differs significantly from matched/missing ratio (${matchedCount}/${totalReqs} = ${expectedCompetencyScore}) — possible scoring error`
+        );
+      }
+    }
+
+    const agentScores = [competencyScore, experienceScore, softSkillsScore].filter(s => Number.isFinite(s));
+    if (agentScores.length >= 2) {
+      const maxScore = Math.max(...agentScores);
+      const minScore = Math.min(...agentScores);
+      if (maxScore - minScore > 60) {
+        biasReasons.push(
+          `Extreme score variance across agents (${minScore} to ${maxScore}) — review for evaluation consistency`
+        );
+      }
+    }
+
+    if (agentScores.length >= 3 &&
+      agentScores.every(s => s === agentScores[0]) &&
+      agentScores[0] > 90) {
+      biasReasons.push('All agents returned identical high scores — verify evaluation rigor');
+    }
+
+    const relevantYears = safeAgentReports?.experience_agent?.relevant_years_validated ?? null;
+    if (relevantYears !== null && relevantYears === 0 && experienceScore > 50) {
+      biasReasons.push(
+        `Experience score (${experienceScore}) contradicts 0 validated relevant years — review experience evaluation`
+      );
+    }
+
+    const hasJurisdictionIssue = safeAgentReports?.competency_agent?.jurisdiction_issue === true;
+    const aggregatorFlaggedJurisdiction = safeSummary?.jurisdiction_flag === true;
+
+    if (hasJurisdictionIssue || aggregatorFlaggedJurisdiction) {
       biasReasons.push('Jurisdiction/licensing issue: candidate may need license transfer');
     }
-    if (hasMissingCriticalSkills && !isJdRoleMismatch && !hasJurisdictionIssue) {
-      biasPenalty = Math.max(biasPenalty, 30);
-      biasReasons.push('Significant skill gaps detected');
-    }
-    if (hasVeryLowFinalScore && !isJdRoleMismatch && !hasJurisdictionIssue) {
-      biasPenalty = Math.max(biasPenalty, 20);
-      biasReasons.push('Low overall fit score');
-    }
 
-    // Apply bias penalty to confidence score
-    const confidenceScore = Math.max(0, Math.min(100, Math.round(profileCompleteness - biasPenalty)));
-
-    // Determine bias check status
     const biasCheck = biasReasons.length > 0
       ? `REVIEW REQUIRED: ${biasReasons.join('; ')}`
-      : "No bias detected";
+      : 'No bias detected';
 
     return {
       name: safeProfile?.candidate_name || 'Anonymous',
       email: safeProfile?.email || '',
       skills: safeProfile?.skills || [],
-      // Use relevant_years_validated from experience agent (more accurate for role fit)
-      // Falls back to profile total_years_experience if not available
       experienceYears: safeAgentReports?.experience_agent?.relevant_years_validated ?? safeProfile?.total_years_experience ?? 0,
       workExperience: workExperience,
       education: safeProfile?.education || [],
