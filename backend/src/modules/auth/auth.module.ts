@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
 import { UploadModule } from '../upload/upload.module';
 import { EmailModule } from '../email/email.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
 import { JwtConfig } from '../../config/jwt.config';
@@ -15,6 +16,7 @@ import { JwtConfig } from '../../config/jwt.config';
     UsersModule,
     UploadModule,
     EmailModule,
+    NotificationsModule,
     PassportModule,
     JwtModule.registerAsync({
       useClass: JwtConfig,

@@ -24,6 +24,7 @@ import CandidatesTableSkeleton from "@/components/candidates/CandidatesTableSkel
 import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
+import NotificationDropdown from "@/components/notifications/NotificationDropdown";
 import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
@@ -338,13 +339,18 @@ function CandidatesContent() {
 				<div className="p-4 md:p-6 lg:p-8 w-full overflow-x-hidden">
 					<div className="max-w-7xl mx-auto w-full">
 						{/* Header */}
-						<div className="mb-6 md:mb-8">
-							<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
-								Candidate Pipeline
-							</h1>
-							<p className="text-gray-400 text-sm md:text-base">
-								Filter and manage your candidate pool
-							</p>
+						<div className="mb-6 md:mb-8 flex items-start justify-between">
+							<div>
+								<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
+									Candidate Pipeline
+								</h1>
+								<p className="text-gray-400 text-sm md:text-base">
+									Filter and manage your candidate pool
+								</p>
+							</div>
+							<div className="hidden md:block">
+								<NotificationDropdown />
+							</div>
 						</div>
 
 						{/* Search and Filters Section */}

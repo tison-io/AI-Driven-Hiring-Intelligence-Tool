@@ -37,7 +37,8 @@ export class UploadService {
 		await this.queueService.addAIProcessingJob(
 			candidate._id.toString(),
 			jobRole,
-			jobDescription
+			jobDescription,
+			userId
 		);
 
 		return {
@@ -95,7 +96,8 @@ export class UploadService {
 			await this.queueService.addAIProcessingJob(
 				candidate._id.toString(),
 				jobRole,
-				jobDescription
+				jobDescription,
+				userId
 			);
 
 			return {
