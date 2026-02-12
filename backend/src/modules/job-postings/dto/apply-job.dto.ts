@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsEmail } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ApplyJobDto {
@@ -9,6 +9,14 @@ export class ApplyJobDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @ApiProperty({
+    description: 'Candidate email address',
+    example: 'john.doe@example.com',
+  })
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 
   @ApiPropertyOptional({
     description: 'Application source type',

@@ -23,14 +23,15 @@ export class UploadService {
 		jobRole: string,
 		userId: string,
 		jobDescription?: string,
-		applicantData?: { name?: string; source?: string },
+		applicantData?: { name?: string; email?: string; source?: string },
 	) {
 		// Extract text from file
 		const rawText = await this.extractTextFromFile(file);
 
 		// Create candidate record
 		const candidate = await this.candidatesService.create({
-			name: applicantData?.name || "Extracted from Resume", // Use provided name or default
+			name: applicantData?.name || "Extracted from Resume",
+			email: applicantData?.email,
 			rawText,
 			jobRole,
 			source: (applicantData?.source as 'file' | 'linkedin') || 'file',

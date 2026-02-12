@@ -242,10 +242,11 @@ export class JobPostingsController {
       type: 'object',
       properties: {
         name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', format: 'email', example: 'john.doe@example.com' },
         file: { type: 'string', format: 'binary' },
         source: { type: 'string', example: 'resume', enum: ['resume', 'linkedin'] },
       },
-      required: ['name', 'file'],
+      required: ['name', 'email', 'file'],
     },
   })
   @ApiResponse({ status: 201, description: 'Application submitted' })
