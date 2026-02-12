@@ -88,14 +88,18 @@ export class AiService {
 
     const extractionConfidence = safeProfile?.extraction_confidence || {};
     const avgExtractionConfidence = (() => {
-      const values = Object.values(extractionConfidence).filter(
-        (v): v is number => typeof v === 'number'
-      );
+      const values = Object.values(extractionConfidence)
+        .filter((v): v is number => Number.isFinite(v))
+        .map(v => Math.max(0, Math.min(1, v))); // Clamp each value to [0, 1]
       return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0.5;
     })();
 
+    // Ensure inputs are finite with safe defaults
+    const safeProfileCompleteness = Number.isFinite(profileCompleteness) ? profileCompleteness : 0;
+    const safeAvgConfidence = Number.isFinite(avgExtractionConfidence) ? avgExtractionConfidence : 0.5;
+
     const confidenceScore = Math.max(0, Math.min(100,
-      Math.round((profileCompleteness + avgExtractionConfidence * 100) / 2)
+      Math.round((safeProfileCompleteness + safeAvgConfidence * 100) / 2)
     ));
     const competencyScore = categoryScores?.competency ?? 0;
     const experienceScore = categoryScores?.experience ?? 0;

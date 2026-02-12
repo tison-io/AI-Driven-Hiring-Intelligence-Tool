@@ -176,9 +176,16 @@ def extract_resume_node(state: AgentState):
         if isinstance(confidence, dict):
             for field in ["email", "phone", "experience"]:
                 val = confidence.get(field)
-                if isinstance(val, (int, float)) and val > 1:
-                    confidence[field] = round(val / 100, 2)
-                    print(f"[RESUME_EXTRACTION] Normalized {field} confidence: {val} -> {confidence[field]}")
+                if isinstance(val, (int, float)):
+                    # Coerce to float and normalize if > 1
+                    normalized = float(val)
+                    if normalized > 1:
+                        normalized = normalized / 100
+                    # Clamp to [0.0, 1.0] range
+                    normalized = min(max(normalized, 0.0), 1.0)
+                    confidence[field] = round(normalized, 2)
+                    if val > 1 or val < 0:
+                        print(f"[RESUME_EXTRACTION] Normalized {field} confidence: {val} -> {confidence[field]}")
             result["extraction_confidence"] = confidence
         
         action_words = {"and", "the", "for", "with", "managed", "developed", "created", "built",
@@ -367,8 +374,13 @@ def tech_agent_node(state: AgentState):
         missing = result.get("missing_competencies", [])
         total = len(matched) + len(missing)
         if total > 0 and not use_market_standards:
-            correct_score = round((len(matched) / total) * 100)
-            llm_score = result.get("score", 0)
+            correct_score = int(round((len(matched) / total) * 100))
+            # Coerce LLM score to numeric with safe fallback
+            raw_score = result.get("score", 0)
+            try:
+                llm_score = float(raw_score) if raw_score is not None else 0.0
+            except (TypeError, ValueError):
+                llm_score = 0.0
             if abs(correct_score - llm_score) > 1:  # Only override if meaningfully different
                 print(f"[TECH_AGENT] Score recalculated: LLM said {llm_score}, "
                       f"actual is ({len(matched)}/{total})*100 = {correct_score}")
@@ -377,7 +389,13 @@ def tech_agent_node(state: AgentState):
                     f"Recalculated from matched/missing arrays: "
                     f"{len(matched)} matched, {len(missing)} missing out of {total}")
         
-        result["score"] = round(result.get("score", 0))
+        # Coerce to numeric and round
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
         
         log_stage("TECH_AGENT", result, is_output=True)
         return {"tech_evaluation": result}
@@ -450,7 +468,13 @@ def experience_agent_node(state: AgentState):
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
-        result["score"] = round(result.get("score", 0))
+        # Coerce to numeric and clamp to 0-100
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
         log_stage("EXPERIENCE_AGENT", result, is_output=True)
         return {"experience_evaluation": result}
     except Exception as e:
@@ -501,7 +525,13 @@ def culture_agent_node(state: AgentState):
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
-        result["score"] = round(result.get("score", 0))
+        # Coerce to numeric and clamp to 0-100
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
         log_stage("CULTURE_AGENT", result, is_output=True)
         return {"culture_evaluation": result}
     except Exception as e:
