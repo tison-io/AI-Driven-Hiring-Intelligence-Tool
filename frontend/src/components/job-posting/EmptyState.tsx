@@ -15,7 +15,7 @@ export default function EmptyState({ onCreateClick }: EmptyStateProps) {
           {/* Empty State Illustration */}
           <div className="flex justify-center mb-8">
             <Image
-              src="/images/empty-job-posting.svg"
+              src="/images/empty-state.svg"
               alt="No job postings"
               width={200}
               height={200}
