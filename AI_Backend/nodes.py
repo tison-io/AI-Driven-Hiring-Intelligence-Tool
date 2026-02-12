@@ -535,7 +535,7 @@ def aggregator_node(state: AgentState):
         "jd_role_mismatch": tech_eval_full.get("jd_role_mismatch", False),
         "jd_is_vague": tech_eval_full.get("jd_is_vague", False),
         "use_market_standards": tech_eval_full.get("use_market_standards", False),
-        "jurisdiction_flag": tech_eval_full.get("jurisdiction_flag", False),
+        "jurisdiction_flag": tech_eval_full.get("jurisdiction_issue", False),
         "reasoning": tech_eval_full.get("reasoning", "")
     }
     
@@ -569,6 +569,8 @@ def aggregator_node(state: AgentState):
     }
     log_stage("AGGREGATOR", input_data, is_output=False)
     
+    # NOTE: Logging full agent reports for debugging and continuous improvement.
+    # This is intentional during development. Consider redacting PII for production.
     print("FULL AGENT REPORTS")
     log_stage("TECH_EVAL_FULL", tech_eval_full, is_output=False)
     log_stage("EXPERIENCE_EVAL_FULL", exp_eval_full, is_output=False)
@@ -584,11 +586,11 @@ def aggregator_node(state: AgentState):
             "exp_eval": json.dumps(exp_eval_summary),    
             "culture_eval": json.dumps(culture_eval_summary)  
         })
-        result["final_score"] = round(result.get("final_score", 0))
+        result["final_score"] = max(0, min(100, round(result.get("final_score", 0))))
         cat = result.get("category_scores", {})
         for key in ["competency", "experience", "soft_skills"]:
             if key in cat:
-                cat[key] = round(cat[key])
+                cat[key] = max(0, min(100, round(cat[key])))
         result["category_scores"] = cat
         log_stage("AGGREGATOR", result, is_output=True)
         return {"final_evaluation": result}

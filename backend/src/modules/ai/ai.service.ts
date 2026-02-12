@@ -122,7 +122,7 @@ export class AiService {
       }
     }
 
-    const agentScores = [competencyScore, experienceScore, softSkillsScore].filter(s => s > 0);
+    const agentScores = [competencyScore, experienceScore, softSkillsScore].filter(s => Number.isFinite(s));
     if (agentScores.length >= 2) {
       const maxScore = Math.max(...agentScores);
       const minScore = Math.min(...agentScores);
