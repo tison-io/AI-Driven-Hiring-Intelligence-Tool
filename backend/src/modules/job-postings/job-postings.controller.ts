@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, Put, Delete, Patch, UseInterceptors, UploadedFile, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, Put, Delete, Patch, UseInterceptors, UploadedFile, NotFoundException, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -146,10 +146,15 @@ export class JobPostingsController {
       throw new NotFoundException('This job posting is no longer accepting applications');
     }
 
+    // Ensure companyId exists before processing
+    if (!jobPosting.companyId) {
+      throw new BadRequestException('Missing companyId for job posting');
+    }
+
     const result = await this.uploadService.processResume(
       file,
       jobPosting.title,
-      jobPosting.companyId?.toString(),
+      jobPosting.companyId.toString(),
       jobPosting.description,
       applyDto,
     );
