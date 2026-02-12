@@ -4,6 +4,7 @@ import { QueueService } from './queue.service';
 import { AiProcessor } from './processors/ai-processor';
 import { CandidatesModule } from '../candidates/candidates.module';
 import { AiModule } from '../ai/ai.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { AiModule } from '../ai/ai.module';
     }),
     CandidatesModule,
     AiModule,
+    NotificationsModule,
   ],
   providers: [QueueService, AiProcessor],
   exports: [QueueService],

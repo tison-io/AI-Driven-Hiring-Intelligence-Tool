@@ -10,6 +10,6 @@ import { ApifyModule } from "../linkedin-scraper/linkedinScraper.module";
 	imports: [CandidatesModule, QueueModule, ApifyModule],
 	controllers: [UploadController],
 	providers: [UploadService, CloudinaryService],
-	exports: [CloudinaryService],
+	exports: [CloudinaryService, UploadService],
 })
 export class UploadModule {}

@@ -37,7 +37,22 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
-  @ApiResponse({ status: 200, description: 'User successfully logged in' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'User successfully logged in',
+    schema: {
+      example: {
+        user: {
+          id: '507f1f77bcf86cd799439011',
+          email: 'user@example.com',
+          fullName: 'John Doe',
+          role: 'recruiter',
+          profileCompleted: true,
+        },
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 429, description: 'Too many login attempts' })
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
@@ -52,8 +67,11 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     
-    // Return user only (no token in response body)
-    return { user: result.user };
+    // Return both user and token (token for API/Swagger testing)
+    return { 
+      user: result.user,
+      access_token: result.access_token,
+    };
   }
 
   @Post('logout')
@@ -82,6 +100,22 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getProfile(@Request() req) {
     return this.authService.getProfile(req.user.id);
+  }
+
+  @Get('ws-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Get WebSocket authentication token' })
+  @ApiResponse({ status: 200, description: 'WebSocket token generated' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getWebSocketToken(@Request() req) {
+    const payload = { 
+      sub: req.user.id.toString(), // Convert ObjectId to string
+      email: req.user.email,
+      role: req.user.role 
+    };
+    const token = this.jwtService.sign(payload, { expiresIn: '7d' });
+    return { token };
   }
 
   @Put('change-password')
@@ -210,7 +244,22 @@ export class AuthController {
 
   @Post('verify-email')
   @ApiOperation({ summary: 'Verify email with 6-digit code' })
-  @ApiResponse({ status: 200, description: 'Email verified successfully, JWT issued' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Email verified successfully, JWT issued',
+    schema: {
+      example: {
+        user: {
+          id: '507f1f77bcf86cd799439011',
+          email: 'user@example.com',
+          fullName: 'John Doe',
+          role: 'recruiter',
+          emailVerified: true,
+        },
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
   @ApiResponse({ status: 400, description: 'Invalid or expired verification code' })
   async verifyEmail(
     @Body() verifyEmailDto: VerifyEmailDto,
@@ -227,7 +276,11 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     
-    return { user: result.user };
+    // Return both user and token (token for API/Swagger testing)
+    return { 
+      user: result.user,
+      access_token: result.access_token,
+    };
   }
 
   @Post('resend-verification')

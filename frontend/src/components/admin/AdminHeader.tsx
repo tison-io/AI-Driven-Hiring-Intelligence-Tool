@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { AdminHeaderProps } from '@/types';
+import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 
 export default function AdminHeader({ currentPage }: AdminHeaderProps) {
   const { user, logout } = useAuth();
@@ -40,7 +41,9 @@ export default function AdminHeader({ currentPage }: AdminHeaderProps) {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">{currentPage}</h1>
         
-        <div className="relative" ref={dropdownRef}>
+        <div className="flex items-center gap-4">
+          <NotificationDropdown />
+          <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg px-3 py-2 transition-colors"
@@ -76,6 +79,7 @@ export default function AdminHeader({ currentPage }: AdminHeaderProps) {
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
     </header>

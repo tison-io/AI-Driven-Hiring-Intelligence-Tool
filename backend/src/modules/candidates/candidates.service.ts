@@ -1,14 +1,18 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, FilterQuery } from "mongoose";
+import { Model, FilterQuery, Types } from "mongoose";
 import { Candidate, CandidateDocument } from "./entities/candidate.entity";
 import { CandidateFilterDto } from "./dto/candidate-filter.dto";
+import { NotificationEventService } from '../notifications/notification-event.service';
+import { MilestoneDetectionService } from '../notifications/automation/milestone-detection.service';
 
 @Injectable()
 export class CandidatesService {
 	constructor(
 		@InjectModel(Candidate.name)
 		private candidateModel: Model<CandidateDocument>,
+		private notificationEventService: NotificationEventService,
+		private milestoneDetectionService: MilestoneDetectionService,
 	) {}
 
 	async findAll(
@@ -149,17 +153,37 @@ export class CandidatesService {
 	async create(
 		candidateData: Partial<Candidate>,
 	): Promise<CandidateDocument> {
+		// Check for potential duplicates before creating
+		await this.checkForDuplicates(candidateData);
+
 		const candidate = new this.candidateModel(candidateData);
-		return candidate.save();
+		const savedCandidate = await candidate.save();
+
+		// Emit new application event
+		this.notificationEventService.emitNewApplication({
+			candidateId: savedCandidate._id.toString(),
+			candidateName: savedCandidate.name || 'New Candidate',
+			userId: savedCandidate.createdBy,
+			jobRole: savedCandidate.jobRole,
+		});
+
+		return savedCandidate;
 	}
 
 	async update(
 		id: string,
 		updateData: Partial<Candidate>,
 	): Promise<CandidateDocument | null> {
-		return this.candidateModel
+		const updatedCandidate = await this.candidateModel
 			.findByIdAndUpdate(id, updateData, { new: true })
 			.exec();
+
+		// Check for processing milestone if status changed to completed
+		if (updateData.status === 'completed') {
+			await this.milestoneDetectionService.checkProcessingMilestone();
+		}
+
+		return updatedCandidate;
 	}
 
 	async findByUserId(userId: string): Promise<CandidateDocument[]> {
@@ -192,8 +216,30 @@ export class CandidatesService {
 			throw new NotFoundException("Candidate not found");
 		}
 
+		const wasShortlisted = candidate.isShortlisted;
 		candidate.isShortlisted = !candidate.isShortlisted;
-		return candidate.save();
+		const savedCandidate = await candidate.save();
+
+		// Emit shortlisted event when adding to shortlist
+		if (!wasShortlisted && savedCandidate.isShortlisted) {
+			this.notificationEventService.emitCandidateShortlisted({
+				candidateId: savedCandidate._id.toString(),
+				candidateName: savedCandidate.name || 'Candidate',
+				userId: savedCandidate.createdBy,
+				action: 'shortlisted',
+			});
+		}
+		// Emit event when removing from shortlist
+		else if (wasShortlisted && !savedCandidate.isShortlisted) {
+			this.notificationEventService.emitCandidateRemovedFromShortlist({
+				candidateId: savedCandidate._id.toString(),
+				candidateName: savedCandidate.name || 'Candidate',
+				userId: savedCandidate.createdBy,
+				action: 'removed_from_shortlist',
+			});
+		}
+
+		return savedCandidate;
 	}
 
 	async getFilterOptions(userId: string, userRole: string) {
@@ -232,5 +278,138 @@ export class CandidatesService {
 
 	private escapeRegex(string: string): string {
 		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
+
+	private async checkForDuplicates(candidateData: Partial<Candidate>): Promise<void> {
+		const query: FilterQuery<CandidateDocument> = {
+			createdBy: candidateData.createdBy,
+		};
+
+		// Check for LinkedIn URL duplicates
+		if (candidateData.linkedinUrl) {
+			query.linkedinUrl = candidateData.linkedinUrl;
+			const existingCandidate = await this.candidateModel.findOne(query).exec();
+			
+			if (existingCandidate) {
+				this.notificationEventService.emitDuplicateFound({
+					candidateId: existingCandidate._id.toString(),
+					candidateName: candidateData.name || 'Candidate',
+					userId: candidateData.createdBy,
+					action: 'duplicate_found',
+					duplicateDetails: {
+						type: 'linkedin_url',
+						existingCandidateId: existingCandidate._id.toString(),
+						existingCandidateName: existingCandidate.name,
+						linkedinUrl: candidateData.linkedinUrl,
+					},
+				});
+			}
+		}
+
+		// Check for similar names (basic similarity check)
+		if (candidateData.name && candidateData.name.length > 3) {
+			const similarCandidates = await this.candidateModel.find({
+				createdBy: candidateData.createdBy,
+				name: { $regex: this.escapeRegex(candidateData.name), $options: 'i' },
+			}).exec();
+
+			if (similarCandidates.length > 0) {
+				for (const similar of similarCandidates) {
+					this.notificationEventService.emitDuplicateFound({
+						candidateId: similar._id.toString(),
+						candidateName: candidateData.name,
+						userId: candidateData.createdBy,
+						action: 'duplicate_found',
+						duplicateDetails: {
+							type: 'similar_name',
+							existingCandidateId: similar._id.toString(),
+							existingCandidateName: similar.name,
+							similarityScore: this.calculateNameSimilarity(candidateData.name, similar.name),
+						},
+					});
+				}
+			}
+		}
+	}
+
+	private calculateNameSimilarity(name1: string, name2: string): number {
+		// Simple similarity calculation (can be improved with more sophisticated algorithms)
+		const longer = name1.length > name2.length ? name1 : name2;
+		const shorter = name1.length > name2.length ? name2 : name1;
+		const editDistance = this.levenshteinDistance(longer.toLowerCase(), shorter.toLowerCase());
+		return ((longer.length - editDistance) / longer.length) * 100;
+	}
+
+	private levenshteinDistance(str1: string, str2: string): number {
+		const matrix = [];
+		for (let i = 0; i <= str2.length; i++) {
+			matrix[i] = [i];
+		}
+		for (let j = 0; j <= str1.length; j++) {
+			matrix[0][j] = j;
+		}
+		for (let i = 1; i <= str2.length; i++) {
+			for (let j = 1; j <= str1.length; j++) {
+				if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+					matrix[i][j] = matrix[i - 1][j - 1];
+				} else {
+					matrix[i][j] = Math.min(
+						matrix[i - 1][j - 1] + 1,
+						matrix[i][j - 1] + 1,
+						matrix[i - 1][j] + 1
+					);
+				}
+			}
+		}
+		return matrix[str2.length][str1.length];
+	}
+
+	async updateMany(
+		filter: Partial<{ status: string; jobPostingId: string }>,
+		update: Partial<{ status: string; isShortlisted: boolean }>,
+		userId: string,
+		userRole: string,
+	): Promise<any> {
+		const allowedFilterKeys = ['status', 'jobPostingId'];
+		const allowedUpdateKeys = ['status', 'isShortlisted'];
+
+		const sanitizedFilter: any = {};
+		for (const key of Object.keys(filter)) {
+			if (allowedFilterKeys.includes(key)) {
+				const value = filter[key];
+				if (value !== undefined) {
+					if (key === 'jobPostingId') {
+						if (!Types.ObjectId.isValid(value)) {
+							throw new BadRequestException('Invalid jobPostingId');
+						}
+					}
+					sanitizedFilter[key] = value;
+				}
+			}
+		}
+
+		if (Object.keys(sanitizedFilter).length === 0) {
+			throw new BadRequestException('Empty filter not allowed');
+		}
+
+		if (userRole !== 'admin') {
+			sanitizedFilter.createdBy = userId;
+		}
+
+		const sanitizedUpdate: any = {};
+		for (const key of Object.keys(update)) {
+			if (allowedUpdateKeys.includes(key)) {
+				const value = update[key];
+				if (value !== undefined) {
+					sanitizedUpdate[key] = value;
+				}
+			}
+		}
+
+		if (Object.keys(sanitizedUpdate).length === 0) {
+			throw new BadRequestException('No valid update fields provided');
+		}
+
+		return this.candidateModel.updateMany(sanitizedFilter, { $set: sanitizedUpdate }).exec();
 	}
 }

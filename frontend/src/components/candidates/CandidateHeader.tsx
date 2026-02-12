@@ -3,19 +3,25 @@
 import { ArrowLeft, Linkedin } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { CandidateHeaderProps } from '@/types'
+import NotificationDropdown from '@/components/notifications/NotificationDropdown'
 
 export default function CandidateHeader({ name, title = 'Candidate', linkedinUrl, onDelete }: CandidateHeaderProps) {
   const router = useRouter()
 
   return (
     <div className="mb-6 md:mb-8">
-      <button 
-        onClick={() => router.push('/candidates')}
-        className="flex items-center gap-2 text-gray-400 hover:text-gray-600 mb-4 transition-colors text-sm md:text-base"
-      >
-        <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
-        <span>Back to Pipeline</span>
-      </button>
+      <div className="flex items-center justify-between mb-4">
+        <button 
+          onClick={() => router.push('/candidates')}
+          className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors text-sm md:text-base"
+        >
+          <ArrowLeft className="w-4 h-4 md:w-5 md:h-5" />
+          <span>Back to Pipeline</span>
+        </button>
+        <div className="hidden md:block">
+          <NotificationDropdown />
+        </div>
+      </div>
       
       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div>

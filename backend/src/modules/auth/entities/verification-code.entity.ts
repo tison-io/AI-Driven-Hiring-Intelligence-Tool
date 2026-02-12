@@ -15,7 +15,7 @@ export class VerificationCode {
   @Prop({ required: true })
   codeHash: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, expires: 0 })
   expiresAt: Date;
 
   @Prop({ default: 0 })
@@ -23,9 +23,6 @@ export class VerificationCode {
 }
 
 export const VerificationCodeSchema = SchemaFactory.createForClass(VerificationCode);
-
-// Index for automatic cleanup of expired codes
-VerificationCodeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 // Index for faster userId lookups
 VerificationCodeSchema.index({ userId: 1 });
