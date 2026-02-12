@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { ProcessingStatus } from '../../../common/enums/processing-status.enum';
 
 export type CandidateDocument = Candidate & Document;
@@ -83,6 +83,15 @@ export class Candidate {
 
   @Prop()
   processingTime?: number; // in milliseconds
+
+  @Prop({ type: Types.ObjectId, ref: 'JobPosting' })
+  jobPostingId?: Types.ObjectId;
+
+  @Prop()
+  email?: string;
+
+  @Prop({ default: false })
+  emailSent: boolean;
 
   createdAt?: Date;
   updatedAt?: Date;
