@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import MetricCard from '@/components/admin/MetricCard';
+import EmptyState from '@/components/job-posting/EmptyState';
 import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown } from 'lucide-react';
 
 interface JobPosting {
@@ -121,6 +122,9 @@ export default function JobPostingPage() {
               </div>
 
               {/* Job Postings Table */}
+              {jobPostings.length === 0 ? (
+                <EmptyState onCreateClick={() => router.push('/job-posting/create')} />
+              ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                 {/* Search and Filters */}
                 <div className="p-6 border-b border-gray-200">
@@ -271,6 +275,7 @@ export default function JobPostingPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
         </Layout>
     </ProtectedRoute>
