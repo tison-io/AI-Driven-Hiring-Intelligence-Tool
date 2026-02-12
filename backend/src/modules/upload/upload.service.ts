@@ -18,16 +18,27 @@ export class UploadService {
 		private linkedInMapper: LinkedInMapper
 	) {}
 
-	async processResume(file: Express.Multer.File, jobRole: string, userId: string, jobDescription?: string) {
+	async processResume(
+		file: Express.Multer.File,
+		jobRole: string,
+		userId: string,
+		jobDescription?: string,
+		applicantData?: { name?: string; email?: string; source?: string },
+	) {
+		if (!userId) {
+			throw new BadRequestException('User ID is required for candidate creation');
+		}
+
 		// Extract text from file
 		const rawText = await this.extractTextFromFile(file);
 
 		// Create candidate record
 		const candidate = await this.candidatesService.create({
-			name: "Extracted from Resume", // Will be updated by AI
+			name: applicantData?.name || "Extracted from Resume",
+			email: applicantData?.email,
 			rawText,
 			jobRole,
-			source: 'file',
+			source: (applicantData?.source as 'file' | 'linkedin') || 'file',
 			...(jobDescription && { jobDescription }),
 			status: ProcessingStatus.PENDING,
 			createdBy: userId,

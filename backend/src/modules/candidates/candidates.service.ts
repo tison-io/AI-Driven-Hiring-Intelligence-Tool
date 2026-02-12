@@ -362,6 +362,8 @@ export class CandidatesService {
 			}
 		}
 		return matrix[str2.length][str1.length];
+	}
+
 	async updateMany(
 		filter: Partial<{ status: string; jobPostingId: string }>,
 		update: Partial<{ status: string; isShortlisted: boolean }>,
