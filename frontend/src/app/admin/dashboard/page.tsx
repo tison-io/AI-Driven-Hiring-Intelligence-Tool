@@ -7,6 +7,7 @@ import MetricCard from "@/components/admin/MetricCard";
 import SystemHealthCard from "@/components/admin/SystemHealthCard";
 import { useAdminDashboard } from "@/hooks/useAdminDashboard";
 import TrendChart from "@/components/admin/TrendChart";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 export default function AdminDashboard() {
 	const { data, loading, error, aiData } = useAdminDashboard();
@@ -27,7 +28,8 @@ export default function AdminDashboard() {
 						</p>
 
 						{loading && (
-							<p className="text-gray-600">Loading metrics...</p>
+							<div className="item-center justify-center flex"><LoadingSpinner
+							/></div>
 						)}
 						{error && (
 							<p className="text-red-600">Error: {error}</p>
