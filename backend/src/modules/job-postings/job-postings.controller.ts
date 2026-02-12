@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, Put, Delete, Patch, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, Get, Query, Param, Put, Delete, Patch, UseInterceptors, UploadedFile, NotFoundException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiBody, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -138,7 +138,14 @@ export class JobPostingsController {
     @Body() applyDto: ApplyJobDto,
     @UploadedFile(FileValidationPipe) file: Express.Multer.File,
   ) {
-    const jobPosting = await this.jobPostingsService.getPublicJobPosting(jobId);
+    // Get full job posting (includes companyId)
+    const jobPosting = await this.jobPostingsService.findOne(jobId);
+    
+    // Verify it's active
+    if (!jobPosting.isActive) {
+      throw new NotFoundException('This job posting is no longer accepting applications');
+    }
+
     const result = await this.uploadService.processResume(
       file,
       jobPosting.title,
