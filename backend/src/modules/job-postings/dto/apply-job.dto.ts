@@ -20,12 +20,12 @@ export class ApplyJobDto {
 
   @ApiPropertyOptional({
     description: 'Application source type',
-    example: 'resume',
-    enum: ['resume', 'linkedin'],
-    default: 'resume',
+    example: 'file',
+    enum: ['file', 'linkedin'],
+    default: 'file',
   })
   @IsOptional()
   @IsString()
-  @IsIn(['resume', 'linkedin'])
+  @IsIn(['file', 'linkedin'])
   source?: string;
 }

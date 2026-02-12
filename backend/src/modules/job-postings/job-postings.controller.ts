@@ -93,6 +93,66 @@ export class JobPostingsController {
     });
   }
 
+  // PUBLIC ENDPOINTS - Must come before :id routes to avoid conflicts
+
+  @Get('apply/:id')
+  @ApiTags('Public Application')
+  @ApiOperation({ 
+    summary: 'Get job posting for public application (No Auth)',
+    description: 'Public endpoint to fetch job details for candidates.',
+  })
+  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiResponse({ status: 200, description: 'Job details retrieved' })
+  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
+  async getPublicJobPosting(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.jobPostingsService.getPublicJobPosting(id);
+  }
+
+  @Post('apply/:id')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB max
+    },
+  }))
+  @ApiTags('Public Application')
+  @ApiOperation({ summary: 'Submit application (No Auth)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', example: 'John Doe' },
+        email: { type: 'string', format: 'email', example: 'john.doe@example.com' },
+        file: { type: 'string', format: 'binary' },
+        source: { type: 'string', example: 'file', enum: ['file', 'linkedin'] },
+      },
+      required: ['name', 'email', 'file'],
+    },
+  })
+  @ApiResponse({ status: 201, description: 'Application submitted' })
+  @ApiResponse({ status: 400, description: 'Invalid file or data' })
+  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
+  async submitApplication(
+    @Param('id', ParseObjectIdPipe) jobId: string,
+    @Body() applyDto: ApplyJobDto,
+    @UploadedFile(FileValidationPipe) file: Express.Multer.File,
+  ) {
+    const jobPosting = await this.jobPostingsService.getPublicJobPosting(jobId);
+    const result = await this.uploadService.processResume(
+      file,
+      jobPosting.title,
+      jobPosting.companyId?.toString(),
+      jobPosting.description,
+      applyDto,
+    );
+    return {
+      candidateId: result.candidateId,
+      message: 'Application submitted successfully. We\'re evaluating your profile and will email results shortly.',
+      status: result.status,
+    };
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
@@ -212,63 +272,5 @@ export class JobPostingsController {
     return this.jobPostingsService.toggleActive(id, req.user.id, req.user.role);
   }
 
-  // PUBLIC ENDPOINTS
 
-  @Get('apply/:id')
-  @ApiTags('Public Application')
-  @ApiOperation({ 
-    summary: 'Get job posting for public application (No Auth)',
-    description: 'Public endpoint to fetch job details for candidates.',
-  })
-  @ApiParam({ name: 'id', description: 'Job posting ID' })
-  @ApiResponse({ status: 200, description: 'Job details retrieved' })
-  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
-  async getPublicJobPosting(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.jobPostingsService.getPublicJobPosting(id);
-  }
-
-  @Post('apply/:id')
-  @UseInterceptors(FileInterceptor('file', {
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB max
-    },
-  }))
-  @ApiTags('Public Application')
-  @ApiOperation({ summary: 'Submit application (No Auth)' })
-  @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', description: 'Job posting ID' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        name: { type: 'string', example: 'John Doe' },
-        email: { type: 'string', format: 'email', example: 'john.doe@example.com' },
-        file: { type: 'string', format: 'binary' },
-        source: { type: 'string', example: 'resume', enum: ['resume', 'linkedin'] },
-      },
-      required: ['name', 'email', 'file'],
-    },
-  })
-  @ApiResponse({ status: 201, description: 'Application submitted' })
-  @ApiResponse({ status: 400, description: 'Invalid file or data' })
-  @ApiResponse({ status: 404, description: 'Job not found or inactive' })
-  async submitApplication(
-    @Param('id', ParseObjectIdPipe) jobId: string,
-    @Body() applyDto: ApplyJobDto,
-    @UploadedFile(FileValidationPipe) file: Express.Multer.File,
-  ) {
-    const jobPosting = await this.jobPostingsService.getPublicJobPosting(jobId);
-    const result = await this.uploadService.processResume(
-      file,
-      jobPosting.title,
-      jobPosting['companyId']?.toString() || 'public',
-      jobPosting.description,
-      applyDto,
-    );
-    return {
-      candidateId: result.candidateId,
-      message: 'Application submitted successfully. We\'re evaluating your profile and will email results shortly.',
-      status: result.status,
-    };
-  }
 }

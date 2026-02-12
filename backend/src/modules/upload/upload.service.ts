@@ -25,6 +25,10 @@ export class UploadService {
 		jobDescription?: string,
 		applicantData?: { name?: string; email?: string; source?: string },
 	) {
+		if (!userId) {
+			throw new BadRequestException('User ID is required for candidate creation');
+		}
+
 		// Extract text from file
 		const rawText = await this.extractTextFromFile(file);
 
