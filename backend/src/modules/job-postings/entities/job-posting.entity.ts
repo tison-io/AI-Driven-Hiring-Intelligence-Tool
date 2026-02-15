@@ -56,6 +56,9 @@ export class JobPosting {
 
   @Prop({ default: true })
   isActive: boolean;
+
+  @Prop({ required: true, unique: true, index: true })
+  applicationToken: string;
 }
 
 export const JobPostingSchema = SchemaFactory.createForClass(JobPosting);
