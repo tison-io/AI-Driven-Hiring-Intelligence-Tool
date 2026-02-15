@@ -95,20 +95,20 @@ export class JobPostingsController {
 
   // PUBLIC ENDPOINTS - Must come before :id routes to avoid conflicts
 
-  @Get('apply/:id')
+  @Get('apply/:token')
   @ApiTags('Public Application')
   @ApiOperation({ 
     summary: 'Get job posting for public application (No Auth)',
-    description: 'Public endpoint to fetch job details for candidates.',
+    description: 'Public endpoint to fetch job details for candidates using application token.',
   })
-  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiParam({ name: 'token', description: 'Application token' })
   @ApiResponse({ status: 200, description: 'Job details retrieved' })
   @ApiResponse({ status: 404, description: 'Job not found or inactive' })
-  async getPublicJobPosting(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.jobPostingsService.getPublicJobPosting(id);
+  async getPublicJobPosting(@Param('token') token: string) {
+    return this.jobPostingsService.getPublicJobPostingByToken(token);
   }
 
-  @Post('apply/:id')
+  @Post('apply/:token')
   @UseInterceptors(FileInterceptor('file', {
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB max
@@ -117,7 +117,7 @@ export class JobPostingsController {
   @ApiTags('Public Application')
   @ApiOperation({ summary: 'Submit application (No Auth)' })
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', description: 'Job posting ID' })
+  @ApiParam({ name: 'token', description: 'Application token' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -134,28 +134,31 @@ export class JobPostingsController {
   @ApiResponse({ status: 400, description: 'Invalid file or data' })
   @ApiResponse({ status: 404, description: 'Job not found or inactive' })
   async submitApplication(
-    @Param('id', ParseObjectIdPipe) jobId: string,
+    @Param('token') token: string,
     @Body() applyDto: ApplyJobDto,
     @UploadedFile(FileValidationPipe) file: Express.Multer.File,
   ) {
-    // Get full job posting (includes companyId)
-    const jobPosting = await this.jobPostingsService.findOne(jobId);
+    // Get job posting by token
+    const jobPosting = await this.jobPostingsService.getPublicJobPostingByToken(token);
+    
+    // Get full job posting details (includes companyId)
+    const fullJobPosting = await this.jobPostingsService.findOne(jobPosting._id.toString());
     
     // Verify it's active
-    if (!jobPosting.isActive) {
+    if (!fullJobPosting.isActive) {
       throw new NotFoundException('This job posting is no longer accepting applications');
     }
 
     // Ensure companyId exists before processing
-    if (!jobPosting.companyId) {
+    if (!fullJobPosting.companyId) {
       throw new BadRequestException('Missing companyId for job posting');
     }
 
     const result = await this.uploadService.processResume(
       file,
-      jobPosting.title,
-      jobPosting.companyId.toString(),
-      jobPosting.description,
+      fullJobPosting.title,
+      fullJobPosting.companyId.toString(),
+      fullJobPosting.description,
       applyDto,
     );
     return {
