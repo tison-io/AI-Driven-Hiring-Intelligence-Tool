@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
  */
 async function backfillApplicationTokens() {
   const app = await NestFactory.createApplicationContext(AppModule);
+  let hadFailures = false;
   
   try {
     const jobPostingModel = app.get<Model<JobPostingDocument>>('JobPostingModel');
@@ -55,6 +56,7 @@ async function backfillApplicationTokens() {
         console.log(`✅ Updated job posting: ${jobPosting._id} - Token: ${token}`);
       } catch (error) {
         failed++;
+        hadFailures = true;
         console.error(`❌ Failed to update job posting ${jobPosting._id}:`, error.message);
       }
     }
@@ -65,8 +67,14 @@ async function backfillApplicationTokens() {
     console.log(`❌ Failed: ${failed}`);
     console.log('========================================\n');
     
+    // Fail if any updates failed
+    if (hadFailures) {
+      throw new Error(`Migration completed with ${failed} failures`);
+    }
+    
   } catch (error) {
     console.error('Migration failed:', error);
+    throw error; // Re-throw to propagate failure
   } finally {
     await app.close();
   }
