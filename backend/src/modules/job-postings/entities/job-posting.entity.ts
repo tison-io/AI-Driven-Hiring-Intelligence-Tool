@@ -62,5 +62,15 @@ export class JobPosting {
 }
 
 export const JobPostingSchema = SchemaFactory.createForClass(JobPosting);
+
+// Pre-save hook to auto-generate applicationToken for legacy documents
+JobPostingSchema.pre('save', function(next) {
+  if (!this.applicationToken) {
+    const crypto = require('crypto');
+    this.applicationToken = crypto.randomBytes(16).toString('hex');
+  }
+  next();
+});
+
 JobPostingSchema.index({ title: 'text', description: 'text', location: 'text' });
 JobPostingSchema.index({ companyId: 1, isActive: 1, createdAt: -1 });
