@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, MapPin, X } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
+import Tiptap from '@/components/job-posting/Tiptap';
 
 interface FormData {
   jobTitle: string;
@@ -85,15 +86,12 @@ export default function CreateJobPostingPage() {
     router.push('/job-posting');
   };
 
-  const ToolbarButton = ({ icon, label }: { icon: React.ReactNode; label: string }) => (
-    <button
-      type="button"
-      className="p-2 hover:bg-gray-100 rounded text-gray-600 transition-colors"
-      aria-label={label}
-    >
-      {icon}
-    </button>
-  );
+  const handleDescriptionChange = (html: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      jobDescription: html,
+    }));
+  };
 
   return (
     <ProtectedRoute>
@@ -193,44 +191,10 @@ export default function CreateJobPostingPage() {
                     Job Description
                   </label>
                   
-                  {/* Rich Text Editor Toolbar */}
-                  <div className="border border-gray-300 rounded-t-lg bg-gray-50 px-3 py-2 flex items-center gap-1">
-                    <ToolbarButton
-                      icon={<span className="font-bold text-sm">B</span>}
-                      label="Bold"
-                    />
-                    <ToolbarButton
-                      icon={<span className="italic text-sm">I</span>}
-                      label="Italic"
-                    />
-                    <div className="w-px h-6 bg-gray-300 mx-1"></div>
-                    <ToolbarButton
-                      icon={
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                        </svg>
-                      }
-                      label="Bullet list"
-                    />
-                    <ToolbarButton
-                      icon={
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
-                        </svg>
-                      }
-                      label="Numbered list"
-                    />
-                  </div>
-
-                  {/* Textarea */}
-                  <textarea
-                    id="jobDescription"
-                    name="jobDescription"
-                    value={formData.jobDescription}
-                    onChange={handleInputChange}
-                    rows={10}
+                  <Tiptap
+                    content={formData.jobDescription}
+                    onChange={handleDescriptionChange}
                     placeholder="Describe the role, responsibilities, and team culture..."
-                    className="w-full px-4 py-3 border border-gray-300 border-t-0 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 resize-none"
                   />
                 </div>
 
