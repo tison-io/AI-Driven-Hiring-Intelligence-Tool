@@ -11,9 +11,9 @@ export function SkillsPills({ skills }: Props) {
     <div className="mt-8 space-y-3">
       <h3 className="text-base font-semibold text-secondary-600">Required Skills</h3>
       <div className="flex flex-wrap gap-2">
-        {skills.map((s) => (
+        {skills.map((s, idx) => (
           <span
-            key={s}
+            key={`${s}-${idx}`}
             className="px-3 py-1 rounded-full text-sm font-medium text-gray-900"
             style={{
               backgroundColor: 'rgba(59, 130, 246, 0.2)',

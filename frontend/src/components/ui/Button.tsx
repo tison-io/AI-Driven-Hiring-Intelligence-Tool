@@ -1,8 +1,9 @@
 'use client';
 
 import { cn } from "@/utils/helpers";
+import type { ButtonHTMLAttributes } from "react";
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "solid" | "outline" | "ghost" | "gradient";
 };
 
