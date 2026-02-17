@@ -128,9 +128,7 @@ export const jobPostingsApi = {
 		return response.data;
 	},
 	submitApplication: async (token: string, formData: FormData) => {
-		const response = await api.post(`/api/job-postings/apply/${token}`, formData, {
-			headers: { "Content-Type": "multipart/form-data" },
-		});
+		const response = await api.post(`/api/job-postings/apply/${token}`, formData);
 		return response.data;
 	},
 };
