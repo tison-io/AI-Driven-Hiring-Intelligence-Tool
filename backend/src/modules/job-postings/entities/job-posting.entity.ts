@@ -37,11 +37,36 @@ export class JobPosting {
   @Prop({ required: true })
   description: string;
 
-  @Prop({ type: [String], required: true })
+  @Prop({ type: [String], default: [] })
+  responsibilities: string[];
+
+  @Prop({ type: [String], default: [] })
+  requiredSkills: string[];
+
+  @Prop({ type: [String] })
   requirements: string[];
 
   @Prop({ required: true })
   location: string;
+
+  @Prop({ 
+    type: String, 
+    enum: ['entry', 'mid', 'senior', 'lead', 'principal']
+  })
+  experienceLevel?: string;
+
+  @Prop({ 
+    type: String, 
+    enum: ['full-time', 'part-time', 'contract', 'internship'],
+    default: 'full-time'
+  })
+  employmentType?: string;
+
+  @Prop({ type: Date })
+  closingDate?: Date;
+
+  @Prop()
+  companyName?: string;
 
   @Prop({ type: Salary, validate: {
     validator: function(v: Salary) {
@@ -72,5 +97,5 @@ JobPostingSchema.pre('save', function(next) {
   next();
 });
 
-JobPostingSchema.index({ title: 'text', description: 'text', location: 'text' });
+JobPostingSchema.index({ title: 'text', description: 'text', location: 'text', companyName: 'text' });
 JobPostingSchema.index({ companyId: 1, isActive: 1, createdAt: -1 });

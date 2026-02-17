@@ -121,4 +121,18 @@ export const auditLogsApi = {
 	},
 };
 
+// Job Postings API functions
+export const jobPostingsApi = {
+	getByToken: async (token: string) => {
+		const response = await api.get(`/api/job-postings/apply/${token}`);
+		return response.data;
+	},
+	submitApplication: async (token: string, formData: FormData) => {
+		const response = await api.post(`/api/job-postings/apply/${token}`, formData, {
+			headers: { "Content-Type": "multipart/form-data" },
+		});
+		return response.data;
+	},
+};
+
 export default api;

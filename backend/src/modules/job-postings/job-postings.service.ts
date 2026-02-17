@@ -19,8 +19,18 @@ export class JobPostingsService {
   async create(createDto: CreateJobPostingDto, companyId: string) {
     const applicationToken = crypto.randomBytes(16).toString('hex');
     
+    // Auto-extract responsibilities from description if not provided
+    const responsibilities = createDto.responsibilities?.length > 0 
+      ? createDto.responsibilities 
+      : this.extractResponsibilities(createDto.description);
+    
+    // Use provided skills or default to empty array
+    const requiredSkills = createDto.requiredSkills || [];
+    
     const jobPosting = await this.jobPostingModel.create({
       ...createDto,
+      responsibilities,
+      requiredSkills,
       companyId,
       applicationToken,
     });
@@ -29,6 +39,27 @@ export class JobPostingsService {
       ...jobPosting.toObject(),
       shareableLink: this.generateShareableLink(jobPosting.applicationToken),
     };
+  }
+
+  private extractResponsibilities(description: string): string[] {
+    const lines = description.split('\n');
+    const responsibilities = [];
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Match lines starting with •, -, *, or numbers (1., 2., etc.)
+      if (/^[•\-*]/.test(trimmed) || /^\d+\./.test(trimmed)) {
+        const cleaned = trimmed
+          .replace(/^[•\-*]\s*/, '')
+          .replace(/^\d+\.\s*/, '')
+          .trim();
+        if (cleaned) {
+          responsibilities.push(cleaned);
+        }
+      }
+    }
+    
+    return responsibilities;
   }
 
   async findAll(options: { page: number; limit: number; search?: string }) {
@@ -169,8 +200,13 @@ export class JobPostingsService {
       _id: jobPosting._id,
       title: jobPosting.title,
       description: jobPosting.description,
-      requirements: jobPosting.requirements,
+      responsibilities: jobPosting.responsibilities,
+      requiredSkills: jobPosting.requiredSkills,
       location: jobPosting.location,
+      experienceLevel: jobPosting.experienceLevel,
+      employmentType: jobPosting.employmentType,
+      closingDate: jobPosting.closingDate,
+      companyName: jobPosting.companyName,
       salary: jobPosting.salary,
     };
   }
