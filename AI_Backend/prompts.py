@@ -100,7 +100,7 @@ Exact certification names only.
       "job_title": "string",
       "start_date": "YYYY-MM",
       "end_date": "YYYY-MM or 'Present'",
-      "description": "string"
+      "description": "string — role responsibilities and achievements described in the resume. This is NOT a job title. If no description is available, set to empty string."
     }}
   ],
   "education": [
@@ -114,9 +114,9 @@ Exact certification names only.
   "certifications": ["string"],
   "is_valid_resume": boolean,
   "extraction_confidence": {{
-  "email": number,
-  "phone": number,
-  "experience": number
+  "email": number (0.0 to 1.0 ONLY — NOT a percentage. Example: 0.95, not 95),
+  "phone": number (0.0 to 1.0 ONLY — NOT a percentage. Example: 0.8, not 80),
+  "experience": number (0.0 to 1.0 ONLY — NOT a percentage. Example: 0.7, not 70)
   }}
 }}
 
@@ -273,24 +273,29 @@ Do not consider the accreditation body of the educational institution. Consider 
    - Nursing diploma/degree from ANY country = "Graduation from a Nursing program" (regardless of accreditation body)
    - Different naming conventions for same degree level are EQUIVALENT
 
-2. Certification equivalency:
-Do not consider the name of the certification. Consider the core competency only.
+2. Certification/Acronym Semantic Matching (CASE-INSENSITIVE):
+   - "Basic Life Support" (BLS) == "Basic Life Saver" (BCLS) == "CPR" -> MATCH
+   - "Registered Nurse" (RN) == "Registered Community Health Nurse" (KRCHN) -> MATCH (functionally equivalent)
+   - IGNORE case differences. Use semantic logic.
 
-   - "Basic Life Support (BLS)" ≈ "Basic Life Saver (BCLS)" - same core competency
-   - "First Aid certified" ≈ basic emergency response training
 
 3. Licensing considerations:
    - Wrong jurisdiction license (e.g., Kenya vs NY) = candidate HAS the skill but LACKS the specific jurisdiction license
    - This should be flagged as "Missing: [State] license" NOT as "Missing: Nursing qualification"
    - Do NOT list general qualifications as missing if candidate has equivalent from another jurisdiction
 
-# SCORING
+# SCORING — CRITICAL: Score MUST be mathematically consistent
 If use_market_standards = true: evaluate fairly against inferred role standards (no forced 0).
 If total requirements is 0, set score = 100.
-Otherwise: score = (matched / total) * 100
-Apply penalties:
-- missing jurisdiction-specific license: -25
-- missing required cert: -15 each
+Otherwise: score = (matched_count / total_requirements_count) * 100
+
+IMPORTANT: Your score MUST match your matched_competencies and missing_competencies lists.
+If you list 5 matched and 2 missing, total = 7, score = (5/7)*100 = 71.4
+Do NOT return score=100 if missing_competencies is non-empty.
+Do NOT say "meets all requirements" if missing_competencies has items.
+
+# NO PENALTIES applied for jurisdiction/missing certs.
+# Score differs from missing_competencies ONLY by the ratio.
 
 # FLAG FOR REVIEW
 If score is low primarily due to jurisdiction/licensing issues (not skill gaps):
@@ -364,8 +369,22 @@ Evaluate:
 
 Weight relevance higher than raw duration.
 
-Penalize:
-- Unrelated history
+### CAREER CHANGERS — IMPORTANT
+If a candidate has BOTH unrelated experience AND relevant experience (e.g., current role matches the ROLE NAME):
+- Do NOT score 0 just because some past roles were in a different field.
+- Count ONLY the RELEVANT roles' duration as relevant_years_validated.
+- A candidate whose CURRENT role matches the ROLE NAME has at least some relevant experience — never set to 0.
+- Example: If someone was a Biochemist for 2 years then a Web Developer for 2 years applying for Web Developer, relevant_years_validated = 2, NOT 0 AND NOT 4.
+
+### DUAL-TITLE ROLES — IMPORTANT
+If a job title contains BOTH a relevant AND unrelated field (e.g., "Biochemist/Web Developer"):
+- Count only HALF of that role's duration as relevant_years_validated (assume 50% split).
+- Example: "Biochemist/Web developer" for 1.67 years → count 0.83 years as relevant.
+- If the description provides more detail about web development duties, you may count more.
+- If no description is provided, default to the 50% split.
+
+Penalize (but do NOT zero out):
+- Unrelated history (reduce score proportionally, not to 0)
 - Title inflation without scope
 - Regressions without reason
 
@@ -471,18 +490,28 @@ Infer importance weights from JD signals:
 High tool density → increase competency weight
 High responsibility density → increase experience weight
 High collaboration language → increase soft skill weight
-Licensing/certification language → mark as critical gate
+Licensing/certification language → mark as flag for review (do NOT cap score)
 Normalize weights to sum to 1.0 (e.g., 0.5, 0.3, 0.2).
 
-# CRITICAL REQUIREMENT GATE
-If JD contains mandatory license/certification and competency report shows missing → cap final_score ≤ 40.
+# LICENSING/CERTIFICATION FLAG (ZERO SCORE PENALTY)
+If JD contains mandatory license/certification and competency report shows it as missing:
+- You must NOT reduce the final_score. Use the weighted formula STRICTLY.
+- Set "jurisdiction_flag": true.
+- The flag is the ONLY mechanism to signal the issue. The score must remain high if technical skills are good.
 
-# SCORING FORMULA
+# SCORING FORMULA — MUST USE AGENT SCORES DIRECTLY
 final_score =
 (competency_score * competency_weight) +
 (experience_score * experience_weight) +
 (soft_skill_score * soft_weight)
 Since weights sum to 1.0, final_score will be in range 0-100.
+
+IMPORTANT: The category_scores in your output MUST match the agent report scores exactly.
+- category_scores.competency MUST equal the competency report's score
+- category_scores.experience MUST equal the experience report's score
+- category_scores.soft_skills MUST equal the behavioral report's score
+Do NOT re-evaluate or override the agent scores. If you believe an agent scored incorrectly,
+note it in final_reasoning but still USE the agent's score for the formula.
 
 # REQUIREMENT COVERAGE CHECK
 Evaluate each evaluation criterion against matched competencies and evidence using equivalency rules.
@@ -493,10 +522,11 @@ Produce strengths/weaknesses as derived evidence insights, not copied text.
     "final_score": number,
     "final_reasoning": "string",
     "category_scores": {{
-        "competency": number,
-        "experience": number,
-        "soft_skills": number
+        "competency": number (MUST match competency report score),
+        "experience": number (MUST match experience report score),
+        "soft_skills": number (MUST match behavioral report score)
     }},
+    "jurisdiction_flag": boolean,
     "strengths": ["string"],
     "weaknesses": ["string"],
     "interview_questions": ["string"]
@@ -518,18 +548,30 @@ FEEDBACK_GENERATION_PROMPT = ChatPromptTemplate.from_messages([
   Your job is to generate a professional, encouraging, and personalized feedback email for a candidate who has been evaluated.
 
   # TONE GUIDELINES
-  - Professional and warm.
-  - Encouraging, even for low-scoring candidates.
-  - Constructive, never harsh or discouraging.
+  - Professional and warm — as if writing to a colleague, not a stranger.
+  - Encouraging, even for low-scoring candidates. 
+    NEVER use these words: "unfortunately", "lacking", "deficient", "failed", "not qualified", "inadequate".
+  - Constructive — frame every weakness as "an area where further development would strengthen your profile".
   - Use the candidate's FIRST NAME for personalization.
+  - Match tone to score tier:
+    * Shortlist (80-100): Enthusiastic, congratulatory
+    * Maybe (50-79): Balanced and supportive
+    * Reject (0-49): Warm and growth-focused
 
   # FEEDBACK STRUCTURE
   1. Greeting: "Dear {first_name},"
-  2. Thank-you note for applying for the role.
-  3. Strengths section: 3-5 bullet points of strengths.
-  4. Growth suggestions: Highlight constructive areas of improvement.
-  5. Overall assessment: Brief mention of alignment **WITHOUT** numeric score.
-  6. Encouraging closing statement.
+  2. Thank-you note: Acknowledge effort, express appreciation.
+  3. Strengths section: 3-5 bullet points, lead with STRONGEST.
+  4. Growth suggestions: 2-3 areas framed as opportunities.
+     - Use "To further strengthen your profile, consider..."
+     - NEVER say "You lack..." or "Missing..." — instead say "Gaining experience in X would complement your existing skill set."
+  5. Overall assessment: Brief alignment mention WITHOUT revealing exact numeric score.
+  6. Encouraging closing: Always end with hope.
+
+  # SIGN-OFF — CRITICAL
+  Always sign the email as:
+  "Warm regards,\nThe TalentScan AI Team"
+  Do NOT use placeholders like [Your Name], [Your Position], or [Company Name].
 
   # RECOMMENDATION LOGIC
   Based on the final score:

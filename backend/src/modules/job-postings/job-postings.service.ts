@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
 import { JobPosting, JobPostingDocument } from './entities/job-posting.entity';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
@@ -16,14 +17,17 @@ export class JobPostingsService {
   ) {}
 
   async create(createDto: CreateJobPostingDto, companyId: string) {
+    const applicationToken = crypto.randomBytes(16).toString('hex');
+    
     const jobPosting = await this.jobPostingModel.create({
       ...createDto,
       companyId,
+      applicationToken,
     });
     
     return {
       ...jobPosting.toObject(),
-      shareableLink: this.generateShareableLink(jobPosting._id.toString()),
+      shareableLink: this.generateShareableLink(jobPosting.applicationToken),
     };
   }
 
@@ -49,7 +53,7 @@ export class JobPostingsService {
 
     const dataWithLinks = data.map(job => ({
       ...job.toObject(),
-      shareableLink: this.generateShareableLink(job._id.toString()),
+      shareableLink: this.generateShareableLink(job.applicationToken),
     }));
 
     return {
@@ -74,7 +78,7 @@ export class JobPostingsService {
     
     return {
       ...jobPosting.toObject(),
-      shareableLink: this.generateShareableLink(jobPosting._id.toString()),
+      shareableLink: this.generateShareableLink(jobPosting.applicationToken),
     };
   }
 
@@ -143,9 +147,32 @@ export class JobPostingsService {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  private generateShareableLink(jobId: string): string {
+  private generateShareableLink(token: string): string {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
-    return `${frontendUrl}/apply/${jobId}`;
+    return `${frontendUrl}/apply/${token}`;
+  }
+
+  async getPublicJobPostingByToken(token: string) {
+    const jobPosting = await this.jobPostingModel.findOne({ 
+      applicationToken: token 
+    }).exec();
+    
+    if (!jobPosting) {
+      throw new NotFoundException('Job posting not found');
+    }
+
+    if (!jobPosting.isActive) {
+      throw new NotFoundException('This job posting is no longer accepting applications');
+    }
+    
+    return {
+      _id: jobPosting._id,
+      title: jobPosting.title,
+      description: jobPosting.description,
+      requirements: jobPosting.requirements,
+      location: jobPosting.location,
+      salary: jobPosting.salary,
+    };
   }
 
   async getPublicJobPosting(id: string) {

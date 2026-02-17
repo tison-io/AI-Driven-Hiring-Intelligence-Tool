@@ -2,7 +2,7 @@ import json
 import os
 import re
 from datetime import datetime
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq  # Changed from langchain_openai
 import dotenv
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -20,7 +20,11 @@ from prompts import (
 
 dotenv.load_dotenv()
 
-llm=ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatGroq(
+    model="llama-3.3-70b-versatile",
+    temperature=0,
+    groq_api_key=os.getenv("GROQ_API_KEY")
+)
 
 def log_stage(stage_name: str, data: dict, is_output: bool = False):
     separator = "=" * 60
@@ -168,6 +172,34 @@ def extract_resume_node(state: AgentState):
         if not result.get("phone_number"):
             result["phone_number"] = None
         
+        confidence = result.get("extraction_confidence", {})
+        if isinstance(confidence, dict):
+            for field in ["email", "phone", "experience"]:
+                val = confidence.get(field)
+                if isinstance(val, (int, float)):
+                    # Coerce to float and normalize if > 1
+                    normalized = float(val)
+                    if normalized > 1:
+                        normalized = normalized / 100
+                    # Clamp to [0.0, 1.0] range
+                    normalized = min(max(normalized, 0.0), 1.0)
+                    confidence[field] = round(normalized, 2)
+                    if val > 1 or val < 0:
+                        print(f"[RESUME_EXTRACTION] Normalized {field} confidence: {val} -> {confidence[field]}")
+            result["extraction_confidence"] = confidence
+        
+        action_words = {"and", "the", "for", "with", "managed", "developed", "created", "built",
+                        "designed", "implemented", "supported", "maintained", "led", "coordinated",
+                        "responsible", "worked", "collaborated", "ensured", "conducted", "optimized"}
+        for exp in result.get("work_experience", []):
+            desc = (exp.get("description") or "").strip()
+            if desc and len(desc.split()) < 6:
+                desc_words = set(desc.lower().split())
+                has_action_words = bool(desc_words & action_words)
+                if not has_action_words:
+                    print(f"[RESUME_EXTRACTION] Warning: Description looks like a title, clearing: '{desc}'")
+                    exp["description"] = ""
+        
         if not result.get("current_position") and work_experience:
             for exp in work_experience:
                 if (exp.get("end_date") or "").lower() == "present":
@@ -214,7 +246,20 @@ def jd_role_alignment_node(state: AgentState):
     
     primary_requirements = jd.get("primary_requirements") or []
     responsibilities = jd.get("responsibilities") or []
-    jd_is_vague = len(primary_requirements) < 3 and len(responsibilities) < 3
+    
+    original_jd_text = state.get("job_description_text", "")
+    jd_word_count = len(original_jd_text.split())
+    jd_is_vague_by_length = jd_word_count < 50  # Less than 50 words = vague JD
+    jd_is_vague_by_content = len(primary_requirements) < 3 and len(responsibilities) < 3
+    jd_is_vague = jd_is_vague_by_length or jd_is_vague_by_content
+    
+    if jd_is_vague:
+        vague_reason = []
+        if jd_is_vague_by_length:
+            vague_reason.append(f"JD too short ({jd_word_count} words, need 50+)")
+        if jd_is_vague_by_content:
+            vague_reason.append(f"Too few explicit requirements ({len(primary_requirements)} reqs, {len(responsibilities)} resps)")
+        print(f"[JD_ROLE_ALIGNMENT] JD flagged as vague: {', '.join(vague_reason)}")
     
     input_data = {
         "role_name": role_name,
@@ -280,24 +325,31 @@ def tech_agent_node(state: AgentState):
     use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
+    candidate_skills = candidate.get("skills", [])
+    candidate_evidence = candidate.get("capability_evidence", [])
+    candidate_education = candidate.get("education", [])
+    candidate_certifications = candidate.get("certifications", [])
+    
+    jd_requirements = jd.get("primary_requirements", [])
+    
     input_data = {
         "role_name": state["role_name"],
         "jd_role_mismatch": jd_role_mismatch,
         "jd_is_vague": jd_is_vague,
         "use_market_standards": use_market_standards,
         "inferred_job_family": inferred_job_family,
-        "jd_skills": jd.get("primary_requirements", []),
-        "candidate_skills": candidate.get("skills", []),
-        "candidate_evidence": candidate.get("capability_evidence", []),
-        "candidate_education": candidate.get("education", []),
-        "candidate_certifications": candidate.get("certifications", [])
+        "jd_skills": jd_requirements,
+        "candidate_skills": candidate_skills,
+        "candidate_evidence": candidate_evidence,
+        "candidate_education": candidate_education,
+        "candidate_certifications": candidate_certifications
     }
     log_stage("TECH_AGENT", input_data, is_output=False)
     
     combined_evidence = {
-        "work_evidence": candidate.get("capability_evidence", []),
-        "education": candidate.get("education", []),
-        "certifications": candidate.get("certifications", [])
+        "work_evidence": candidate_evidence,
+        "education": candidate_education,
+        "certifications": candidate_certifications
     }
     
     chain = COMPETENCY_EVAL_PROMPT | llm | JsonOutputParser()
@@ -308,8 +360,8 @@ def tech_agent_node(state: AgentState):
             "jd_is_vague": jd_is_vague,
             "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
-            "jd_skills": json.dumps(jd.get("primary_requirements", [])),
-            "candidate_skills": json.dumps(candidate.get("skills", [])),
+            "jd_skills": json.dumps(jd_requirements),
+            "candidate_skills": json.dumps(candidate_skills),
             "candidate_evidence": json.dumps(combined_evidence)
         })
 
@@ -317,6 +369,34 @@ def tech_agent_node(state: AgentState):
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
         result["inferred_job_family"] = inferred_job_family
+        
+        matched = result.get("matched_competencies", [])
+        missing = result.get("missing_competencies", [])
+        total = len(matched) + len(missing)
+        if total > 0 and not use_market_standards:
+            correct_score = int(round((len(matched) / total) * 100))
+            # Coerce LLM score to numeric with safe fallback
+            raw_score = result.get("score", 0)
+            try:
+                llm_score = float(raw_score) if raw_score is not None else 0.0
+            except (TypeError, ValueError):
+                llm_score = 0.0
+            if abs(correct_score - llm_score) > 1:  # Only override if meaningfully different
+                print(f"[TECH_AGENT] Score recalculated: LLM said {llm_score}, "
+                      f"actual is ({len(matched)}/{total})*100 = {correct_score}")
+                result["score"] = correct_score
+                result["score_override_reason"] = (
+                    f"Recalculated from matched/missing arrays: "
+                    f"{len(matched)} matched, {len(missing)} missing out of {total}")
+        
+        # Coerce to numeric and round
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
+        
         log_stage("TECH_AGENT", result, is_output=True)
         return {"tech_evaluation": result}
     except Exception as e:
@@ -330,7 +410,10 @@ def experience_agent_node(state: AgentState):
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
     alignment = state.get("jd_role_alignment", {})
+    
     work_experience = candidate.get("work_experience", [])
+    candidate_education = candidate.get("education", [])
+    
     current_dt = datetime.now()
     calculated_years = calculate_total_years(work_experience, current_dt)
     
@@ -353,11 +436,16 @@ def experience_agent_node(state: AgentState):
             "required_years": required_years,
             "education_requirement": education_requirement
         },
-        "candidate_experience": candidate.get("work_experience", []),
-        "candidate_education": candidate.get("education", []),
+        "candidate_experience": work_experience,
+        "candidate_education": candidate_education,
         "calculated_total_years": calculated_years
     }
     log_stage("EXPERIENCE_AGENT", input_data, is_output=False)
+    
+    jd_experience_rules = {
+        "required_years": required_years,
+        "education_requirement": education_requirement
+    }
     
     chain = EXP_EVAL_PROMPT | llm | JsonOutputParser()
     current_date = current_dt.strftime("%Y-%m-%d")
@@ -372,14 +460,21 @@ def experience_agent_node(state: AgentState):
             "total_years_calculated": calculated_years,
             "preserved_required_years": required_years,
             "preserved_education_requirement": json.dumps(education_requirement) if education_requirement else "null",
-            "jd_experience_rules": json.dumps(jd),
-            "candidate_experience": json.dumps(candidate.get("work_experience", [])),
-            "candidate_education": json.dumps(candidate.get("education", [])) 
+            "jd_experience_rules": json.dumps(jd_experience_rules),  # Optimized: only experience rules, not entire JD
+            "candidate_experience": json.dumps(work_experience),
+            "candidate_education": json.dumps(candidate_education) 
         })
 
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
+        # Coerce to numeric and clamp to 0-100
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
         log_stage("EXPERIENCE_AGENT", result, is_output=True)
         return {"experience_evaluation": result}
     except Exception as e:
@@ -398,14 +493,19 @@ def culture_agent_node(state: AgentState):
     use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
     
+    candidate_summary = candidate.get("summary", "")
+    candidate_evidence = candidate.get("capability_evidence", [])
+    
+    jd_responsibilities = jd.get("responsibilities", [])
+    
     input_data = {
         "role_name": state.get("role_name", ""),
         "jd_role_mismatch": jd_role_mismatch,
         "jd_is_vague": jd_is_vague,
         "use_market_standards": use_market_standards,
-        "jd_responsibilities": jd.get("responsibilities", []),
-        "candidate_summary": candidate.get("summary", ""),
-        "candidate_evidence_count": len(candidate.get("capability_evidence", []))
+        "jd_responsibilities": jd_responsibilities,
+        "candidate_summary": candidate_summary,
+        "candidate_evidence_count": len(candidate_evidence)
     }
     log_stage("CULTURE_AGENT", input_data, is_output=False)
     
@@ -417,14 +517,21 @@ def culture_agent_node(state: AgentState):
             "jd_is_vague": jd_is_vague,
             "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
-            "jd_responsibilities": json.dumps(jd.get("responsibilities", [])),
-            "candidate_summary": candidate.get("summary", ""),
-            "candidate_evidence": json.dumps(candidate.get("capability_evidence", []))
+            "jd_responsibilities": json.dumps(jd_responsibilities),
+            "candidate_summary": candidate_summary,
+            "candidate_evidence": json.dumps(candidate_evidence)
         })
 
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
+        # Coerce to numeric and clamp to 0-100
+        raw_score = result.get("score", 0)
+        try:
+            numeric_score = float(raw_score) if raw_score is not None else 0.0
+        except (TypeError, ValueError):
+            numeric_score = 0.0
+        result["score"] = max(0, min(100, round(numeric_score)))
         log_stage("CULTURE_AGENT", result, is_output=True)
         return {"culture_evaluation": result}
     except Exception as e:
@@ -447,11 +554,44 @@ def aggregator_node(state: AgentState):
         evaluation_criteria = jd_requirements + jd_responsibilities
         criteria_source = "requirements_and_responsibilities"
     
+    tech_eval_full = state.get("tech_evaluation", {})
+    exp_eval_full = state.get("experience_evaluation", {})
+    culture_eval_full = state.get("culture_evaluation", {})
+    
+    tech_eval_summary = {
+        "score": tech_eval_full.get("score", 0),
+        "matched_count": len(tech_eval_full.get("matched_competencies", [])),
+        "missing_count": len(tech_eval_full.get("missing_competencies", [])),
+        "jd_role_mismatch": tech_eval_full.get("jd_role_mismatch", False),
+        "jd_is_vague": tech_eval_full.get("jd_is_vague", False),
+        "use_market_standards": tech_eval_full.get("use_market_standards", False),
+        "jurisdiction_flag": tech_eval_full.get("jurisdiction_issue", False),
+        "reasoning": tech_eval_full.get("reasoning", "")
+    }
+    
+    exp_eval_summary = {
+        "score": exp_eval_full.get("score", 0),
+        "relevant_years_validated": exp_eval_full.get("relevant_years_validated", 0),
+        "education_match": exp_eval_full.get("education_match", False),
+        "jd_role_mismatch": exp_eval_full.get("jd_role_mismatch", False),
+        "jd_is_vague": exp_eval_full.get("jd_is_vague", False),
+        "use_market_standards": exp_eval_full.get("use_market_standards", False),
+        "reasoning": exp_eval_full.get("reasoning", "")
+    }
+    
+    culture_eval_summary = {
+        "score": culture_eval_full.get("score", 0),
+        "jd_role_mismatch": culture_eval_full.get("jd_role_mismatch", False),
+        "jd_is_vague": culture_eval_full.get("jd_is_vague", False),
+        "use_market_standards": culture_eval_full.get("use_market_standards", False),
+        "reasoning": culture_eval_full.get("reasoning", "")
+    }
+    
     input_data = {
         "role_name": state["role_name"],
-        "tech_eval_score": state.get("tech_evaluation", {}).get("score"),
-        "experience_eval_score": state.get("experience_evaluation", {}).get("score"),
-        "culture_eval_score": state.get("culture_evaluation", {}).get("score"),
+        "tech_eval_score": tech_eval_summary["score"],
+        "experience_eval_score": exp_eval_summary["score"],
+        "culture_eval_score": culture_eval_summary["score"],
         "jd_requirements_count": len(jd_requirements),
         "jd_responsibilities_count": len(jd_responsibilities),
         "evaluation_criteria_count": len(evaluation_criteria),
@@ -459,10 +599,12 @@ def aggregator_node(state: AgentState):
     }
     log_stage("AGGREGATOR", input_data, is_output=False)
     
+    # NOTE: Logging full agent reports for debugging and continuous improvement.
+    # This is intentional during development. Consider redacting PII for production.
     print("FULL AGENT REPORTS")
-    log_stage("TECH_EVAL_FULL", state.get("tech_evaluation", {}), is_output=False)
-    log_stage("EXPERIENCE_EVAL_FULL", state.get("experience_evaluation", {}), is_output=False)
-    log_stage("CULTURE_EVAL_FULL", state.get("culture_evaluation", {}), is_output=False)
+    log_stage("TECH_EVAL_FULL", tech_eval_full, is_output=False)
+    log_stage("EXPERIENCE_EVAL_FULL", exp_eval_full, is_output=False)
+    log_stage("CULTURE_EVAL_FULL", culture_eval_full, is_output=False)
     
     chain = AGGREGATOR_PROMPT | llm | JsonOutputParser()
     try:
@@ -470,10 +612,16 @@ def aggregator_node(state: AgentState):
             "role_name": state["role_name"],
             "evaluation_criteria": json.dumps(evaluation_criteria),
             "criteria_count": len(evaluation_criteria),
-            "tech_eval": json.dumps(state.get("tech_evaluation")),
-            "exp_eval": json.dumps(state.get("experience_evaluation")),
-            "culture_eval": json.dumps(state.get("culture_evaluation"))
+            "tech_eval": json.dumps(tech_eval_summary),  
+            "exp_eval": json.dumps(exp_eval_summary),    
+            "culture_eval": json.dumps(culture_eval_summary)  
         })
+        result["final_score"] = max(0, min(100, round(result.get("final_score", 0))))
+        cat = result.get("category_scores", {})
+        for key in ["competency", "experience", "soft_skills"]:
+            if key in cat:
+                cat[key] = max(0, min(100, round(cat[key])))
+        result["category_scores"] = cat
         log_stage("AGGREGATOR", result, is_output=True)
         return {"final_evaluation": result}
     except Exception as e:
