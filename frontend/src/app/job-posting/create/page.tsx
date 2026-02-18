@@ -75,6 +75,13 @@ export default function CreateJobPostingPage() {
         isActive: false,
       };
 
+      // Validate salary data
+      const hasPartialSalary = (formData.salaryMin && !formData.salaryMax) || (!formData.salaryMin && formData.salaryMax);
+      
+      if (hasPartialSalary) {
+        toast.warning('Both minimum and maximum salary are required. Salary data will not be saved.');
+      }
+
       if (formData.salaryMin && formData.salaryMax) {
         payload.salary = {
           min: parseFloat(formData.salaryMin),
@@ -99,6 +106,13 @@ export default function CreateJobPostingPage() {
       return;
     }
 
+    // Validate salary data
+    const hasPartialSalary = (formData.salaryMin && !formData.salaryMax) || (!formData.salaryMin && formData.salaryMax);
+    
+    if (hasPartialSalary) {
+      toast.warning('Both minimum and maximum salary are required. Salary data will not be saved.');
+    }
+
     setIsSubmitting(true);
     try {
       const payload: any = {
@@ -113,6 +127,10 @@ export default function CreateJobPostingPage() {
         const min = parseFloat(formData.salaryMin);
         const max = parseFloat(formData.salaryMax);
         
+        if (min < 0 || max < 0) {
+          toast.error('Salary values cannot be negative')
+          setIsSubmitting(false);
+         return;  }
         if (min > max) {
           toast.error('Minimum salary must be less than maximum salary');
           setIsSubmitting(false);
