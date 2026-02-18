@@ -49,6 +49,16 @@ export class CreateJobPostingDto {
   @IsString({ each: true })
   requiredSkills?: string[];
 
+  @ApiPropertyOptional({
+    description: 'List of job requirements',
+    example: ['5+ years of experience', 'Bachelor\'s degree in Computer Science', 'Strong problem-solving skills'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requirements?: string[];
+
   @ApiProperty({
     description: 'Job location',
     example: 'San Francisco, CA (Remote available)',

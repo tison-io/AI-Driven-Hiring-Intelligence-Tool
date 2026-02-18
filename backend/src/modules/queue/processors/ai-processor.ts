@@ -7,6 +7,7 @@ import { ProcessingStatus } from '../../../common/enums/processing-status.enum';
 import { NotificationEventService } from '../../notifications/notification-event.service';
 import { EmailService } from '../../email/email.service';
 import { ResultsTokensService } from '../../results-tokens/results-tokens.service';
+import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { JobPosting, JobPostingDocument } from '../../job-postings/entities/job-posting.entity';
@@ -21,6 +22,7 @@ export class AiProcessor {
     private notificationEventService: NotificationEventService,
     private emailService: EmailService,
     private resultsTokensService: ResultsTokensService,
+    private auditLogsService: AuditLogsService,
     @InjectModel(JobPosting.name) private jobPostingModel: Model<JobPostingDocument>,
   ) { }
 
@@ -119,9 +121,25 @@ export class AiProcessor {
             
             await this.candidatesService.update(candidateId, { emailSent: true });
             this.logger.log(`Email sent to ${candidate.email} for candidate ${candidateId}`);
+            
+            // Log email sent to audit logs
+            await this.auditLogsService.createLog({
+              userOrSystem: 'SYSTEM',
+              action: 'EMAIL_SENT',
+              target: `Candidate: ${candidateId}`,
+              details: `Evaluation results email sent to ${candidate.email} for job: ${jobPosting.title}. Score: ${result.roleFitScore}%. Token: ${resultsToken}`,
+            });
           }
         } catch (emailError) {
           this.logger.error(`Failed to send email for candidate ${candidateId}`, emailError.stack);
+          
+          // Log email failure to audit logs
+          await this.auditLogsService.createLog({
+            userOrSystem: 'SYSTEM',
+            action: 'EMAIL_FAILED',
+            target: `Candidate: ${candidateId}`,
+            details: `Failed to send evaluation results email to ${candidate.email}. Error: ${emailError.message}`,
+          });
         }
       }
       

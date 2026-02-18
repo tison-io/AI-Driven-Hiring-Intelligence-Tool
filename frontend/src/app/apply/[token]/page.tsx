@@ -8,6 +8,7 @@ import { JobHeader } from "@/components/job/JobHeader";
 import { JobRole } from "@/components/job/JobRole";
 import { JobDescription } from "@/components/job/JobDescription";
 import { Responsibilities } from "@/components/job/Responsibilities";
+import { Requirements } from "@/components/job/Requirements";
 import { SkillsPills } from "@/components/job/SkillsPills";
 import { ApplyCard } from "@/components/apply/ApplyCard";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -18,6 +19,7 @@ type JobData = {
   description: string;
   responsibilities?: string[];
   requiredSkills?: string[];
+  requirements?: string[];
   location: string;
   experienceLevel?: string;
   employmentType?: string;
@@ -78,10 +80,14 @@ export default function JobPage() {
               location={job.location}
               employmentType={job.employmentType || "Full-time"}
               closingDate={job.closingDate}
+              salary={job.salary}
             />
             <JobRole description={job.description} />
             {job.responsibilities && job.responsibilities.length > 0 && (
               <Responsibilities responsibilities={job.responsibilities} />
+            )}
+            {job.requirements && job.requirements.length > 0 && (
+              <Requirements requirements={job.requirements} />
             )}
             {job.requiredSkills && job.requiredSkills.length > 0 && (
               <SkillsPills skills={job.requiredSkills} />
