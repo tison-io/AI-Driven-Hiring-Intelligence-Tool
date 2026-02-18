@@ -764,8 +764,7 @@ function CandidatesContent() {
 														Experience
 													</p>
 													<p className="text-sm font-medium text-gray-700">
-														{candidate.experienceYears ||
-															0}{" "}
+														{(candidate.experienceYears || 0).toFixed(2)}{" "}
 														yrs
 													</p>
 												</div>
@@ -867,8 +866,7 @@ function CandidatesContent() {
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
 															<p className="text-sm xl:text-base text-gray-700">
-																{candidate.experienceYears ||
-																	0}{" "}
+																{(candidate.experienceYears || 0).toFixed(2)}{" "}
 																yrs
 															</p>
 														</td>
