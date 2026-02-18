@@ -8,6 +8,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { EmailModule } from '../email/email.module';
 import { ResultsTokensModule } from '../results-tokens/results-tokens.module';
 import { JobPostingsModule } from '../job-postings/job-postings.module';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JobPostingsModule } from '../job-postings/job-postings.module';
     NotificationsModule,
     EmailModule,
     ResultsTokensModule,
+    AuditLogsModule,
     forwardRef(() => JobPostingsModule),
   ],
   providers: [QueueService, AiProcessor],
