@@ -8,10 +8,17 @@ type Props = {
   location: string;
   employmentType: string;
   closingDate?: string;
+  salary?: { min: number; max: number; currency: string };
 };
 
-export function JobHeader({ title, companyName, location, employmentType, closingDate }: Props) {
-  const daysRemaining = closingDate ? Math.ceil((new Date(closingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+export function JobHeader({ title, companyName, location, employmentType, closingDate, salary }: Props) {
+  const daysRemaining = closingDate ? (() => {
+    const closing = new Date(closingDate);
+    const today = new Date();
+    closing.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return Math.ceil((closing.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  })() : null;
 
   return (
     <div className="space-y-3">
@@ -34,6 +41,13 @@ export function JobHeader({ title, companyName, location, employmentType, closin
           <span>💼</span>
           <span>{employmentType}</span>
         </span>
+        
+        {salary && (
+          <span className="inline-flex items-center gap-1.5">
+            <span>💰</span>
+            <span>{salary.currency} {salary.min.toLocaleString()} - {salary.max.toLocaleString()}</span>
+          </span>
+        )}
         
         {daysRemaining && daysRemaining > 0 && (
           <span className="inline-flex items-center gap-1.5">

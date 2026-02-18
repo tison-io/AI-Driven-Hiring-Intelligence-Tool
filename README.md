@@ -40,10 +40,10 @@ A comprehensive hiring platform that evaluates candidates from resumes and Linke
 ### **Prerequisites**
 
 -   Node.js 18+
--   Python 3.8+ (for AI Backend)
+-   Python 3.10+ (for AI Backend)
 -   MongoDB (local or Atlas)
 -   Redis (for background jobs)
--   OpenAI API Key
+-   Groq API Key (for AI evaluation)
 -   Brevo API Key (for emails)
 -   Git
 
@@ -114,7 +114,11 @@ cp .env.example .env
 ```
 
 ```env
-OPENAI_API_KEY=your-openai-api-key-here
+GROQ_API_KEY=your-groq-api-key-here
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT=https://api.smith.langchain.com
+LANGCHAIN_API_KEY=
+LANGCHAIN_PROJECT=
 ```
 
 ### **Step 4: Start Services**
@@ -262,7 +266,7 @@ PUT /auth/change-password
 
 ### **Python FastAPI Backend**
 
-The AI processing is handled by a separate Python FastAPI service that provides real AI-powered candidate evaluation using OpenAI.
+The AI processing is handled by a separate Python FastAPI service that provides real AI-powered candidate evaluation using **Groq** (Llama 3.3 70B) through a **LangGraph** multi-agent pipeline.
 
 **Location**: `AI_Backend/`
 
@@ -281,73 +285,68 @@ cp .env.example .env
 
 **Configure `AI_Backend/.env`:**
 ```env
-OPENAI_API_KEY=your-openai-api-key-here
+GROQ_API_KEY=your-groq-api-key-here
 ```
 
 #### **3. Start AI Service**
 ```bash
-python -m uvicorn main:app --host 0.0.0.0 --port 8000/ or
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+# or
 python main.py
 ```
 
 ### **AI Service Architecture**
 
-The AI evaluation process involves multiple endpoints:
+The AI evaluation runs as a single LangGraph pipeline via one endpoint:
 
-1. **Text Extraction** (`POST /parse-text`)
-   - Extracts structured data from resume text
-   - Identifies candidate name, skills, experience, education
-   - Validates resume completeness
+**`POST /analyze/graph`** — End-to-end evaluation pipeline:
+- Accepts resume (PDF/DOCX file or raw text), job description, and role name
+- Runs an 8-node LangGraph workflow with retry policies and checkpointing
+- Returns structured scores, agent reports, parsed profile, and candidate feedback
 
-2. **File Processing** (`POST /parse`)
-   - Accepts PDF/DOCX files
-   - Extracts text and processes with AI
-   - Returns structured candidate data
-
-3. **Candidate Scoring** (`POST /score`)
-   - Scores candidate against job requirements
-   - Provides role fit score, confidence score
-   - Generates interview questions and bias analysis
-
-4. **End-to-End Analysis** (`POST /analyze`)
-   - Complete file upload to evaluation pipeline
-   - Combines parsing, extraction, and scoring
+The pipeline contains 8 sequential/parallel nodes:
+1. **JD Parser** — Extracts structured requirements from the job description
+2. **Alignment Check** — Detects JD-Role profession mismatches and vague JDs
+3. **Resume Extractor** — Parses resume into structured candidate profile
+4. **Competency Agent** — Evaluates technical skills with semantic matching *(parallel)*
+5. **Experience Agent** — Evaluates career history and seniority *(parallel)*
+6. **Behavioral Agent** — Evaluates soft skills from evidence *(parallel)*
+7. **Aggregator** — Computes weighted final score, strengths, weaknesses, interview questions
+8. **Feedback Generator** — Produces personalized candidate feedback email
 
 ### **AI Service Dependencies**
 
 **Core Technologies:**
 - **FastAPI**: Web framework
-- **OpenAI**: AI processing and evaluation
-- **LangChain**: AI workflow management
+- **Groq (Llama 3.3 70B)**: LLM for AI evaluation
+- **LangGraph**: Multi-agent workflow orchestration with retry policies
+- **LangChain**: LLM integration and prompt management
+- **LangSmith**: Observability and tracing
 - **PyPDF**: PDF text extraction
 - **Mammoth**: DOCX text extraction
-- **Scikit-learn**: ML utilities
+- **SlowAPI**: Rate limiting (5 req/min per IP)
 
 ### **Integration with Backend**
 
-The Node.js backend (`src/modules/ai/ai.service.ts`) communicates with the Python AI service:
+The Node.js backend (`src/modules/ai/ai.service.ts`) communicates with the Python AI service via a single endpoint:
 
 ```typescript
-async evaluateCandidate(rawText: string, jobRole: string, jobDescription?: string) {
-  try {
-    // Step 1: Extract structured data from raw text
-    const extractedData = await this.extractCandidateData(rawText);
-    
-    // Step 2: Score candidate against job role
-    const scoringResult = await this.scoreCandidateData(extractedData, jobRole, jobDescription);
-    
-    // Step 3: Transform to backend format
-    return this.transformAiResponse(extractedData, scoringResult);
-  } catch (error) {
-    // Fallback to mock data if AI service fails
-    return this.getMockResponse();
-  }
+async evaluateWithGraph(formData: FormData) {
+  // Sends resume (file or raw text), job description, and role name
+  // to POST /analyze/graph
+  const response = await axios.post(
+    `${this.aiServiceUrl}/analyze/graph`,
+    formData
+  );
+  // Response contains: final_score, recommendation, summary,
+  // agent_reports, parsed_profile, candidate_feedback
+  return this.transformGraphResponse(response.data);
 }
 ```
 
 ### **Fallback Behavior**
 
-If the AI service is unavailable, the system automatically falls back to mock responses to ensure the application continues functioning.
+If the AI service is unavailable, the system falls back to mock responses to ensure the application continues functioning.
 
 ## 📧 Email Service Configuration
 
@@ -418,13 +417,13 @@ LinkedIn profiles are processed through the AI service which extracts relevant c
 
 ```
 AI_Backend/                    # Python FastAPI AI Service
-├── main.py                    # FastAPI application entry point
-├── parsing.py                 # PDF/DOCX text extraction
-├── extraction.py              # Resume data extraction with AI
-├── scoring.py                 # Candidate scoring and evaluation
-├── prompts.py                 # AI prompts and templates
+├── main.py                    # FastAPI app, API endpoint, file handling
+├── graph.py                   # LangGraph workflow definition, retry policies
+├── nodes.py                   # Agent node implementations (8 nodes)
+├── prompts.py                 # LLM prompt templates for each agent
+├── states.py                  # TypedDict state definitions with merge reducers
+├── parsing.py                 # PDF/DOCX text extraction and cleaning
 ├── requirements.txt           # Python dependencies
-├── .env.example               # AI service environment variables
 ├── Dockerfile                 # Docker configuration
 └── test.py                    # AI service tests
 
@@ -697,7 +696,7 @@ For issues or questions:
 - Background job processing with Redis queue system
 - Data export functionality (CSV, XLSX, HTML)
 - Comprehensive Swagger documentation
-- Mock AI system ready for real AI integration
+- AI evaluation via Groq/LangGraph multi-agent pipeline
 - MongoDB database with user ownership tracking
 
 ### **Frontend Application**

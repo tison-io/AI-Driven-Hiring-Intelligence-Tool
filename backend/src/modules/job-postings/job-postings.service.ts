@@ -202,6 +202,7 @@ export class JobPostingsService {
       description: jobPosting.description,
       responsibilities: jobPosting.responsibilities,
       requiredSkills: jobPosting.requiredSkills,
+      requirements: jobPosting.requirements,
       location: jobPosting.location,
       experienceLevel: jobPosting.experienceLevel,
       employmentType: jobPosting.employmentType,

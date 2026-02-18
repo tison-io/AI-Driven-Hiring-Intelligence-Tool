@@ -13,7 +13,7 @@ export class CandidatesService {
 		private candidateModel: Model<CandidateDocument>,
 		private notificationEventService: NotificationEventService,
 		private milestoneDetectionService: MilestoneDetectionService,
-	) {}
+	) { }
 
 	async findAll(
 		filters: CandidateFilterDto,
@@ -143,7 +143,13 @@ export class CandidatesService {
 		// Always add secondary sort by _id for consistent ordering
 		sortOptions._id = 1;
 
-		return this.candidateModel.find(query).sort(sortOptions).exec();
+		// Select only fields needed for list view to improve performance
+		return this.candidateModel
+			.find(query)
+			.select('name jobRole experienceYears skills roleFitScore confidenceScore status isShortlisted createdAt certifications workExperience.company')
+			.sort(sortOptions)
+			.lean()
+			.exec();
 	}
 
 	async findById(id: string): Promise<CandidateDocument | null> {
@@ -289,7 +295,7 @@ export class CandidatesService {
 		if (candidateData.linkedinUrl) {
 			query.linkedinUrl = candidateData.linkedinUrl;
 			const existingCandidate = await this.candidateModel.findOne(query).exec();
-			
+
 			if (existingCandidate) {
 				this.notificationEventService.emitDuplicateFound({
 					candidateId: existingCandidate._id.toString(),

@@ -9,7 +9,7 @@ const api = axios.create({
 	headers: {
 		"Content-Type": "application/json",
 	},
-	timeout: 10000, // 10 seconds timeout
+	timeout: 30000, // 30 seconds timeout - increased for large datasets
 	withCredentials: true, // Enable cookies for JWT authentication
 });
 
@@ -157,7 +157,9 @@ export const jobPostingsApi = {
 		return response.data;
 	},
 	submitApplication: async (token: string, formData: FormData) => {
-		const response = await api.post(`/api/job-postings/apply/${token}`, formData);
+		const response = await api.post(`/api/job-postings/apply/${token}`, formData, {
+			headers: { "Content-Type": "multipart/form-data" },
+		});
 		return response.data;
 	},
 };

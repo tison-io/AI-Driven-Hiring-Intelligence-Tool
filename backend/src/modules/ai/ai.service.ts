@@ -84,23 +84,7 @@ export class AiService {
       safeProfile?.total_years_experience != null
     ];
     const filledFields = profileFields.filter(Boolean).length;
-    const profileCompleteness = (filledFields / profileFields.length) * 100;
-
-    const extractionConfidence = safeProfile?.extraction_confidence || {};
-    const avgExtractionConfidence = (() => {
-      const values = Object.values(extractionConfidence)
-        .filter((v): v is number => Number.isFinite(v))
-        .map(v => Math.max(0, Math.min(1, v))); // Clamp each value to [0, 1]
-      return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0.5;
-    })();
-
-    // Ensure inputs are finite with safe defaults
-    const safeProfileCompleteness = Number.isFinite(profileCompleteness) ? profileCompleteness : 0;
-    const safeAvgConfidence = Number.isFinite(avgExtractionConfidence) ? avgExtractionConfidence : 0.5;
-
-    const confidenceScore = Math.max(0, Math.min(100,
-      Math.round((safeProfileCompleteness + safeAvgConfidence * 100) / 2)
-    ));
+    const profileCompleteness = Math.round((filledFields / profileFields.length) * 100);
     const competencyScore = categoryScores?.competency ?? 0;
     const experienceScore = categoryScores?.experience ?? 0;
     const softSkillsScore = categoryScores?.soft_skills ?? 0;
@@ -160,6 +144,14 @@ export class AiService {
     const biasCheck = biasReasons.length > 0
       ? `REVIEW REQUIRED: ${biasReasons.join('; ')}`
       : 'No bias detected';
+
+    // Confidence score: based on profile completeness, penalized by bias detections
+    let confidenceScore = profileCompleteness;
+    if (explicitJdRoleMismatch) {
+      confidenceScore = Math.min(confidenceScore, 30);
+    } else if (biasReasons.length > 0) {
+      confidenceScore = Math.min(confidenceScore, 60);
+    }
 
     return {
       name: safeProfile?.candidate_name || 'Anonymous',

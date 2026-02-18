@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as SibApiV3Sdk from 'sib-api-v3-sdk';
 import { BrevoConfig } from '../../config/brevo.config';
 import escapeHtml from "escape-html"
+import { evaluationResultsTemplate } from './templates/evaluation-results.template';
 
 @Injectable()
 export class EmailService {
@@ -100,5 +101,33 @@ export class EmailService {
     `;
 
     await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+  }
+
+  async sendEvaluationResults(
+    to: string,
+    candidateName: string,
+    jobTitle: string,
+    score: number,
+    resultsToken: string,
+  ): Promise<void> {
+    const resultsUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/results/${resultsToken}`;
+    
+    const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+    sendSmtpEmail.sender = { name: this.brevoConfig.fromName, email: this.brevoConfig.fromEmail };
+    sendSmtpEmail.to = [{ email: to }];
+    sendSmtpEmail.subject = `Your Application Results for ${jobTitle}`;
+    sendSmtpEmail.htmlContent = evaluationResultsTemplate(
+      candidateName,
+      jobTitle,
+      score,
+      resultsUrl,
+    );
+
+    try {
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+    } catch (error) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      await this.apiInstance.sendTransacEmail(sendSmtpEmail);
+    }
   }
 }

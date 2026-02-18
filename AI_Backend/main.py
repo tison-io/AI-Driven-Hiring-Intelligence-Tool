@@ -8,6 +8,7 @@ from pydantic import BaseModel
 import uvicorn
 from fastapi import Request
 import json
+import uuid
 
 from graph import app_graph
 from parsing import parse_pdf, parse_docx
@@ -80,8 +81,12 @@ async def analyze_with_graph(
     }
 
     print(f"--- STARTING EVALUATION FOR: {role_name} ---")
+    thread_id = str(uuid.uuid4())
     try:
-        final_state = await app_graph.ainvoke(initial_state)
+        final_state = await app_graph.ainvoke(
+            initial_state,
+            config={"configurable": {"thread_id": thread_id}}
+        )
 
         return {
             "success": True,
@@ -100,6 +105,7 @@ async def analyze_with_graph(
     except Exception as e:
         print(f"Graph Execution Error: {e}")
         raise HTTPException(500, f"Analysis failed: {str(e)}")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

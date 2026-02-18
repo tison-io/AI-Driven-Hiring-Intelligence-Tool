@@ -4,6 +4,7 @@ import { QueueService } from "../queue/queue.service";
 import { ApifyService } from "../linkedin-scraper/linkedinScraper.service";
 import { LinkedInMapper } from "../linkedin-scraper/mappers/linkedin-mapper";
 import { ProcessingStatus } from "../../common/enums/processing-status.enum";
+import { Types } from "mongoose";
 import pdfParse from "pdf-parse";
 import * as mammoth from "mammoth";
 
@@ -23,7 +24,7 @@ export class UploadService {
 		jobRole: string,
 		userId: string,
 		jobDescription?: string,
-		applicantData?: { name?: string; email?: string; source?: string },
+		applicantData?: { name?: string; email?: string; source?: string; jobPostingId?: string },
 	) {
 		if (!userId) {
 			throw new BadRequestException('User ID is required for candidate creation');
@@ -40,6 +41,7 @@ export class UploadService {
 			jobRole,
 			source: (applicantData?.source as 'file' | 'linkedin') || 'file',
 			...(jobDescription && { jobDescription }),
+			...(applicantData?.jobPostingId && { jobPostingId: new Types.ObjectId(applicantData.jobPostingId) }),
 			status: ProcessingStatus.PENDING,
 			createdBy: userId,
 		});

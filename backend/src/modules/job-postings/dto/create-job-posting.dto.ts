@@ -5,6 +5,8 @@ import {
   IsBoolean,
   ValidateNested,
   IsNotEmpty,
+  IsIn,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -47,6 +49,16 @@ export class CreateJobPostingDto {
   @IsString({ each: true })
   requiredSkills?: string[];
 
+  @ApiPropertyOptional({
+    description: 'List of job requirements',
+    example: ['5+ years of experience', 'Bachelor\'s degree in Computer Science', 'Strong problem-solving skills'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requirements?: string[];
+
   @ApiProperty({
     description: 'Job location',
     example: 'San Francisco, CA (Remote available)',
@@ -61,7 +73,7 @@ export class CreateJobPostingDto {
     enum: ['entry', 'mid', 'senior', 'lead', 'principal'],
   })
   @IsOptional()
-  @IsString()
+  @IsIn(['entry', 'mid', 'senior', 'lead', 'principal'])
   experienceLevel?: string;
 
   @ApiPropertyOptional({
@@ -70,7 +82,7 @@ export class CreateJobPostingDto {
     enum: ['full-time', 'part-time', 'contract', 'internship'],
   })
   @IsOptional()
-  @IsString()
+  @IsIn(['full-time', 'part-time', 'contract', 'internship'])
   employmentType?: string;
 
   @ApiPropertyOptional({
@@ -78,7 +90,7 @@ export class CreateJobPostingDto {
     example: '2024-12-31',
   })
   @IsOptional()
-  @IsString()
+  @IsDateString()
   closingDate?: string;
 
   @ApiPropertyOptional({

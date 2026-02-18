@@ -170,7 +170,10 @@ export class JobPostingsController {
       fullJobPosting.title,
       fullJobPosting.companyId.toString(),
       fullJobPosting.description,
-      applyDto,
+      {
+        ...applyDto,
+        jobPostingId: fullJobPosting._id.toString(),
+      },
     );
     return {
       candidateId: result.candidateId,

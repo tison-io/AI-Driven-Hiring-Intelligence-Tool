@@ -39,8 +39,8 @@ export class Candidate {
   @Prop({ min: 0, max: 100 })
   roleFitScore?: number;
 
-  @Prop({ type: Object }) 
-  scoringBreakdown?: any; 
+  @Prop({ type: Object })
+  scoringBreakdown?: any;
 
   @Prop({ type: [String], default: [] })
   keyStrengths: string[];
@@ -98,3 +98,11 @@ export class Candidate {
 }
 
 export const CandidateSchema = SchemaFactory.createForClass(Candidate);
+
+// Add indexes for performance optimization
+CandidateSchema.index({ createdBy: 1 }); // User-scoped queries
+CandidateSchema.index({ status: 1 }); // Status filtering
+CandidateSchema.index({ createdBy: 1, status: 1 }); // Compound index for common combination
+CandidateSchema.index({ roleFitScore: 1 }); // Sorting and filtering by score
+CandidateSchema.index({ createdAt: -1 }); // Time-based sorting and filtering
+CandidateSchema.index({ isShortlisted: 1 }); // Shortlist queries
