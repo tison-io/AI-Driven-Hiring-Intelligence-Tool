@@ -152,10 +152,6 @@ export const jobPostingsApi = {
 		const response = await api.patch(`/api/job-postings/${id}/toggle`);
 		return response.data;
 	},
-};
-
-// Job Postings API functions
-export const jobPostingsApi = {
 	getByToken: async (token: string) => {
 		const response = await api.get(`/api/job-postings/apply/${token}`);
 		return response.data;
