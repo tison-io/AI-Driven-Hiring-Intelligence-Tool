@@ -11,7 +11,13 @@ type Props = {
 };
 
 export function JobHeader({ title, companyName, location, employmentType, closingDate }: Props) {
-  const daysRemaining = closingDate ? Math.ceil((new Date(closingDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
+  const daysRemaining = closingDate ? (() => {
+    const closing = new Date(closingDate);
+    const today = new Date();
+    closing.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    return Math.ceil((closing.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  })() : null;
 
   return (
     <div className="space-y-3">

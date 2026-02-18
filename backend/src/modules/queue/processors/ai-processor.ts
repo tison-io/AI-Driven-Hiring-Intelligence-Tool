@@ -5,6 +5,11 @@ import { CandidatesService } from '../../candidates/candidates.service';
 import { AiService } from '../../ai/ai.service';
 import { ProcessingStatus } from '../../../common/enums/processing-status.enum';
 import { NotificationEventService } from '../../notifications/notification-event.service';
+import { EmailService } from '../../email/email.service';
+import { ResultsTokensService } from '../../results-tokens/results-tokens.service';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { JobPosting, JobPostingDocument } from '../../job-postings/entities/job-posting.entity';
 
 @Processor('ai-processing')
 export class AiProcessor {
@@ -14,6 +19,9 @@ export class AiProcessor {
     private candidatesService: CandidatesService,
     private aiService: AiService,
     private notificationEventService: NotificationEventService,
+    private emailService: EmailService,
+    private resultsTokensService: ResultsTokensService,
+    @InjectModel(JobPosting.name) private jobPostingModel: Model<JobPostingDocument>,
   ) { }
 
   @Process('process-candidate')
@@ -90,6 +98,33 @@ export class AiProcessor {
       }
 
       this.logger.log(`Graph Processing Complete for ${candidateId}. Time: ${processingTime}ms`);
+      
+      // Send email if candidate has email and jobPostingId
+      if (candidate.email && candidate.jobPostingId) {
+        try {
+          const jobPosting = await this.jobPostingModel.findById(candidate.jobPostingId);
+          if (jobPosting) {
+            const resultsToken = await this.resultsTokensService.generateToken(
+              candidateId,
+              candidate.jobPostingId,
+            );
+            
+            await this.emailService.sendEvaluationResults(
+              candidate.email,
+              result.name,
+              jobPosting.title,
+              result.roleFitScore || 0,
+              resultsToken,
+            );
+            
+            await this.candidatesService.update(candidateId, { emailSent: true });
+            this.logger.log(`Email sent to ${candidate.email} for candidate ${candidateId}`);
+          }
+        } catch (emailError) {
+          this.logger.error(`Failed to send email for candidate ${candidateId}`, emailError.stack);
+        }
+      }
+      
       return { success: true, candidateId };
 
     } catch (error) {

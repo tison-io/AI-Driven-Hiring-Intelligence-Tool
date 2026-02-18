@@ -1,10 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
 import { QueueService } from './queue.service';
 import { AiProcessor } from './processors/ai-processor';
 import { CandidatesModule } from '../candidates/candidates.module';
 import { AiModule } from '../ai/ai.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { EmailModule } from '../email/email.module';
+import { ResultsTokensModule } from '../results-tokens/results-tokens.module';
+import { JobPostingsModule } from '../job-postings/job-postings.module';
 
 @Module({
   imports: [
@@ -14,6 +17,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
     CandidatesModule,
     AiModule,
     NotificationsModule,
+    EmailModule,
+    ResultsTokensModule,
+    forwardRef(() => JobPostingsModule),
   ],
   providers: [QueueService, AiProcessor],
   exports: [QueueService],
