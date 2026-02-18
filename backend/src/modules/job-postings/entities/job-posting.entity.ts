@@ -43,7 +43,7 @@ export class JobPosting {
   @Prop({ type: [String], default: [] })
   requiredSkills: string[];
 
-  @Prop({ type: [String] })
+  @Prop({ type: [String], default: [] })
   requirements: string[];
 
   @Prop({ required: true })

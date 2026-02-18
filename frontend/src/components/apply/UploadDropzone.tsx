@@ -38,8 +38,15 @@ export function UploadDropzone({
           const f = e.dataTransfer.files?.[0];
           if (f) accept(f);
         }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            pick();
+          }
+        }}
         role="button"
         tabIndex={0}
+        aria-label="Upload resume file"
       >
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary-50">
           <UploadCloud className="h-6 w-6 text-secondary-600" />
