@@ -27,14 +27,25 @@ export class CreateJobPostingDto {
   @IsNotEmpty()
   description: string;
 
-  @ApiProperty({
-    description: 'List of job requirements',
-    example: ['5+ years of Node.js experience', 'Experience with MongoDB', 'Strong understanding of REST APIs'],
+  @ApiPropertyOptional({
+    description: 'List of job responsibilities',
+    example: ['Design and develop backend systems', 'Lead architecture reviews', 'Mentor junior developers'],
     type: [String],
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  requirements: string[];
+  responsibilities?: string[];
+
+  @ApiPropertyOptional({
+    description: 'List of required skills',
+    example: ['Node.js', 'MongoDB', 'AWS', 'Docker'],
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requiredSkills?: string[];
 
   @ApiProperty({
     description: 'Job location',
@@ -43,6 +54,40 @@ export class CreateJobPostingDto {
   @IsString()
   @IsNotEmpty()
   location: string;
+
+  @ApiPropertyOptional({
+    description: 'Experience level',
+    example: 'senior',
+    enum: ['entry', 'mid', 'senior', 'lead', 'principal'],
+  })
+  @IsOptional()
+  @IsString()
+  experienceLevel?: string;
+
+  @ApiPropertyOptional({
+    description: 'Employment type',
+    example: 'full-time',
+    enum: ['full-time', 'part-time', 'contract', 'internship'],
+  })
+  @IsOptional()
+  @IsString()
+  employmentType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Job closing date',
+    example: '2024-12-31',
+  })
+  @IsOptional()
+  @IsString()
+  closingDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Company name',
+    example: 'TechStar Recruiters',
+  })
+  @IsOptional()
+  @IsString()
+  companyName?: string;
 
   @ApiPropertyOptional({
     description: 'Salary range (optional)',
