@@ -54,7 +54,7 @@ export class AiProcessor {
         workExperience: result.workExperience,
         education: result.education,
         certifications: result.certifications,
-        
+
         roleFitScore: result.roleFitScore,
         scoringBreakdown: result.scoringBreakdown,
         isShortlisted: result.isShortlisted,
@@ -94,7 +94,7 @@ export class AiProcessor {
 
     } catch (error) {
       this.logger.error(`Processing failed for candidate ${candidateId}`, error.stack);
-      
+
       const processingTime = Date.now() - startTime;
       await this.candidatesService.update(candidateId, {
         status: ProcessingStatus.FAILED,
@@ -103,7 +103,7 @@ export class AiProcessor {
 
       // Get candidate info for notification
       const candidate = await this.candidatesService.findById(candidateId);
-      
+
       // Emit processing failed event
       this.notificationEventService.emitProcessingFailed({
         candidateId,

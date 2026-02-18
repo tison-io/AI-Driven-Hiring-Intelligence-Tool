@@ -2,7 +2,7 @@ import json
 import os
 import re
 from datetime import datetime
-from langchain_groq import ChatGroq  # Changed from langchain_openai
+from langchain_groq import ChatGroq
 import dotenv
 from langchain_core.output_parsers import JsonOutputParser
 
@@ -26,14 +26,30 @@ llm = ChatGroq(
     groq_api_key=os.getenv("GROQ_API_KEY")
 )
 
+
 def log_stage(stage_name: str, data: dict, is_output: bool = False):
     separator = "=" * 60
     direction = "OUTPUT" if is_output else "INPUT"
     print(f"\n{separator}")
+    if not is_output:
+        print(f"STAGE: {stage_name}")
+        print(f"\n{separator}")
     print(f"[{stage_name}] {direction}")
     print(separator)
     print(json.dumps(data, indent=2, default=str))
-    print(separator + "\n")
+    print(separator)
+
+def extract_first_name(candidate_name: str) -> str:
+    if not candidate_name or not isinstance(candidate_name, str):
+        return ""
+    name = candidate_name.strip()
+    name = re.sub(r'\b[A-Z][a-z]*\.\s*', '', name)
+    name = re.sub(r'^\b[A-Z]{2,4}\b\s+', '', name)
+    name = re.sub(r'\s+[A-Z]{2,4}$', '', name)
+    name = re.sub(r'\s+[A-Z]\.[A-Z]\.?$', '', name)
+    name = re.sub(r'\s+(Jr|Sr|II|III|IV)\b\.?$', '', name, flags=re.IGNORECASE)
+    parts = name.split()
+    return parts[0] if parts else ""
 
 def calculate_total_years(work_experience: list, current_date: datetime) -> float:
     print("\n" + "=" * 60)
@@ -52,8 +68,12 @@ def calculate_total_years(work_experience: list, current_date: datetime) -> floa
         try:
             start_date = datetime.strptime(start_str, "%Y-%m")
         except:
-            print(f"  WARNING: Could not parse start_date '{start_str}' for {company}")
-            continue
+            try:
+                start_date = datetime.strptime(start_str, "%Y")
+                start_date = start_date.replace(month=1, day=1)
+            except:
+                print(f"  WARNING: Could not parse start_date '{start_str}' for {company}")
+                continue
         
         if end_str.lower() == "present":
             end_date = current_date
@@ -61,8 +81,12 @@ def calculate_total_years(work_experience: list, current_date: datetime) -> floa
             try:
                 end_date = datetime.strptime(end_str, "%Y-%m")
             except:
-                print(f"  WARNING: Could not parse end_date '{end_str}' for {company}")
-                continue
+                try:
+                    end_date = datetime.strptime(end_str, "%Y")
+                    end_date = end_date.replace(month=12, day=31)
+                except:
+                    print(f"  WARNING: Could not parse end_date '{end_str}' for {company}")
+                    continue
         
         months = (end_date.year - start_date.year) * 12 + (end_date.month - start_date.month)
         years = months / 12
@@ -107,64 +131,22 @@ def extract_resume_node(state: AgentState):
         except (TypeError, ValueError):
             years = 0
         result["total_years_experience"] = years
-        if years <= 2:
-            result["experience_level"] = "Entry"
-        elif years <= 5:
-            result["experience_level"] = "Mid"
-        else:
-            result["experience_level"] = "Senior"
-        print(f"[RESUME_EXTRACTION] Experience level: {result['experience_level']} ({years} years)")
+        print(f"[RESUME_EXTRACTION] Total years: {years}")
         
         candidate_name = result.get("candidate_name", "")
-        if candidate_name and isinstance(candidate_name, str):
-            result["first_name"] = candidate_name.split()[0] if candidate_name.split() else ""
-        else:
-            result["first_name"] = ""
+        result["first_name"] = extract_first_name(candidate_name)
         
         email = result.get("email")
         if email and isinstance(email, str):
             email = email.strip().lower()
-            email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+            result["email"] = email
             
-            format_valid = bool(re.match(email_pattern, email))
+            if "email_valid" not in result:
+                email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+                result["email_valid"] = bool(re.match(email_pattern, email))
+                if not result["email_valid"]:
+                    print(f"[RESUME_EXTRACTION] Warning: Invalid email format: {email}")
             
-            if format_valid:
-                local_part, domain = email.rsplit('@', 1)
-                domain_name = domain.rsplit('.', 1)[0] if '.' in domain else domain
-                
-                fake_domains = {'xxx', 'yyy', 'zzz', 'abc', 'test', 'example', 'fake', 
-                               'dummy', 'temp', 'placeholder', 'domain', 'email', 'mail'}
-                
-                fake_local = {'sample', 'test', 'demo', 'fake', 'placeholder', 'yourname',
-                             'myemail', 'noreply', 'user', 'name', 'email', 'example'}
-                
-                is_fake = False
-                if domain_name in fake_domains:
-                    is_fake = True
-                    print(f"[RESUME_EXTRACTION] Suspicious domain detected: {domain}")
-                
-                if local_part in fake_local:
-                    is_fake = True
-                    print(f"[RESUME_EXTRACTION] Suspicious email pattern: {local_part}")
-                
-                if re.match(r'^(.)\1{2,}', domain_name) or re.match(r'^(.)\1{2,}', local_part):
-                    is_fake = True
-                    print(f"[RESUME_EXTRACTION] Repeated character pattern detected: {email}")
-                
-                tld = domain.rsplit('.', 1)[-1] if '.' in domain else ''
-                has_valid_tld = bool(tld) and tld.isalpha() and len(tld) >= 2
-                if not has_valid_tld:
-                    is_fake = True
-                    print(f"[RESUME_EXTRACTION] Invalid domain TLD: {domain}")
-                
-                result["email_valid"] = not is_fake
-                result["email"] = email
-                
-                if is_fake:
-                    print(f"[RESUME_EXTRACTION] Warning: Placeholder/fake email detected: {email}")
-            else:
-                result["email_valid"] = False
-                print(f"[RESUME_EXTRACTION] Warning: Invalid email format: {email}")
         else:
             result["email_valid"] = False
             result["email"] = None
@@ -177,28 +159,21 @@ def extract_resume_node(state: AgentState):
             for field in ["email", "phone", "experience"]:
                 val = confidence.get(field)
                 if isinstance(val, (int, float)):
-                    # Coerce to float and normalize if > 1
                     normalized = float(val)
                     if normalized > 1:
                         normalized = normalized / 100
-                    # Clamp to [0.0, 1.0] range
                     normalized = min(max(normalized, 0.0), 1.0)
                     confidence[field] = round(normalized, 2)
                     if val > 1 or val < 0:
                         print(f"[RESUME_EXTRACTION] Normalized {field} confidence: {val} -> {confidence[field]}")
             result["extraction_confidence"] = confidence
         
-        action_words = {"and", "the", "for", "with", "managed", "developed", "created", "built",
-                        "designed", "implemented", "supported", "maintained", "led", "coordinated",
-                        "responsible", "worked", "collaborated", "ensured", "conducted", "optimized"}
         for exp in result.get("work_experience", []):
             desc = (exp.get("description") or "").strip()
-            if desc and len(desc.split()) < 6:
-                desc_words = set(desc.lower().split())
-                has_action_words = bool(desc_words & action_words)
-                if not has_action_words:
-                    print(f"[RESUME_EXTRACTION] Warning: Description looks like a title, clearing: '{desc}'")
-                    exp["description"] = ""
+            title = (exp.get("job_title") or "").strip()
+            if desc and title and desc.lower().strip('.') == title.lower().strip('.'):
+                print(f"[RESUME_EXTRACTION] Warning: Description identical to title, clearing: '{desc}'")
+                exp["description"] = ""
         
         if not result.get("current_position") and work_experience:
             for exp in work_experience:
@@ -373,15 +348,14 @@ def tech_agent_node(state: AgentState):
         matched = result.get("matched_competencies", [])
         missing = result.get("missing_competencies", [])
         total = len(matched) + len(missing)
-        if total > 0 and not use_market_standards:
+        if total > 0:
             correct_score = int(round((len(matched) / total) * 100))
-            # Coerce LLM score to numeric with safe fallback
             raw_score = result.get("score", 0)
             try:
                 llm_score = float(raw_score) if raw_score is not None else 0.0
             except (TypeError, ValueError):
                 llm_score = 0.0
-            if abs(correct_score - llm_score) > 1:  # Only override if meaningfully different
+            if abs(correct_score - llm_score) > 1:
                 print(f"[TECH_AGENT] Score recalculated: LLM said {llm_score}, "
                       f"actual is ({len(matched)}/{total})*100 = {correct_score}")
                 result["score"] = correct_score
@@ -389,7 +363,6 @@ def tech_agent_node(state: AgentState):
                     f"Recalculated from matched/missing arrays: "
                     f"{len(matched)} matched, {len(missing)} missing out of {total}")
         
-        # Coerce to numeric and round
         raw_score = result.get("score", 0)
         try:
             numeric_score = float(raw_score) if raw_score is not None else 0.0
@@ -414,8 +387,10 @@ def experience_agent_node(state: AgentState):
     work_experience = candidate.get("work_experience", [])
     candidate_education = candidate.get("education", [])
     
+    calculated_years = candidate.get("total_years_experience", None)
     current_dt = datetime.now()
-    calculated_years = calculate_total_years(work_experience, current_dt)
+    if calculated_years is None:
+        calculated_years = calculate_total_years(work_experience, current_dt)
     
     jd_role_mismatch = alignment.get("jd_role_mismatch", False)
     jd_is_vague = alignment.get("jd_is_vague", False)
@@ -468,7 +443,6 @@ def experience_agent_node(state: AgentState):
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
-        # Coerce to numeric and clamp to 0-100
         raw_score = result.get("score", 0)
         try:
             numeric_score = float(raw_score) if raw_score is not None else 0.0
@@ -487,14 +461,18 @@ def culture_agent_node(state: AgentState):
     candidate = state.get("candidate_profile", {})
     jd = state.get("extracted_scoring_rules", {})
     alignment = state.get("jd_role_alignment", {})
-    
     jd_role_mismatch = alignment.get("jd_role_mismatch", False)
     jd_is_vague = alignment.get("jd_is_vague", False)
     use_market_standards = alignment.get("use_market_standards", False)
     inferred_job_family = alignment.get("inferred_job_family", "Unknown")
-    
-    candidate_summary = candidate.get("summary", "")
+    work_experience = candidate.get("work_experience", [])
     candidate_evidence = candidate.get("capability_evidence", [])
+    
+    work_descriptions = [
+        {"title": exp.get("job_title", ""), "description": exp.get("description", "")}
+        for exp in work_experience
+        if exp.get("description", "").strip()
+    ]
     
     jd_responsibilities = jd.get("responsibilities", [])
     
@@ -503,9 +481,9 @@ def culture_agent_node(state: AgentState):
         "jd_role_mismatch": jd_role_mismatch,
         "jd_is_vague": jd_is_vague,
         "use_market_standards": use_market_standards,
-        "jd_responsibilities": jd_responsibilities,
-        "candidate_summary": candidate_summary,
-        "candidate_evidence_count": len(candidate_evidence)
+        "jd_responsibilities_count": len(jd_responsibilities),
+        "candidate_evidence_count": len(candidate_evidence),
+        "work_descriptions_count": len(work_descriptions)
     }
     log_stage("CULTURE_AGENT", input_data, is_output=False)
     
@@ -518,14 +496,13 @@ def culture_agent_node(state: AgentState):
             "use_market_standards": use_market_standards,
             "inferred_job_family": inferred_job_family,
             "jd_responsibilities": json.dumps(jd_responsibilities),
-            "candidate_summary": candidate_summary,
+            "candidate_summary": json.dumps(work_descriptions),
             "candidate_evidence": json.dumps(candidate_evidence)
         })
 
         result["jd_role_mismatch"] = jd_role_mismatch
         result["jd_is_vague"] = jd_is_vague
         result["use_market_standards"] = use_market_standards
-        # Coerce to numeric and clamp to 0-100
         raw_score = result.get("score", 0)
         try:
             numeric_score = float(raw_score) if raw_score is not None else 0.0
@@ -600,7 +577,7 @@ def aggregator_node(state: AgentState):
     log_stage("AGGREGATOR", input_data, is_output=False)
     
     # NOTE: Logging full agent reports for debugging and continuous improvement.
-    # This is intentional during development. Consider redacting PII for production.
+    # This is intentional during development.
     print("FULL AGENT REPORTS")
     log_stage("TECH_EVAL_FULL", tech_eval_full, is_output=False)
     log_stage("EXPERIENCE_EVAL_FULL", exp_eval_full, is_output=False)
