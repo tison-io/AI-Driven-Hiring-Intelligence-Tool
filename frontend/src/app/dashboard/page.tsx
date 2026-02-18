@@ -117,6 +117,14 @@ export default function DashboardPage() {
 					sourceAnalysis: data.sourceAnalysis,
 				});
 			} catch (err: any) {
+				console.error("❌ Dashboard fetch failed:", {
+					message: err?.message,
+					status: err?.response?.status,
+					url: err?.config?.url,
+					method: err?.config?.method,
+					responseData: err?.response?.data,
+					stack: err?.stack,
+				  });
 				setError(
 					err.response?.data?.message || "Failed to load dashboard",
 				);
