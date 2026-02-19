@@ -123,6 +123,35 @@ export const auditLogsApi = {
 
 // Job Postings API functions
 export const jobPostingsApi = {
+	create: async (data: any) => {
+		const response = await api.post('/api/job-postings', data);
+		return response.data;
+	},
+
+	getAll: async (filters?: { page?: number; limit?: number; search?: string }) => {
+		const response = await api.get('/api/job-postings', { params: filters });
+		return response.data;
+	},
+
+	getById: async (id: string) => {
+		const response = await api.get(`/api/job-postings/${id}`);
+		return response.data;
+	},
+
+	update: async (id: string, data: any) => {
+		const response = await api.put(`/api/job-postings/${id}`, data);
+		return response.data;
+	},
+
+	delete: async (id: string) => {
+		const response = await api.delete(`/api/job-postings/${id}`);
+		return response.data;
+	},
+
+	toggleActive: async (id: string) => {
+		const response = await api.patch(`/api/job-postings/${id}/toggle`);
+		return response.data;
+	},
 	getByToken: async (token: string) => {
 		const response = await api.get(`/api/job-postings/apply/${token}`);
 		return response.data;

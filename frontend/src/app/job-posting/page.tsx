@@ -1,77 +1,89 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
-import MetricCard from '@/components/admin/MetricCard';
+import MetricCard from '@/components/job-posting/MetricCard';
 import EmptyState from '@/components/job-posting/EmptyState';
 import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown } from 'lucide-react';
+import { jobPostingsApi } from '@/lib/api';
+import toast from '@/lib/toast';
 
 interface JobPosting {
-  id: string;
+  _id: string;
   title: string;
-  createdDate: string;
-  department: string;
-  applicants: number;
-  newApplicants?: number;
-  status: 'active' | 'draft' | 'inactive';
-  shareLink?: string;
+  description: string;
+  requirements: string[];
+  location: string;
+  salary?: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  companyId: string;
+  isActive: boolean;
+  applicationToken: string;
+  shareableLink?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function JobPostingPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 10;
 
-  const jobPostings: JobPosting[] = [
-    {
-      id: '1',
-      title: 'Senior Backend Engineer',
-      createdDate: 'Oct 24, 2023',
-      department: 'Engineering',
-      applicants: 42,
-      newApplicants: 5,
-      status: 'active',
-      shareLink: 'talentscan.ai/j8x92m...',
-    },
-    {
-      id: '2',
-      title: 'UI/UX Designer (Mobile)',
-      createdDate: 'Oct 28, 2023',
-      department: 'Design',
-      applicants: 0,
-      status: 'draft',
-    },
-    {
-      id: '3',
-      title: 'Product Manager',
-      createdDate: 'Oct 22, 2023',
-      department: 'Product',
-      applicants: 18,
-      newApplicants: 0,
-      status: 'active',
-      shareLink: 'talentscan.ai/jp92kl...',
-    },
-    {
-      id: '4',
-      title: 'Marketing Specialist',
-      createdDate: 'Sep 15, 2023',
-      department: 'Marketing',
-      applicants: 0,
-      status: 'inactive',
-    },
-    {
-      id: '5',
-      title: 'Lead Data Scientist',
-      createdDate: 'Oct 10, 2023',
-      department: 'Data',
-      applicants: 12,
-      newApplicants: 2,
-      status: 'active',
-      shareLink: 'talentscan.ai/jm33la...',
-    },
-  ];
+  useEffect(() => {
+    fetchJobPostings();
+  }, [page, searchQuery]);
+
+  const fetchJobPostings = async () => {
+    try {
+      setLoading(true);
+      const response = await jobPostingsApi.getAll({
+        page,
+        limit,
+        search: searchQuery || undefined,
+      });
+      setJobPostings(response.data);
+      setTotal(response.total);
+      setTotalPages(response.totalPages);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to fetch job postings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyLink = (link: string) => {
+    navigator.clipboard.writeText(link);
+    toast.success('Link copied to clipboard!');
+  };
+
+  const handleToggleActive = async (id: string) => {
+    try {
+      await jobPostingsApi.toggleActive(id);
+      toast.success('Job status updated!');
+      fetchJobPostings();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const activeJobs = jobPostings.filter(job => job.isActive).length;
+  const totalApplicants = 0; // TODO: Implement applicant counting
 
   return (
     <ProtectedRoute>
@@ -100,29 +112,34 @@ export default function JobPostingPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <MetricCard
                   title="Active Jobs"
-                  value={12}
-                  percentageChange={8}
+                  value={activeJobs}
+                  percentageChange={0}
+                  trend="up"
+                  type="candidates"
+                />
+                <MetricCard
+                  title="Total Jobs"
+                  value={total}
+                  percentageChange={0}
                   trend="up"
                   type="candidates"
                 />
                 <MetricCard
                   title="Total Applicants"
-                  value={248}
-                  percentageChange={15}
+                  value={totalApplicants}
+                  percentageChange={0}
                   trend="up"
-                  type="candidates"
-                />
-                <MetricCard
-                  title="Average Time to Fill"
-                  value="18 days"
-                  percentageChange={12}
-                  trend="down"
                   type="score"
                 />
               </div>
 
-              {/* Job Postings Table */}
-              {jobPostings.length === 0 ? (
+              {/* Loading State */}
+              {loading ? (
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                  <p className="mt-4 text-gray-500">Loading job postings...</p>
+                </div>
+              ) : jobPostings.length === 0 ? (
                 <EmptyState onCreateClick={() => router.push('/job-posting/create')} />
               ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -133,21 +150,14 @@ export default function JobPostingPage() {
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <input
                         type="text"
-                        placeholder="Search by job title, department..."
+                        placeholder="Search by job title, location..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setPage(1);
+                        }}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                        <Filter className="w-4 h-4" />
-                        Filter: All Status
-                      </button>
-                      <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                        <ArrowUpDown className="w-4 h-4" />
-                        Sort By: Newest
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -161,7 +171,7 @@ export default function JobPostingPage() {
                           Job Title & Date
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Applicants
+                          Location
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
@@ -176,81 +186,73 @@ export default function JobPostingPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {jobPostings.map((job) => (
-                        <tr key={job.id} className="hover:bg-gray-50">
+                        <tr key={job._id} className="hover:bg-gray-50">
                           {/* Job Title & Date */}
                           <td className="px-6 py-4">
                             <div>
                               <div className="text-sm font-medium text-gray-900">{job.title}</div>
                               <div className="text-sm text-gray-500">
-                                Created {job.createdDate} • {job.department}
+                                Created {formatDate(job.createdAt)}
                               </div>
                             </div>
                           </td>
 
-                          {/* Applicants */}
+                          {/* Location */}
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-900">{job.applicants}</span>
-                              {job.newApplicants !== undefined && job.newApplicants > 0 && (
-                                <span className="text-xs text-green-600 font-medium">+{job.newApplicants} new</span>
-                              )}
-                              {job.status === 'draft' && (
-                                <span className="text-xs text-gray-500">Drafting</span>
-                              )}
-                              {job.newApplicants === 0 && job.status === 'active' && (
-                                <span className="text-xs text-gray-500">0 new</span>
-                              )}
-                            </div>
+                            <span className="text-sm text-gray-600">{job.location}</span>
                           </td>
 
                           {/* Status */}
                           <td className="px-6 py-4">
-                            {job.status === 'active' && (
-                              <div className="flex items-center gap-2">
-                                <div className="relative inline-flex items-center">
-                                  <div className="w-11 h-6 bg-green-500 rounded-full"></div>
-                                  <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
-                                </div>
-                                <span className="text-sm font-medium text-green-600">Active</span>
-                              </div>
-                            )}
-                            {job.status === 'draft' && (
-                              <div className="flex items-center gap-2">
-                                <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
-                                  DRAFT
-                                </span>
-                              </div>
-                            )}
-                            {job.status === 'inactive' && (
-                              <div className="flex items-center gap-2">
-                                <div className="relative inline-flex items-center">
-                                  <div className="w-11 h-6 bg-gray-300 rounded-full"></div>
-                                  <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
-                                </div>
-                                <span className="text-sm font-medium text-gray-500">Inactive</span>
-                              </div>
-                            )}
+                            <button
+                              onClick={() => handleToggleActive(job._id)}
+                              className="flex items-center gap-2 group"
+                            >
+                              {job.isActive ? (
+                                <>
+                                  <div className="relative inline-flex items-center">
+                                    <div className="w-11 h-6 bg-green-500 rounded-full group-hover:bg-green-600 transition-colors"></div>
+                                    <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                                  </div>
+                                  <span className="text-sm font-medium text-green-600">Active</span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="relative inline-flex items-center">
+                                    <div className="w-11 h-6 bg-gray-300 rounded-full group-hover:bg-gray-400 transition-colors"></div>
+                                    <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-500">Inactive</span>
+                                </>
+                              )}
+                            </button>
                           </td>
 
                           {/* Share Link */}
                           <td className="px-6 py-4">
-                            {job.shareLink ? (
+                            {job.isActive && job.shareableLink ? (
                               <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-600">{job.shareLink}</span>
-                                <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                                <span className="text-sm text-gray-600 truncate max-w-[200px]">
+                                  {job.shareableLink.replace('http://localhost:3001', 'talentscan.ai')}
+                                </span>
+                                <button 
+                                  onClick={() => handleCopyLink(job.shareableLink!)}
+                                  className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                >
                                   <Copy className="w-4 h-4 text-gray-400" />
                                 </button>
                               </div>
                             ) : (
-                              <span className="text-sm text-gray-400">
-                                {job.status === 'draft' ? 'Not Published' : 'Link Inactive'}
-                              </span>
+                              <span className="text-sm text-gray-400">Link Inactive</span>
                             )}
                           </td>
 
                           {/* Actions */}
                           <td className="px-6 py-4">
-                            <button className="p-1 hover:bg-gray-100 rounded transition-colors">
+                            <button 
+                              onClick={() => router.push(`/job-posting/${job._id}`)}
+                              className="p-1 hover:bg-gray-100 rounded transition-colors"
+                            >
                               <MoreVertical className="w-5 h-5 text-gray-400" />
                             </button>
                           </td>
@@ -263,13 +265,22 @@ export default function JobPostingPage() {
                 {/* Pagination */}
                 <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                   <div className="text-sm text-gray-500">
-                    Showing 1 to 5 of 5 results
+                    Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, total)} of {total} results
                   </div>
                   <div className="flex items-center gap-2">
-                    <button className="px-4 py-2 text-sm text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed" disabled>
+                    <button 
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
                       Previous
                     </button>
-                    <button className="px-4 py-2 text-sm text-gray-400 hover:text-gray-600 disabled:cursor-not-allowed" disabled>
+                    <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
+                    <button 
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                    >
                       Next
                     </button>
                   </div>

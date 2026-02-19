@@ -53,7 +53,7 @@ export default function MetricCard({ title, value, percentageChange, trend, type
       <div className="flex items-center space-x-1 text-sm">
         {getTrendIcon()}
         <span className={getTrendColor()}>
-          {trend === 'up' ? '+' : trend === 'down' ? '-' : ''}{Math.abs(percentageChange)}%
+          {trend === 'up' ? '+' : trend === 'down' ? '-' : ''}{Math.abs(percentageChange ?? 0)}%
         </span>
         <span className="text-gray-500">vs last month</span>
       </div>

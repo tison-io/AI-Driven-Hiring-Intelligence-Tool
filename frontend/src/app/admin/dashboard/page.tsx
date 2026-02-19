@@ -28,7 +28,7 @@ export default function AdminDashboard() {
 						</p>
 
 						{loading && (
-							<div className="item-center justify-center flex"><LoadingSpinner
+							<div className="items-center justify-center flex"><LoadingSpinner
 							/></div>
 						)}
 						{error && (
