@@ -7,7 +7,7 @@ import Layout from '@/components/layout/Layout';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import MetricCard from '@/components/job-posting/MetricCard';
 import EmptyState from '@/components/job-posting/EmptyState';
-import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown } from 'lucide-react';
+import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown, Users, Eye } from 'lucide-react';
 import { jobPostingsApi } from '@/lib/api';
 import toast from '@/lib/toast';
 import TableSkeleton from '@/components/job-posting/TableSkeleton';
@@ -282,7 +282,8 @@ export default function JobPostingPage() {
 
                           {/* Share Link */}
                           <td className="px-6 py-4">
-                            {job.status === 'active' && job.shareableLink ? (                              <div className="flex items-center gap-2">
+                            {job.status === 'active' && job.shareableLink ? (                              
+                              <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600 truncate max-w-[200px]">
                                   {job.shareableLink.replace('http://localhost:3001', 'talentscan.ai')}
                                 </span>
@@ -311,7 +312,7 @@ export default function JobPostingPage() {
                               </button>
 
                               {openDropdown === job._id && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                <div className="absolute right-0 mt-2 w-[200px] bg-white rounded-lg shadow-lg border border-gray-200 z-10">
                                   {job.status === 'draft' ? (
                                     <>
                                       <button
@@ -345,11 +346,32 @@ export default function JobPostingPage() {
                                         }}
                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                       >
+                                       <Users className='w-4 h-4'/>
+                                        View Applicants
+                                      </button>
+                                      <button
+                                        // onClick={() => {
+                                        //   router.push(`/job-posting/${job._id}`);
+                                        //   setOpenDropdown(null);
+                                        // }}
+
+                                        onClick={() => window.open(job.shareableLink, "_blank")}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                      >
+                                        <Eye className='w-4 h-4'/>
+                                        View Public Page
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          router.push(`/job-posting/create?id=${job._id}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                      >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                         </svg>
-                                        View Details
+                                        Edit Posting Details
                                       </button>
                                       <button
                                         onClick={() => openDeleteModal(job._id, job.title)}
