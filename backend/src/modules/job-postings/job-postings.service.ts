@@ -61,12 +61,18 @@ export class JobPostingsService {
     return responsibilities;
   }
 
-  async findAll(options: { page: number; limit: number; search?: string }) {
+  async findAll(options: { page: number; limit: number; search?: string }, userId: string, userRole: string) {
     const page = Math.max(1, options.page || 1);
     const limit = Math.max(1, Math.min(100, options.limit || 10));
     const skip = (page - 1) * limit;
     
     const query: any = {};
+    
+    // Filter by companyId unless user is admin
+    if (userRole !== 'admin') {
+      query.companyId = userId;
+    }
+    
     if (options.search) {
       const sanitized = this.escapeRegex(options.search.substring(0, 100));
       query.$or = [
