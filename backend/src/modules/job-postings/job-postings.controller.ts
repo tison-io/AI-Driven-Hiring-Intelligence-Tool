@@ -10,6 +10,7 @@ import { JobPostingsService } from './job-postings.service';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { FileValidationPipe } from '../../common/pipes/file-validation.pipe';
 import { UploadService } from '../upload/upload.service';
+import { JobPostingStatus } from './entities/job-posting.entity';
 
 @ApiTags('Job Postings')
 @Controller('api/job-postings')
@@ -155,8 +156,7 @@ export class JobPostingsController {
     // Get full job posting details (includes companyId)
     const fullJobPosting = await this.jobPostingsService.findOne(jobPosting._id.toString());
     
-    // Verify it's active
-    if (!fullJobPosting.isActive) {
+    if (fullJobPosting.status !== JobPostingStatus.ACTIVE) {
       throw new NotFoundException('This job posting is no longer accepting applications');
     }
 
@@ -282,32 +282,39 @@ export class JobPostingsController {
     return this.jobPostingsService.delete(id, req.user.id, req.user.role);
   }
 
-  @Patch(':id/toggle')
+  @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ 
-    summary: 'Toggle job posting active status',
-    description: 'Toggles the isActive field between true and false. Use this to activate/deactivate job postings without deleting them. Only the owner or an admin can toggle the status.',
+    summary: 'Update job posting status',
+    description: 'Change status between draft, active, and inactive. Only the owner or an admin can update the status.',
   })
   @ApiParam({ name: 'id', description: 'MongoDB ObjectId of the job posting', example: '507f1f77bcf86cd799439011' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        status: { 
+          type: 'string', 
+          enum: ['draft', 'active', 'inactive'],
+          example: 'active'
+        }
+      },
+      required: ['status']
+    }
+  })
   @ApiResponse({ 
     status: 200, 
-    description: 'Job posting status toggled successfully',
-    schema: {
-      example: {
-        _id: '507f1f77bcf86cd799439011',
-        title: 'Senior Backend Engineer',
-        isActive: false,
-        updatedAt: '2024-01-15T11:30:00.000Z',
-      },
-    },
+    description: 'Job posting status updated successfully',
   })
-  @ApiResponse({ status: 403, description: 'Forbidden - You can only toggle your own job postings' })
+  @ApiResponse({ status: 403, description: 'Forbidden - You can only update your own job postings' })
   @ApiResponse({ status: 404, description: 'Job posting not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
-  async toggleActive(@Param('id', ParseObjectIdPipe) id: string, @Request() req: any) {
-    return this.jobPostingsService.toggleActive(id, req.user.id, req.user.role);
+  async updateStatus(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body('status') status: JobPostingStatus,
+    @Request() req: any,
+  ) {
+    return this.jobPostingsService.updateStatus(id, status, req.user.id, req.user.role);
   }
-
-
 }

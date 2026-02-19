@@ -3,6 +3,12 @@ import { Document, Types } from 'mongoose';
 
 export type JobPostingDocument = JobPosting & Document;
 
+export enum JobPostingStatus {
+  DRAFT = 'draft',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+}
+
 export const CURRENCY_ENUM = [
   'USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'CNY', 'INR', 'BRL',
   'MXN', 'ZAR', 'SGD', 'HKD', 'NZD', 'SEK', 'NOK', 'DKK', 'PLN', 'CZK',
@@ -79,8 +85,12 @@ export class JobPosting {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   companyId: Types.ObjectId;
 
-  @Prop({ default: true })
-  isActive: boolean;
+  @Prop({
+    type: String,
+    enum: Object.values(JobPostingStatus),
+    default: JobPostingStatus.DRAFT
+  })
+  status: JobPostingStatus;
 
   @Prop({ required: true, unique: true, index: true })
   applicationToken: string;
@@ -98,4 +108,4 @@ JobPostingSchema.pre('save', function(next) {
 });
 
 JobPostingSchema.index({ title: 'text', description: 'text', location: 'text', companyName: 'text' });
-JobPostingSchema.index({ companyId: 1, isActive: 1, createdAt: -1 });
+JobPostingSchema.index({ companyId: 1, status: 1, createdAt: -1 });

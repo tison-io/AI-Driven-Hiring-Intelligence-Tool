@@ -7,10 +7,12 @@ import {
   IsNotEmpty,
   IsIn,
   IsDateString,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SalaryDto } from './salary.dto';
+import { JobPostingStatus } from '../entities/job-posting.entity';
 
 export class CreateJobPostingDto {
   @ApiProperty({
@@ -111,11 +113,11 @@ export class CreateJobPostingDto {
   salary?: SalaryDto;
 
   @ApiPropertyOptional({
-    description: 'Whether the job posting is active',
-    example: true,
-    default: true,
+    description: 'Job posting status',
+    enum: JobPostingStatus,
+    default: JobPostingStatus.DRAFT,
   })
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @IsEnum(JobPostingStatus)
+  status?: JobPostingStatus;
 }

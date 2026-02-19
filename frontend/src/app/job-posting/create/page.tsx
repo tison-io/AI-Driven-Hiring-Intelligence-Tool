@@ -72,7 +72,7 @@ export default function CreateJobPostingPage() {
         description: formData.description,
         requirements: formData.requirements,
         location: formData.location,
-        isActive: false,
+        status: 'draft',
       };
 
       // Validate salary data
@@ -120,7 +120,7 @@ export default function CreateJobPostingPage() {
         description: formData.description,
         requirements: formData.requirements,
         location: formData.location,
-        isActive: true,
+        status: 'active',
       };
 
       if (formData.salaryMin && formData.salaryMax) {

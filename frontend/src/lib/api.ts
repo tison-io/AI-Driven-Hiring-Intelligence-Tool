@@ -152,6 +152,11 @@ export const jobPostingsApi = {
 		const response = await api.patch(`/api/job-postings/${id}/toggle`);
 		return response.data;
 	},
+
+	updateStatus: async (id: string, status: 'draft' | 'active' | 'inactive') => {
+		const response = await api.patch(`/api/job-postings/${id}/status`, { status });
+		return response.data;
+	},
 	getByToken: async (token: string) => {
 		const response = await api.get(`/api/job-postings/apply/${token}`);
 		return response.data;

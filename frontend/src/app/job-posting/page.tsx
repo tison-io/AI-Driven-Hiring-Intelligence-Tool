@@ -10,6 +10,7 @@ import EmptyState from '@/components/job-posting/EmptyState';
 import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown } from 'lucide-react';
 import { jobPostingsApi } from '@/lib/api';
 import toast from '@/lib/toast';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 interface JobPosting {
   _id: string;
@@ -23,7 +24,7 @@ interface JobPosting {
     currency: string;
   };
   companyId: string;
-  isActive: boolean;
+  status: 'draft' | 'active' | 'inactive';
   applicationToken: string;
   shareableLink?: string;
   createdAt: string;
@@ -67,9 +68,10 @@ export default function JobPostingPage() {
     toast.success('Link copied to clipboard!');
   };
 
-  const handleToggleActive = async (id: string) => {
+  const handleToggleStatus = async (id: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
     try {
-      await jobPostingsApi.toggleActive(id);
+      await jobPostingsApi.updateStatus(id, newStatus);
       toast.success('Job status updated!');
       fetchJobPostings();
     } catch (error: any) {
@@ -82,7 +84,8 @@ export default function JobPostingPage() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
-  const activeJobs = jobPostings.filter(job => job.isActive).length;
+  const activeJobs = jobPostings.filter(job => job.status === 'active').length;
+  const draftJobs = jobPostings.filter(job => job.status === 'draft').length;
   const totalApplicants = 0; // TODO: Implement applicant counting
 
   return (
@@ -133,12 +136,15 @@ export default function JobPostingPage() {
                 />
               </div>
 
-              {/* Loading State */}
+              {/* Loading State //needs change to look like a skeleton */}
               {loading ? (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-                  <p className="mt-4 text-gray-500">Loading job postings...</p>
-                </div>
+                // <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                //   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+
+                // </div>
+                <div className="flex items-center justify-center min-h-screen">
+                <LoadingSpinner size="lg" />
+               </div>
               ) : jobPostings.length === 0 ? (
                 <EmptyState onCreateClick={() => router.push('/job-posting/create')} />
               ) : (
@@ -204,34 +210,39 @@ export default function JobPostingPage() {
 
                           {/* Status */}
                           <td className="px-6 py-4">
-                            <button
-                              onClick={() => handleToggleActive(job._id)}
-                              className="flex items-center gap-2 group"
-                            >
-                              {job.isActive ? (
-                                <>
-                                  <div className="relative inline-flex items-center">
-                                    <div className="w-11 h-6 bg-green-500 rounded-full group-hover:bg-green-600 transition-colors"></div>
-                                    <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
-                                  </div>
-                                  <span className="text-sm font-medium text-green-600">Active</span>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="relative inline-flex items-center">
-                                    <div className="w-11 h-6 bg-gray-300 rounded-full group-hover:bg-gray-400 transition-colors"></div>
-                                    <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
-                                  </div>
-                                  <span className="text-sm font-medium text-gray-500">Inactive</span>
-                                </>
-                              )}
-                            </button>
+                            {job.status === 'draft' ? (
+                              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 text-xs font-medium rounded-full">
+                                DRAFT
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleToggleStatus(job._id, job.status)}
+                                className="flex items-center gap-2 group"
+                              >
+                                {job.status === 'active' ? (
+                                  <>
+                                    <div className="relative inline-flex items-center">
+                                      <div className="w-11 h-6 bg-green-500 rounded-full group-hover:bg-green-600 transition-colors"></div>
+                                      <div className="absolute right-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-green-600">Active</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <div className="relative inline-flex items-center">
+                                      <div className="w-11 h-6 bg-gray-300 rounded-full group-hover:bg-gray-400 transition-colors"></div>
+                                      <div className="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full shadow"></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-500">Inactive</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
                           </td>
 
                           {/* Share Link */}
                           <td className="px-6 py-4">
-                            {job.isActive && job.shareableLink ? (
-                              <div className="flex items-center gap-2">
+                            {job.status === 'active' && job.shareableLink ? (                              <div className="flex items-center gap-2">
                                 <span className="text-sm text-gray-600 truncate max-w-[200px]">
                                   {job.shareableLink.replace('http://localhost:3001', 'talentscan.ai')}
                                 </span>
@@ -243,7 +254,9 @@ export default function JobPostingPage() {
                                 </button>
                               </div>
                             ) : (
-                              <span className="text-sm text-gray-400">Link Inactive</span>
+                              <span className="text-sm text-gray-400">
+                                {job.status === 'draft' ? 'Not Published' : 'Link Inactive'}
+                              </span>
                             )}
                           </td>
 
