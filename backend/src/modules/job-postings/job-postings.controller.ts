@@ -96,12 +96,12 @@ export class JobPostingsController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized - JWT token missing or invalid' })
-  async findAll(@Query() query: FindAllJobPostingsDto) {
+  async findAll(@Query() query: FindAllJobPostingsDto, @Request() req: any) {
     return this.jobPostingsService.findAll({
       page: query.page,
       limit: query.limit,
       search: query.search
-    });
+    }, req.user.id, req.user.role);
   }
 
   // PUBLIC ENDPOINTS - Must come before :id routes to avoid conflicts
