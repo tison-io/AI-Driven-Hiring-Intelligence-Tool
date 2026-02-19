@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MapPin, X } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
@@ -21,6 +21,10 @@ interface FormData {
 
 export default function CreateJobPostingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get('id');
+  const isEditMode = !!editId;
+
   const [formData, setFormData] = useState<FormData>({
     title: '',
     location: '',
@@ -33,6 +37,34 @@ export default function CreateJobPostingPage() {
 
   const [skillInput, setSkillInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (editId) {
+      fetchJobData();
+    }
+  }, [editId]);
+
+  const fetchJobData = async () => {
+    try {
+      setLoading(true);
+      const job = await jobPostingsApi.getById(editId!);
+      setFormData({
+        title: job.title || '',
+        location: job.location || '',
+        description: job.description || '',
+        requirements: job.requirements || [],
+        salaryMin: job.salary?.min?.toString() || '',
+        salaryMax: job.salary?.max?.toString() || '',
+        currency: job.salary?.currency || 'USD',
+      });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to load job data');
+      router.push('/job-posting');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -90,8 +122,13 @@ export default function CreateJobPostingPage() {
         };
       }
 
-      await jobPostingsApi.create(payload);
-      toast.success('Job saved as draft successfully!');
+      if (isEditMode) {
+        await jobPostingsApi.update(editId!, payload);
+        toast.success('Draft updated successfully!');
+      } else {
+        await jobPostingsApi.create(payload);
+        toast.success('Job saved as draft successfully!');
+      }
       router.push('/job-posting');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to save draft');
@@ -144,12 +181,15 @@ export default function CreateJobPostingPage() {
         };
       }
 
-      const result = await jobPostingsApi.create(payload);
-      toast.success('Job posted successfully!');
-      
-      // Show shareable link if available
-      if (result.shareableLink) {
-        console.log('Shareable link:', result.shareableLink);
+      if (isEditMode) {
+        await jobPostingsApi.update(editId!, payload);
+        toast.success('Job updated and published successfully!');
+      } else {
+        const result = await jobPostingsApi.create(payload);
+        toast.success('Job posted successfully!');
+        if (result.shareableLink) {
+          console.log('Shareable link:', result.shareableLink);
+        }
       }
       
       router.push('/job-posting');
@@ -185,11 +225,19 @@ export default function CreateJobPostingPage() {
               >
                 <ArrowLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <h1 className="text-2xl font-semibold text-gray-900">Create New Job Posting</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">{isEditMode ? 'Edit Job Posting' : 'Create New Job Posting'}</h1>
             </div>
           </div>
 
           {/* Form Container */}
+          {loading ? (
+            <div className="max-w-4xl mx-auto px-6 pb-24">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-4 text-gray-500">Loading job data...</p>
+              </div>
+            </div>
+          ) : (
           <div className="max-w-4xl mx-auto px-6 pb-24">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
               <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
@@ -381,6 +429,7 @@ export default function CreateJobPostingPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </Layout>
     </ProtectedRoute>
