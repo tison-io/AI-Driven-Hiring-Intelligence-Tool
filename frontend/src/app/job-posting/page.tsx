@@ -10,7 +10,8 @@ import EmptyState from '@/components/job-posting/EmptyState';
 import { Plus, Search, Copy, MoreVertical, Filter, ArrowUpDown } from 'lucide-react';
 import { jobPostingsApi } from '@/lib/api';
 import toast from '@/lib/toast';
-import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import TableSkeleton from '@/components/job-posting/TableSkeleton';
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal';
 
 interface JobPosting {
   _id: string;
@@ -40,6 +41,8 @@ export default function JobPostingPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<{ id: string; title: string } | null>(null);
   const limit = 10;
 
   useEffect(() => {
@@ -91,16 +94,24 @@ export default function JobPostingPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this job posting?')) return;
+  const handleDelete = async () => {
+    if (!jobToDelete) return;
     
     try {
-      await jobPostingsApi.delete(id);
+      await jobPostingsApi.delete(jobToDelete.id);
       toast.success('Job posting deleted successfully!');
+      setDeleteModalOpen(false);
+      setJobToDelete(null);
       fetchJobPostings();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to delete job posting');
     }
+  };
+
+  const openDeleteModal = (id: string, title: string) => {
+    setJobToDelete({ id, title });
+    setDeleteModalOpen(true);
+    setOpenDropdown(null);
   };
 
   const handlePublish = async (id: string) => {
@@ -170,16 +181,11 @@ export default function JobPostingPage() {
                 />
               </div>
 
-              {/* Loading State //needs change to look like a skeleton */}
+              {/* Loading State */}
               {loading ? (
-                // <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                //   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-
-                // </div>
-                <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner size="lg" />
-               </div>
+                <TableSkeleton />
               ) : jobPostings.length === 0 ? (
+
                 <EmptyState onCreateClick={() => router.push('/job-posting/create')} />
               ) : (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -321,10 +327,7 @@ export default function JobPostingPage() {
                                         Edit Posting Details
                                       </button>
                                       <button
-                                        onClick={() => {
-                                          handleDelete(job._id);
-                                          setOpenDropdown(null);
-                                        }}
+                                        onClick={() => openDeleteModal(job._id, job.title)}
                                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -349,10 +352,7 @@ export default function JobPostingPage() {
                                         View Details
                                       </button>
                                       <button
-                                        onClick={() => {
-                                          handleDelete(job._id);
-                                          setOpenDropdown(null);
-                                        }}
+                                        onClick={() => openDeleteModal(job._id, job.title)}
                                         className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100"
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,6 +398,17 @@ export default function JobPostingPage() {
               </div>
               )}
             </div>
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+              isOpen={deleteModalOpen}
+              onClose={() => {
+                setDeleteModalOpen(false);
+                setJobToDelete(null);
+              }}
+              onConfirm={handleDelete}
+              role={jobToDelete?.title}
+            />
         </Layout>
     </ProtectedRoute>
   );

@@ -6,6 +6,8 @@ import { ArrowLeft, MapPin, X } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import Layout from '@/components/layout/Layout';
 import Tiptap from '@/components/job-posting/Tiptap';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import JobPostingLiveModal from '@/components/modals/JobPostingLiveModal';
 import { jobPostingsApi } from '@/lib/api';
 import toast from '@/lib/toast';
 
@@ -38,6 +40,8 @@ export default function CreateJobPostingPage() {
   const [skillInput, setSkillInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [liveModalOpen, setLiveModalOpen] = useState(false);
+  const [publishedJob, setPublishedJob] = useState<{ title: string; link: string } | null>(null);
 
   useEffect(() => {
     if (editId) {
@@ -182,17 +186,16 @@ export default function CreateJobPostingPage() {
       }
 
       if (isEditMode) {
-        await jobPostingsApi.update(editId!, payload);
+        const result = await jobPostingsApi.update(editId!, payload);
         toast.success('Job updated and published successfully!');
+        setPublishedJob({ title: formData.title, link: result.shareableLink || '' });
+        setLiveModalOpen(true);
       } else {
         const result = await jobPostingsApi.create(payload);
         toast.success('Job posted successfully!');
-        if (result.shareableLink) {
-          console.log('Shareable link:', result.shareableLink);
-        }
+        setPublishedJob({ title: formData.title, link: result.shareableLink || '' });
+        setLiveModalOpen(true);
       }
-      
-      router.push('/job-posting');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to publish job');
     } finally {
@@ -231,9 +234,9 @@ export default function CreateJobPostingPage() {
 
           {/* Form Container */}
           {loading ? (
-            <div className="max-w-4xl mx-auto px-6 pb-24">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+            <div className="flex justify-center pt-12">
+              <div className="text-center">
+                <LoadingSpinner size="lg" />
                 <p className="mt-4 text-gray-500">Loading job data...</p>
               </div>
             </div>
@@ -429,6 +432,19 @@ export default function CreateJobPostingPage() {
               </div>
             </div>
           </div>
+          )}
+
+          {/* Job Posting Live Modal */}
+          {publishedJob && (
+            <JobPostingLiveModal
+              isOpen={liveModalOpen}
+              onClose={() => {
+                setLiveModalOpen(false);
+                router.push('/job-posting');
+              }}
+              jobTitle={publishedJob.title}
+              shareableLink={publishedJob.link}
+            />
           )}
         </div>
       </Layout>

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { AlertCircle, XCircle } from 'lucide-react';
+import { Trash2, XCircle } from 'lucide-react';
 import { DeleteConfirmationModalProps } from '@/types';
 
 export default function DeleteConfirmationModal({
   isOpen,
   onClose,
-  onConfirm
+  onConfirm,
+  role
 }: DeleteConfirmationModalProps) {
   const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState(false);
@@ -45,7 +46,7 @@ export default function DeleteConfirmationModal({
         {/* Icon */}
         <div className="flex justify-center pt-6 pb-4">
           <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center">
-            <AlertCircle className="w-7 h-7 text-red-500" />
+            <Trash2 className="w-7 h-7 text-red-500" />
           </div>
         </div>
 
@@ -56,12 +57,12 @@ export default function DeleteConfirmationModal({
             id="modal-title"
             className="text-xl font-semibold text-gray-900 text-center mb-3"
           >
-            Are you absolutely sure?
+            Delete Job Posting ?
           </h2>
 
           {/* Description */}
           <p className="text-sm text-gray-600 text-center mb-5 leading-relaxed">
-            This action cannot be undone. You will permanently lose all of your data, including all candidate profiles, evaluations, and reports.
+            Are you sure you want to delete {role ? `the posting for ${role}` : 'this job posting'}? This action cannot be undone.
           </p>
 
           {/* Confirmation Input */}
@@ -106,7 +107,7 @@ export default function DeleteConfirmationModal({
               disabled={!inputValue}
               className="flex-1 px-4 py-2.5 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
-              I understand, delete my account
+              I understand, delete this posting
             </button>
           </div>
         </div>
