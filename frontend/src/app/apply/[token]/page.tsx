@@ -25,6 +25,7 @@ type JobData = {
   employmentType?: string;
   closingDate?: string;
   companyName?: string;
+  companyLogo?: string;
   salary?: { min: number; max: number; currency: string };
   isActive: boolean;
 };
@@ -76,7 +77,8 @@ export default function JobPage() {
           <>
             <JobHeader 
               title={job.title}
-              companyName={job.companyName || "TechStar Recruiters"}
+              companyName={job.companyName || "Company"}
+              companyLogo={job.companyLogo}
               location={job.location}
               employmentType={job.employmentType || "Full-time"}
               closingDate={job.closingDate}

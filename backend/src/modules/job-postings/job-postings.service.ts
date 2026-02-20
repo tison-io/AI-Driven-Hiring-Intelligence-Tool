@@ -7,17 +7,26 @@ import { JobPosting, JobPostingDocument, JobPostingStatus } from './entities/job
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
 import { ApplyJobDto } from './dto/apply-job.dto';
+import { User, UserDocument } from '../users/entities/user.entity';
 
 @Injectable()
 export class JobPostingsService {
   constructor(
     @InjectModel(JobPosting.name)
     private jobPostingModel: Model<JobPostingDocument>,
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
     private configService: ConfigService,
   ) {}
 
   async create(createDto: CreateJobPostingDto, companyId: string) {
     const applicationToken = crypto.randomBytes(16).toString('hex');
+    
+    // Get user's company info
+    const user = await this.userModel.findById(companyId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     
     const responsibilities = createDto.responsibilities?.length > 0 
       ? createDto.responsibilities 
@@ -30,6 +39,8 @@ export class JobPostingsService {
       responsibilities,
       requiredSkills,
       companyId,
+      companyName: createDto.companyName || user.companyName,
+      companyLogo: user.companyLogo,
       applicationToken,
       status: createDto.status || JobPostingStatus.DRAFT,
     });
@@ -215,6 +226,7 @@ export class JobPostingsService {
       employmentType: jobPosting.employmentType,
       closingDate: jobPosting.closingDate,
       companyName: jobPosting.companyName,
+      companyLogo: jobPosting.companyLogo,
       salary: jobPosting.salary,
     };
   }

@@ -5,13 +5,14 @@ import { Building2 } from "lucide-react";
 type Props = {
   title: string;
   companyName: string;
+  companyLogo?: string;
   location: string;
   employmentType: string;
   closingDate?: string;
   salary?: { min: number; max: number; currency: string };
 };
 
-export function JobHeader({ title, companyName, location, employmentType, closingDate, salary }: Props) {
+export function JobHeader({ title, companyName, companyLogo, location, employmentType, closingDate, salary }: Props) {
   const daysRemaining = closingDate ? (() => {
     const closing = new Date(closingDate);
     const today = new Date();
@@ -28,7 +29,11 @@ export function JobHeader({ title, companyName, location, employmentType, closin
 
       <div className="flex flex-wrap items-center gap-2 text-sm text-secondary-500/80">
         <span className="inline-flex items-center gap-2 rounded-full bg-white border border-primary-50 px-3 py-1">
-          <Building2 className="h-4 w-4 text-primary-600" />
+          {companyLogo ? (
+            <img src={companyLogo} alt={companyName} className="h-4 w-4 rounded-full object-cover" />
+          ) : (
+            <Building2 className="h-4 w-4 text-primary-600" />
+          )}
           <span className="font-medium text-primary-600">{companyName}</span>
         </span>
 
