@@ -17,6 +17,6 @@ import { NotificationsModule } from "../notifications/notifications.module";
 		NotificationsModule,
 	],
 	providers: [UsersService],
-	exports: [UsersService],
+	exports: [UsersService, MongooseModule],
 })
 export class UsersModule {}
