@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MapPin, X } from 'lucide-react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -21,7 +21,7 @@ interface FormData {
   currency: string;
 }
 
-export default function CreateJobPostingPage() {
+function CreateJobPostingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams.get('id');
@@ -215,9 +215,8 @@ export default function CreateJobPostingPage() {
   };
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="min-h-screen bg-gray-50">
+    <Layout>
+      <div className="min-h-screen bg-gray-50">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 px-6 py-4 mb-6">
             <div className="flex items-center gap-3">
@@ -448,6 +447,15 @@ export default function CreateJobPostingPage() {
           )}
         </div>
       </Layout>
+  );
+}
+
+export default function CreateJobPostingPage() {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><LoadingSpinner size="lg" /></div>}>
+        <CreateJobPostingContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
