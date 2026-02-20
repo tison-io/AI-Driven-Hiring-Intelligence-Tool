@@ -109,6 +109,7 @@ export class EmailService {
     jobTitle: string,
     score: number,
     resultsToken: string,
+    companyName: string,
   ): Promise<void> {
     const resultsUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/results/${resultsToken}`;
     
@@ -121,6 +122,7 @@ export class EmailService {
       jobTitle,
       score,
       resultsUrl,
+      companyName,
     );
 
     try {
