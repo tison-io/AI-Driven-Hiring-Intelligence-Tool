@@ -3,6 +3,7 @@ export const evaluationResultsTemplate = (
   jobTitle: string,
   score: number,
   resultsUrl: string,
+  companyName: string,
 ): string => {
   return `
     <!DOCTYPE html>
@@ -196,7 +197,7 @@ export const evaluationResultsTemplate = (
     <body>
       <div class="container">
         <div class="header">
-          <div class="logo">TechStar Recruiters</div>
+          <div class="logo">${companyName}</div>
           <div class="badge">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"></path>
@@ -231,7 +232,7 @@ export const evaluationResultsTemplate = (
           <p>Hi ${candidateName},</p>
           
           <p>
-            At TechStar Recruiters, we value your time and your career growth. 
+            At ${companyName}, we value your time and your career growth. 
             We believe that every candidate deserves transparent and objective feedback. 
             This report provides a detailed breakdown of how your skills align with our 
             <strong>${jobTitle}</strong> requirements and offers actionable insights for your 
@@ -245,14 +246,14 @@ export const evaluationResultsTemplate = (
           
           <div class="signature">
             To your success,<br>
-            The TechStar Recruiters Recruitment Team
+            The ${companyName} Recruitment Team
           </div>
         </div>
 
         <div class="footer">
           <div>
             Disclaimer: TalentScan AI provides decision-support tools. All final hiring 
-            decisions are made by human recruiters at TechStar Recruiters. 
+            decisions are made by human recruiters at ${companyName}. 
             <a href="#" style="color: #6c5ce7; text-decoration: underline;">Privacy Policy</a>
           </div>
           <div class="footer-logo">TalentScan AI</div>

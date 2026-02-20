@@ -117,6 +117,7 @@ export class AiProcessor {
               jobPosting.title,
               result.roleFitScore || 0,
               resultsToken,
+              jobPosting.companyName || 'Company',
             );
             
             await this.candidatesService.update(candidateId, { emailSent: true });
