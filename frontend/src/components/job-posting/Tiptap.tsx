@@ -20,7 +20,7 @@ const Tiptap = ({ content, onChange, placeholder = 'Start typing...' }: TiptapPr
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none focus:outline-none min-h-[240px] px-4 py-3',
+        class: 'prose prose-sm max-w-none focus:outline-none h-64 overflow-y-auto px-4 py-3',
       },
     },
   });

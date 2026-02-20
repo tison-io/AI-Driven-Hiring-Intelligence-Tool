@@ -3,7 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as crypto from 'crypto';
-import { JobPosting, JobPostingDocument } from './entities/job-posting.entity';
+import { JobPosting, JobPostingDocument, JobPostingStatus } from './entities/job-posting.entity';
 import { CreateJobPostingDto } from './dto/create-job-posting.dto';
 import { UpdateJobPostingDto } from './dto/update-job-posting.dto';
 import { ApplyJobDto } from './dto/apply-job.dto';
@@ -19,12 +19,10 @@ export class JobPostingsService {
   async create(createDto: CreateJobPostingDto, companyId: string) {
     const applicationToken = crypto.randomBytes(16).toString('hex');
     
-    // Auto-extract responsibilities from description if not provided
     const responsibilities = createDto.responsibilities?.length > 0 
       ? createDto.responsibilities 
       : this.extractResponsibilities(createDto.description);
     
-    // Use provided skills or default to empty array
     const requiredSkills = createDto.requiredSkills || [];
     
     const jobPosting = await this.jobPostingModel.create({
@@ -33,6 +31,7 @@ export class JobPostingsService {
       requiredSkills,
       companyId,
       applicationToken,
+      status: createDto.status || JobPostingStatus.DRAFT,
     });
     
     return {
@@ -161,7 +160,7 @@ export class JobPostingsService {
     };
   }
 
-  async toggleActive(id: string, userId: string, userRole: string): Promise<JobPostingDocument> {
+  async updateStatus(id: string, newStatus: JobPostingStatus, userId: string, userRole: string): Promise<JobPostingDocument> {
     if (!isValidObjectId(id)) {
       throw new NotFoundException(`Job posting with ID ${id} not found`);
     }
@@ -173,10 +172,10 @@ export class JobPostingsService {
     }
 
     if (userRole !== 'admin' && jobPosting.companyId.toString() !== userId.toString()) {
-      throw new ForbiddenException('You can only toggle your own job postings');
+      throw new ForbiddenException('You can only update your own job postings');
     }
 
-    jobPosting.isActive = !jobPosting.isActive;
+    jobPosting.status = newStatus;
     return jobPosting.save();
   }
 
@@ -191,15 +190,12 @@ export class JobPostingsService {
 
   async getPublicJobPostingByToken(token: string) {
     const jobPosting = await this.jobPostingModel.findOne({ 
-      applicationToken: token 
+      applicationToken: token,
+      status: JobPostingStatus.ACTIVE
     }).exec();
     
     if (!jobPosting) {
-      throw new NotFoundException('Job posting not found');
-    }
-
-    if (!jobPosting.isActive) {
-      throw new NotFoundException('This job posting is no longer accepting applications');
+      throw new NotFoundException('Job posting not found or not accepting applications');
     }
     
     return {
@@ -229,7 +225,7 @@ export class JobPostingsService {
       throw new NotFoundException('Job posting not found');
     }
 
-    if (!jobPosting.isActive) {
+    if (jobPosting.status !== JobPostingStatus.ACTIVE) {
       throw new NotFoundException('This job posting is no longer accepting applications');
     }
     

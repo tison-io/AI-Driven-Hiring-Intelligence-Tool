@@ -201,6 +201,14 @@ export interface DeleteConfirmationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
+  role?: string;
+}
+
+export interface JobPostingLiveModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  jobTitle: string;
+  shareableLink: string;
 }
 
 // Form Data Types
