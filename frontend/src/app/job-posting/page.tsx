@@ -339,7 +339,8 @@ export default function JobPostingPage() {
                                     </>
                                   ) : (
                                     <>
-                                      <button
+                                    {/* commented out since this feature is still under development */}
+                                      {/* <button
                                         onClick={() => {
                                           router.push(`/job-posting/${job._id}`);
                                           setOpenDropdown(null);
@@ -348,13 +349,8 @@ export default function JobPostingPage() {
                                       >
                                        <Users className='w-4 h-4'/>
                                         View Applicants
-                                      </button>
+                                      </button> */}
                                       <button
-                                        // onClick={() => {
-                                        //   router.push(`/job-posting/${job._id}`);
-                                        //   setOpenDropdown(null);
-                                        // }}
-
                                         onClick={() => window.open(job.shareableLink, "_blank")}
                                         className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                       >

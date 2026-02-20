@@ -118,7 +118,7 @@ export class JobPostingsService {
     };
   }
 
-  async update(id: string, updateDto: UpdateJobPostingDto, userId: string, userRole: string): Promise<JobPostingDocument> {
+  async update(id: string, updateDto: UpdateJobPostingDto, userId: string, userRole: string) {
     if (!isValidObjectId(id)) {
       throw new NotFoundException(`Job posting with ID ${id} not found`);
     }
@@ -134,7 +134,12 @@ export class JobPostingsService {
     }
 
     Object.assign(jobPosting, updateDto);
-    return jobPosting.save();
+    const updated = await jobPosting.save();
+    
+    return {
+      ...updated.toObject(),
+      shareableLink: this.generateShareableLink(updated.applicationToken),
+    };
   }
 
   async delete(id: string, userId: string, userRole: string): Promise<{ success: boolean; message: string }> {
