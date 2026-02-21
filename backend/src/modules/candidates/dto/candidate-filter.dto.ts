@@ -134,4 +134,20 @@ export class CandidateFilterDto {
 	@IsOptional()
 	@IsString()
 	previousCompany?: string;
+
+	@ApiPropertyOptional({ 
+		example: "shortlisted",
+		enum: ['to_review', 'shortlisted', 'rejected', 'hired']
+	})
+	@IsOptional()
+	@IsIn(['to_review', 'shortlisted', 'rejected', 'hired'])
+	hiringStatus?: string;
+
+	@ApiPropertyOptional({ 
+		example: "highly_recommended",
+		enum: ['highly_recommended', 'potential_match', 'needs_review', 'not_recommended']
+	})
+	@IsOptional()
+	@IsIn(['highly_recommended', 'potential_match', 'needs_review', 'not_recommended'])
+	recommendation?: string;
 }
