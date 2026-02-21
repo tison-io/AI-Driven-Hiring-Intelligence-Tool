@@ -275,7 +275,7 @@ function CandidatesContent() {
 
 	const handleBulkShortlist = async () => {
 		try {
-			// TODO: Implement bulk shortlist API call
+			await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'shortlisted');
 			toast.success(`${selectedCandidates.length} candidates shortlisted`);
 			setSelectedCandidates([]);
 			setSelectAll(false);
@@ -287,7 +287,7 @@ function CandidatesContent() {
 
 	const handleBulkReject = async () => {
 		try {
-			// TODO: Implement bulk reject API call
+			await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'rejected');
 			toast.success(`${selectedCandidates.length} candidates rejected`);
 			setSelectedCandidates([]);
 			setSelectAll(false);
