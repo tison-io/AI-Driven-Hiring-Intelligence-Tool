@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from '@/lib/toast'
 import api, { candidatesApi } from '@/lib/api'
-import { CandidateWithShortlist, CandidateDetailProps } from '@/types'
+import { CandidateWithShortlist, CandidateDetailProps, HiringStatus } from '@/types'
 import CandidateHeader from './CandidateHeader'
 import ScoreCards from './ScoreCards'
 import ExperienceSection from './ExperienceSection'
@@ -21,7 +21,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDownloadingReport, setIsDownloadingReport] = useState(false)
   const [isShortlisted, setIsShortlisted] = useState(candidate.isShortlisted || false)
-  const [hiringStatus, setHiringStatus] = useState(candidate.hiringStatus || 'to_review')
+  const [hiringStatus, setHiringStatus] = useState<HiringStatus>(candidate.hiringStatus || 'to_review')
 
   const handleDeleteConfirm = async () => {
     try {
@@ -72,7 +72,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     }
   }
 
-  const handleHiringStatusChange = async (newStatus: string) => {
+  const handleHiringStatusChange = async (newStatus: HiringStatus) => {
     try {
       await candidatesApi.updateHiringStatus(candidateId, newStatus)
       setHiringStatus(newStatus)

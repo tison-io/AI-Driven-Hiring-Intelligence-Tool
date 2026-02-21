@@ -1,5 +1,8 @@
 import { ReactNode } from 'react';
 
+// Common Types
+export type HiringStatus = 'to_review' | 'shortlisted' | 'rejected' | 'hired';
+
 // User Types
 export interface User {
   _id: string;
@@ -42,7 +45,7 @@ export interface Candidate {
   biasCheck?: string;
   jobRole: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  hiringStatus?: 'to_review' | 'shortlisted' | 'rejected' | 'hired';
+  hiringStatus?: HiringStatus;
   recommendation?: 'highly_recommended' | 'potential_match' | 'not_recommended';
   fileUrl?: string;
   createdAt: string;

@@ -2,14 +2,20 @@
 
 import { useState } from 'react'
 import { CheckCircle, XCircle, Clock, UserCheck } from 'lucide-react'
+import { HiringStatus } from '@/types'
 
 interface HiringStatusDropdownProps {
-  currentStatus: string
-  onStatusChange: (newStatus: string) => Promise<void>
+  currentStatus: HiringStatus
+  onStatusChange: (newStatus: HiringStatus) => Promise<void>
   disabled?: boolean
 }
 
-const statusConfig = {
+const statusConfig: Record<HiringStatus, {
+  label: string
+  icon: any
+  color: string
+  hoverColor: string
+}> = {
   to_review: {
     label: 'To Review',
     icon: Clock,
@@ -47,7 +53,7 @@ export default function HiringStatusDropdown({
   const currentConfig = statusConfig[currentStatus as keyof typeof statusConfig] || statusConfig.to_review
   const CurrentIcon = currentConfig.icon
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: HiringStatus) => {
     if (newStatus === currentStatus || isUpdating) return
     
     setIsUpdating(true)
@@ -92,7 +98,7 @@ export default function HiringStatusDropdown({
               return (
                 <button
                   key={status}
-                  onClick={() => handleStatusChange(status)}
+                  onClick={() => handleStatusChange(status as HiringStatus)}
                   disabled={isActive}
                   className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${
                     isActive 
