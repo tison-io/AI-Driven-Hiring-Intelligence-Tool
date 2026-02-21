@@ -69,6 +69,8 @@ function CandidatesContent() {
 	const [skillInput, setSkillInput] = useState("");
 	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [companyFilters, setCompanyFilters] = useState<string[]>([]);
+	const [hiringStatusFilter, setHiringStatusFilter] = useState('');
+	const [recommendationFilter, setRecommendationFilter] = useState('');
 	const [filterOptions, setFilterOptions] = useState<{
 		certifications: string[];
 		companies: string[];
@@ -157,6 +159,8 @@ function CandidatesContent() {
 		if (certificationFilters.length > 0) filterObj.certifications = certificationFilters;
 		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
 		if (companyFilters.length > 0) filterObj.companies = companyFilters;
+		if (hiringStatusFilter) filterObj.hiringStatus = hiringStatusFilter;
+		if (recommendationFilter) filterObj.recommendation = recommendationFilter;
 
 		return filterObj;
 	}, [
@@ -172,6 +176,8 @@ function CandidatesContent() {
 		certificationFilters,
 		skillsFilter,
 		companyFilters,
+		hiringStatusFilter,
+		recommendationFilter,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -224,12 +230,14 @@ function CandidatesContent() {
 			certificationFilters.length > 0 ||
 			skillsFilter.length > 0 ||
 			companyFilters.length > 0 ||
+			hiringStatusFilter ||
+			recommendationFilter ||
 			showShortlistedOnly
 		);
 	}, [
 		searchQuery, minRole, experienceRange, sortBy, statusFilter,
 		confidenceRange, dateRange, educationFilter, certificationFilters,
-		skillsFilter, companyFilters, showShortlistedOnly
+		skillsFilter, companyFilters, hiringStatusFilter, recommendationFilter, showShortlistedOnly
 	]);
 
 	// Detect if any candidates are still processing
@@ -385,6 +393,8 @@ function CandidatesContent() {
 		setSkillsFilter([]);
 		setSkillInput("");
 		setCompanyFilters([]);
+		setHiringStatusFilter('');
+		setRecommendationFilter('');
 		toast.success("Filters cleared");
 	};
 
@@ -702,6 +712,30 @@ function CandidatesContent() {
 											placeholder="Filter by companies..."
 											disabled={isLoadingFilterOptions}
 										/>
+										{/* Hiring Status Filter */}
+										<select
+											value={hiringStatusFilter}
+											onChange={(e) => setHiringStatusFilter(e.target.value)}
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">All Hiring Status</option>
+											<option value="to_review">To Review</option>
+											<option value="shortlisted">Shortlisted</option>
+											<option value="rejected">Rejected</option>
+											<option value="hired">Hired</option>
+										</select>
+										{/* Recommendation Filter */}
+										<select
+											value={recommendationFilter}
+											onChange={(e) => setRecommendationFilter(e.target.value)}
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">All Recommendations</option>
+											<option value="highly_recommended">Highly Recommended</option>
+											<option value="potential_match">Potential Match</option>
+											<option value="needs_review">Needs Review</option>
+											<option value="not_recommended">Not Recommended</option>
+										</select>
 									</div>
 									
 									{/* Skills Filter */}

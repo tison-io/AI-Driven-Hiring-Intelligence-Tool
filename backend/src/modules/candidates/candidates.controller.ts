@@ -112,6 +112,18 @@ export class CandidatesController {
 		required: false,
 		description: "Filter by previous company",
 	})
+	@ApiQuery({
+		name: "hiringStatus",
+		required: false,
+		description: "Filter by hiring status",
+		enum: ['to_review', 'shortlisted', 'rejected', 'hired']
+	})
+	@ApiQuery({
+		name: "recommendation",
+		required: false,
+		description: "Filter by recommendation level",
+		enum: ['highly_recommended', 'potential_match', 'needs_review', 'not_recommended']
+	})
 	async findAll(@Query() filters: CandidateFilterDto, @Request() req) {
 		return this.candidatesService.findAll(
 			filters,

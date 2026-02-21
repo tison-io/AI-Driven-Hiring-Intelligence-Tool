@@ -76,6 +76,8 @@ export interface CandidateFilters {
   score_min?: number;
   score_max?: number;
   jobRole?: string;
+  hiringStatus?: string;
+  recommendation?: string;
 }
 
 // Dashboard Types

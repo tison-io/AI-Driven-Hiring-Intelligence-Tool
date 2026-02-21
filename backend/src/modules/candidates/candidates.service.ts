@@ -131,6 +131,24 @@ export class CandidatesService {
 			};
 		}
 
+		// Hiring Status filter
+		if (filters.hiringStatus) {
+			query.hiringStatus = filters.hiringStatus;
+		}
+
+		// Recommendation filter (based on score ranges)
+		if (filters.recommendation) {
+			if (filters.recommendation === 'highly_recommended') {
+				query.roleFitScore = { $gte: 85 };
+			} else if (filters.recommendation === 'potential_match') {
+				query.roleFitScore = { $gte: 70, $lt: 85 };
+			} else if (filters.recommendation === 'needs_review') {
+				query.roleFitScore = { $gte: 20, $lt: 70 };
+			} else if (filters.recommendation === 'not_recommended') {
+				query.roleFitScore = { $gt: 0, $lt: 20 };
+			}
+		}
+
 		// Sorting
 		const sortOptions: any = {};
 		if (filters.sortBy) {
