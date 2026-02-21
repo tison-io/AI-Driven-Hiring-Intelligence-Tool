@@ -799,74 +799,88 @@ function CandidatesContent() {
 											className="bg-white rounded-lg border border-gray-200 p-4"
 										>
 											<div className="flex items-start justify-between mb-3">
-												<div className="flex-1">
-													<h3 className="font-semibold text-gray-900 mb-1">
-														{candidate.name}
-													</h3>
-													<p className="text-sm text-gray-500">
-														{candidate.jobRole ||
-															"N/A"}
-													</p>
+												<div className="flex items-center gap-3 flex-1">
+													<input
+														type="checkbox"
+														checked={selectedCandidates.includes(candidate._id || candidate.id)}
+														onChange={() => handleSelectCandidate(candidate._id || candidate.id)}
+														className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+													/>
+													<Avatar name={candidate.name} size="md" />
+													<div className="flex-1">
+														<h3 className="font-semibold text-gray-900 mb-1">
+															{candidate.name}
+														</h3>
+														{candidate.email && (
+															<p className="text-xs text-gray-500">{candidate.email}</p>
+														)}
+														<p className="text-sm text-gray-500 mt-1">
+															{candidate.jobRole || "N/A"}
+														</p>
+													</div>
 												</div>
-												<span
-													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || "New")}`}
-												>
-													{candidate.status || "New"}
-												</span>
+											</div>
+
+											<div className="mb-3">
+												<RecommendationBadge score={candidate.roleFitScore || 0} />
 											</div>
 
 											<div className="grid grid-cols-2 gap-3 mb-3">
 												<div>
-													<p className="text-xs text-gray-500 mb-1">
-														Role Fit
-													</p>
+													<p className="text-xs text-gray-500 mb-1">Role Fit</p>
 													<span
 														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
 													>
-														{candidate.roleFitScore ||
-															0}
+														{candidate.roleFitScore || 0}
 													</span>
 												</div>
 												<div>
-													<p className="text-xs text-gray-500 mb-1">
-														Experience
-													</p>
+													<p className="text-xs text-gray-500 mb-1">Experience</p>
 													<p className="text-sm font-medium text-gray-700">
-														{(candidate.experienceYears || 0).toFixed(2)}{" "}
-														yrs
+														{(candidate.experienceYears || 0).toFixed(2)} yrs
 													</p>
 												</div>
 											</div>
 
-											<div className="flex items-center justify-between pt-3 border-t border-gray-200">
-												<span className="text-sm text-gray-600">
-													Confidence:{" "}
-													{candidate.confidenceScore ||
-														0}
-													%
-												</span>
-												<div className="flex items-center gap-2">
-													<button
-														onClick={() =>
-															(window.location.href = `/candidates/${candidate._id || candidate.id}`)
-														}
-														className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+											<div className="flex items-center justify-between pt-3 border-t border-gray-200 mb-3">
+												<div>
+													<p className="text-xs text-gray-500 mb-1">AI Status</p>
+													<span
+														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || "New")}`}
 													>
-														<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
-													</button>
-													<button
-														onClick={() =>
-															handleDeleteClick(
-																candidate._id ||
-																	candidate.id,
-																candidate.name,
-															)
-														}
-														className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
-													>
-														<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
-													</button>
+														{candidate.status || "New"}
+													</span>
 												</div>
+												<div>
+													<p className="text-xs text-gray-500 mb-1">Hiring Status</p>
+													<span
+														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border ${getHiringStatusBadge(candidate.hiringStatus || 'to_review')}`}
+													>
+														{getHiringStatusLabel(candidate.hiringStatus || 'to_review')}
+													</span>
+												</div>
+											</div>
+
+											<div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+												<button
+													onClick={() =>
+														(window.location.href = `/candidates/${candidate._id || candidate.id}`)
+													}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
+													<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+												</button>
+												<button
+													onClick={() =>
+														handleDeleteClick(
+															candidate._id || candidate.id,
+															candidate.name,
+														)
+													}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
+													<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
+												</button>
 											</div>
 										</div>
 									))}
