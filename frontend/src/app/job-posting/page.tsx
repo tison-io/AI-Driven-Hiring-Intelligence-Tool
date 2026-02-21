@@ -35,6 +35,7 @@ interface JobPosting {
 export default function JobPostingPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [jobPostings, setJobPostings] = useState<JobPosting[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -46,8 +47,17 @@ export default function JobPostingPage() {
   const limit = 10;
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     fetchJobPostings();
-  }, [page, searchQuery]);
+  }, [page, debouncedSearch]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +76,7 @@ export default function JobPostingPage() {
       const response = await jobPostingsApi.getAll({
         page,
         limit,
-        search: searchQuery || undefined,
+        search: debouncedSearch || undefined,
       });
       setJobPostings(response.data);
       setTotal(response.total);
@@ -198,10 +208,7 @@ export default function JobPostingPage() {
                         type="text"
                         placeholder="Search by job title, location..."
                         value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          setPage(1);
-                        }}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>

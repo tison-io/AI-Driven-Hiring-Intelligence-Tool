@@ -74,6 +74,9 @@ export class JobPosting {
   @Prop()
   companyName?: string;
 
+  @Prop()
+  companyLogo?: string;
+
   @Prop({ type: Salary, validate: {
     validator: function(v: Salary) {
       return !v || v.min <= v.max;

@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { jobPostingsApi } from "@/lib/api";
+import { ApplyHeader } from "@/components/apply/ApplyHeader";
 import { JobLayout } from "@/components/job/JobLayout";
 import { JobHeader } from "@/components/job/JobHeader";
 import { JobRole } from "@/components/job/JobRole";
@@ -25,6 +26,7 @@ type JobData = {
   employmentType?: string;
   closingDate?: string;
   companyName?: string;
+  companyLogo?: string;
   salary?: { min: number; max: number; currency: string };
   isActive: boolean;
 };
@@ -52,27 +54,37 @@ export default function JobPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-secondary-50 flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
+      <>
+        <ApplyHeader />
+        <div className="min-h-screen bg-secondary-50 flex items-center justify-center">
+          <LoadingSpinner size="lg" />
+        </div>
+      </>
     );
   }
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-secondary-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <h1 className="text-2xl font-semibold text-secondary-700">Job Not Found</h1>
-          <p className="mt-2 text-secondary-500">{error || "This job posting is no longer available"}</p>
+      <>
+        <ApplyHeader />
+        <div className="min-h-screen bg-secondary-50 flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-2xl font-semibold text-secondary-700">Job Not Found</h1>
+            <p className="mt-2 text-secondary-500">{error || "This job posting is no longer available"}</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary-50">
+    <>
+      <ApplyHeader 
+        companyName={job.companyName || "Company"}
+        companyLogo={job.companyLogo}
+      />
       <JobLayout
-        left={
+      left={
           <>
             <JobHeader 
               title={job.title}
@@ -94,8 +106,8 @@ export default function JobPage() {
             )}
           </>
         }
-        right={<ApplyCard token={token} jobTitle={job.title} />}
-      />
-    </div>
+      right={<ApplyCard token={token} jobTitle={job.title} />}
+    />
+    </>
   );
 }
