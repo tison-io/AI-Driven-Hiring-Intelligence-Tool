@@ -1162,6 +1162,16 @@ function CandidatesContent() {
 							onConfirm={handleDeleteConfirm}
 							candidateName={selectedCandidate?.name || ""}
 						/>
+						<BulkActionBar
+							selectedCount={selectedCandidates.length}
+							onShortlist={handleBulkShortlist}
+							onReject={handleBulkReject}
+							onExport={handleBulkExport}
+							onClear={() => {
+								setSelectedCandidates([]);
+								setSelectAll(false);
+							}}
+						/>
 					</div>
 				</div>
 			</Layout>
