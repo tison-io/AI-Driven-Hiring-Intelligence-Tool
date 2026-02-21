@@ -172,4 +172,27 @@ export class CandidatesController {
 			dto.notes,
 		);
 	}
+
+	@Patch('bulk/hiring-status')
+	@ApiOperation({ summary: 'Bulk update hiring status' })
+	@ApiResponse({
+		status: 200,
+		description: 'Bulk hiring status updated successfully',
+	})
+	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	async bulkUpdateHiringStatus(
+		@Body() dto: { candidateIds: string[]; hiringStatus: string },
+		@Request() req: any,
+	) {
+		const results = await Promise.all(
+			dto.candidateIds.map(id =>
+				this.candidatesService.updateHiringStatus(id, dto.hiringStatus),
+			),
+		);
+		return {
+			success: true,
+			updated: results.length,
+			message: `${results.length} candidates updated`,
+		};
+	}
 }
