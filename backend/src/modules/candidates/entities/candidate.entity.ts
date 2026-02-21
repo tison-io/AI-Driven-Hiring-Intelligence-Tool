@@ -75,6 +75,12 @@ export class Candidate {
   @Prop({ default: false })
   isShortlisted: boolean;
 
+  @Prop({ 
+    enum: ['to_review', 'shortlisted', 'rejected', 'hired'],
+    default: 'to_review'
+  })
+  hiringStatus: string;
+
   @Prop()
   fileUrl?: string;
 

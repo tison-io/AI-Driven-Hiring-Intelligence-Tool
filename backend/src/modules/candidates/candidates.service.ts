@@ -131,6 +131,24 @@ export class CandidatesService {
 			};
 		}
 
+		// Hiring Status filter
+		if (filters.hiringStatus) {
+			query.hiringStatus = filters.hiringStatus;
+		}
+
+		// Recommendation filter (based on score ranges)
+		if (filters.recommendation) {
+			if (filters.recommendation === 'highly_recommended') {
+				query.roleFitScore = { $gte: 85 };
+			} else if (filters.recommendation === 'potential_match') {
+				query.roleFitScore = { $gte: 70, $lt: 85 };
+			} else if (filters.recommendation === 'needs_review') {
+				query.roleFitScore = { $gte: 20, $lt: 70 };
+			} else if (filters.recommendation === 'not_recommended') {
+				query.roleFitScore = { $gt: 0, $lt: 20 };
+			}
+		}
+
 		// Sorting
 		const sortOptions: any = {};
 		if (filters.sortBy) {
@@ -144,12 +162,20 @@ export class CandidatesService {
 		sortOptions._id = 1;
 
 		// Select only fields needed for list view to improve performance
-		return this.candidateModel
+		const candidates = await this.candidateModel
 			.find(query)
-			.select('name jobRole experienceYears skills roleFitScore confidenceScore status isShortlisted createdAt certifications workExperience.company')
+			.select('name email jobRole experienceYears skills roleFitScore confidenceScore status isShortlisted hiringStatus createdAt certifications workExperience.company')
 			.sort(sortOptions)
 			.lean()
 			.exec();
+
+		// Add recommendation to each candidate
+		const candidatesWithRecommendation = candidates.map(candidate => ({
+			...candidate,
+			recommendation: this.getRecommendation(candidate.roleFitScore || 0),
+		}));
+
+		return candidatesWithRecommendation;
 	}
 
 	async findById(id: string): Promise<CandidateDocument | null> {
@@ -417,5 +443,65 @@ export class CandidatesService {
 		}
 
 		return this.candidateModel.updateMany(sanitizedFilter, { $set: sanitizedUpdate }).exec();
+	}
+
+	async updateHiringStatus(
+		id: string,
+		hiringStatus: string,
+		notes?: string,
+		skipValidation: boolean = false,
+	): Promise<CandidateDocument> {
+		const candidate = await this.candidateModel.findById(id).exec();
+		
+		if (!candidate) {
+			throw new NotFoundException('Candidate not found');
+		}
+
+		if (!skipValidation) {
+			const currentStatus = candidate.hiringStatus || 'to_review';
+			const allowedTransitions: Record<string, string[]> = {
+				to_review: ['shortlisted', 'rejected'],
+				shortlisted: ['rejected'],
+				rejected: ['shortlisted'],
+				hired: [],
+			};
+
+			if (!allowedTransitions[currentStatus]?.includes(hiringStatus)) {
+				throw new BadRequestException(
+					`Cannot transition from ${currentStatus} to ${hiringStatus}. Allowed transitions: ${allowedTransitions[currentStatus]?.join(', ') || 'none'}`
+				);
+			}
+		}
+
+		if (candidate.hiringStatus === hiringStatus) {
+			return candidate;
+		}
+
+		candidate.hiringStatus = hiringStatus;
+		return await candidate.save();
+	}
+
+	async bulkUpdateHiringStatus(candidateIds: string[], hiringStatus: string) {
+		let updated = 0;
+		await Promise.allSettled(
+			candidateIds.map(async (id) => {
+				const candidate = await this.candidateModel.findById(id).exec();
+				if (candidate && candidate.hiringStatus !== hiringStatus) {
+					await this.updateHiringStatus(id, hiringStatus, undefined, true);
+					updated++;
+				}
+			}),
+		);
+		return {
+			success: true,
+			updated,
+			message: `${updated} candidate${updated !== 1 ? 's' : ''} updated`,
+		};
+	}
+
+	getRecommendation(roleFitScore: number): string {
+		if (roleFitScore >= 85) return 'highly_recommended';
+		if (roleFitScore >= 70) return 'potential_match';
+		return 'not_recommended';
 	}
 }

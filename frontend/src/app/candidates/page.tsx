@@ -15,6 +15,7 @@ import {
 	ArrowUp,
 	ArrowDown,
 	X,
+	UserPlus,
 } from "lucide-react";
 import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
@@ -25,6 +26,11 @@ import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+import Avatar from '@/components/ui/Avatar';
+import RecommendationBadge from '@/components/ui/RecommendationBadge';
+import BulkActionBar from '@/components/candidates/BulkActionBar';
+import { getHiringStatusBadge, getHiringStatusLabel } from '@/utils/candidateUtils';
+import Link from 'next/link';
 import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
@@ -63,12 +69,16 @@ function CandidatesContent() {
 	const [skillInput, setSkillInput] = useState("");
 	const [showAdvanced, setShowAdvanced] = useState(false);
 	const [companyFilters, setCompanyFilters] = useState<string[]>([]);
+	const [hiringStatusFilter, setHiringStatusFilter] = useState('');
+	const [recommendationFilter, setRecommendationFilter] = useState('');
 	const [filterOptions, setFilterOptions] = useState<{
 		certifications: string[];
 		companies: string[];
 		skills: string[];
 	}>({ certifications: [], companies: [], skills: [] });
 	const [isLoadingFilterOptions, setIsLoadingFilterOptions] = useState(true);
+	const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+	const [selectAll, setSelectAll] = useState(false);
 
 	// Debounce searchQuery changes
 	useEffect(() => {
@@ -149,6 +159,8 @@ function CandidatesContent() {
 		if (certificationFilters.length > 0) filterObj.certifications = certificationFilters;
 		if (skillsFilter.length > 0) filterObj.requiredSkills = skillsFilter;
 		if (companyFilters.length > 0) filterObj.companies = companyFilters;
+		if (hiringStatusFilter) filterObj.hiringStatus = hiringStatusFilter;
+		if (recommendationFilter) filterObj.recommendation = recommendationFilter;
 
 		return filterObj;
 	}, [
@@ -164,6 +176,8 @@ function CandidatesContent() {
 		certificationFilters,
 		skillsFilter,
 		companyFilters,
+		hiringStatusFilter,
+		recommendationFilter,
 	]);
 
 	// Get ALL candidates without pagination for filtering
@@ -216,12 +230,14 @@ function CandidatesContent() {
 			certificationFilters.length > 0 ||
 			skillsFilter.length > 0 ||
 			companyFilters.length > 0 ||
+			hiringStatusFilter ||
+			recommendationFilter ||
 			showShortlistedOnly
 		);
 	}, [
 		searchQuery, minRole, experienceRange, sortBy, statusFilter,
 		confidenceRange, dateRange, educationFilter, certificationFilters,
-		skillsFilter, companyFilters, showShortlistedOnly
+		skillsFilter, companyFilters, hiringStatusFilter, recommendationFilter, showShortlistedOnly
 	]);
 
 	// Detect if any candidates are still processing
@@ -245,6 +261,107 @@ function CandidatesContent() {
 	const handleDeleteClick = (id: string, name: string) => {
 		setSelectedCandidate({ id, name });
 		setIsModalOpen(true);
+	};
+
+	const handleSelectAll = () => {
+		if (selectAll) {
+			setSelectedCandidates([]);
+		} else {
+			setSelectedCandidates(candidates.map(c => c._id || c.id));
+		}
+		setSelectAll(!selectAll);
+	};
+
+	const handleSelectCandidate = (id: string) => {
+		setSelectedCandidates(prev => {
+			if (prev.includes(id)) {
+				return prev.filter(cid => cid !== id);
+			}
+			return [...prev, id];
+		});
+	};
+
+	const handleBulkShortlist = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'shortlisted');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already shortlisted');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} shortlisted (${selectedCandidates.length - updated.updated} already shortlisted)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} shortlisted`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to shortlist candidates');
+		}
+	};
+
+	const handleBulkReject = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'rejected');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already rejected');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} rejected (${selectedCandidates.length - updated.updated} already rejected)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} rejected`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to reject candidates');
+		}
+	};
+
+	const handleBulkToReview = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'to_review');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already in review');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} moved to review (${selectedCandidates.length - updated.updated} already in review)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} moved to review`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to move candidates to review');
+		}
+	};
+
+	const handleBulkHired = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'hired');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already hired');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} marked as hired (${selectedCandidates.length - updated.updated} already hired)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} marked as hired`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to mark candidates as hired');
+		}
+	};
+
+	const handleBulkExport = async () => {
+		try {
+			// Use existing export functionality
+			await handleExport('csv');
+			setSelectedCandidates([]);
+			setSelectAll(false);
+		} catch (error: any) {
+			toast.error('Failed to export candidates');
+		}
 	};
 
 	const handleDeleteConfirm = async () => {
@@ -276,6 +393,8 @@ function CandidatesContent() {
 		setSkillsFilter([]);
 		setSkillInput("");
 		setCompanyFilters([]);
+		setHiringStatusFilter('');
+		setRecommendationFilter('');
 		toast.success("Filters cleared");
 	};
 
@@ -339,17 +458,35 @@ function CandidatesContent() {
 				<div className="p-4 md:p-6 lg:p-8 w-full overflow-x-hidden">
 					<div className="max-w-7xl mx-auto w-full">
 						{/* Header */}
-						<div className="mb-6 md:mb-8 flex items-start justify-between">
-							<div>
-								<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
-									Candidate Pipeline
-								</h1>
-								<p className="text-gray-400 text-sm md:text-base">
-									Filter and manage your candidate pool
-								</p>
+						<div className="mb-6 md:mb-8">
+							<div className="flex items-start justify-between mb-4 md:mb-0">
+								<div>
+									<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
+										Candidate Pipeline
+									</h1>
+									<p className="text-gray-400 text-sm md:text-base">
+										Filter and manage your candidate pool
+									</p>
+								</div>
+								<div className="hidden md:flex items-center gap-3">
+									<Link
+										href="/evaluations/new"
+										className="flex items-center justify-center gap-3 px-12 py-2.5 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity text-base min-w-[250px]"
+									>
+										<UserPlus className="w-5 h-5" />
+										<span>Add Candidate</span>
+									</Link>
+									<NotificationDropdown />
+								</div>
 							</div>
-							<div className="hidden md:block">
-								<NotificationDropdown />
+							<div className="md:hidden mt-4">
+								<Link
+									href="/evaluations/new"
+									className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 transition-opacity w-full"
+								>
+									<UserPlus className="w-4 h-4" />
+									<span className="text-sm">Add Candidate Manually</span>
+								</Link>
 							</div>
 						</div>
 
@@ -575,6 +712,30 @@ function CandidatesContent() {
 											placeholder="Filter by companies..."
 											disabled={isLoadingFilterOptions}
 										/>
+										{/* Hiring Status Filter */}
+										<select
+											value={hiringStatusFilter}
+											onChange={(e) => setHiringStatusFilter(e.target.value)}
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">All Hiring Status</option>
+											<option value="to_review">To Review</option>
+											<option value="shortlisted">Shortlisted</option>
+											<option value="rejected">Rejected</option>
+											<option value="hired">Hired</option>
+										</select>
+										{/* Recommendation Filter */}
+										<select
+											value={recommendationFilter}
+											onChange={(e) => setRecommendationFilter(e.target.value)}
+											className="w-full min-w-0 px-4 py-2 bg-f6f6f6 border border-gray-300 rounded-lg text-black focus:outline-none focus:border-gray-500"
+										>
+											<option value="">All Recommendations</option>
+											<option value="highly_recommended">Highly Recommended</option>
+											<option value="potential_match">Potential Match</option>
+											<option value="needs_review">Needs Review</option>
+											<option value="not_recommended">Not Recommended</option>
+										</select>
 									</div>
 									
 									{/* Skills Filter */}
@@ -710,6 +871,7 @@ function CandidatesContent() {
 						)}
 
 						{/* Candidates Table */}
+						<div className={selectedCandidates.length > 0 ? 'mb-32' : ''}>
 						{isLoading ? (
 							<CandidatesTableSkeleton />
 						) : error ? (
@@ -725,79 +887,113 @@ function CandidatesContent() {
 							<>
 								{/* Mobile & Tablet Card View */}
 								<div className="lg:hidden space-y-4">
+									{/* Select All Checkbox for Mobile */}
+									<div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+										<label className="flex items-center gap-3 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={selectAll}
+												onChange={handleSelectAll}
+												className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+											/>
+											<span className="font-medium text-gray-900">
+												Select All ({candidates.length} candidates)
+											</span>
+										</label>
+									</div>
+
 									{candidates.map((candidate) => (
 										<div
 											key={candidate._id || candidate.id}
 											className="bg-white rounded-lg border border-gray-200 p-4"
 										>
 											<div className="flex items-start justify-between mb-3">
-												<div className="flex-1">
-													<h3 className="font-semibold text-gray-900 mb-1">
-														{candidate.name}
-													</h3>
-													<p className="text-sm text-gray-500">
-														{candidate.jobRole ||
-															"N/A"}
-													</p>
+												<div className="flex items-center gap-3 flex-1">
+													<input
+														type="checkbox"
+														checked={selectedCandidates.includes(candidate._id || candidate.id)}
+														onChange={() => handleSelectCandidate(candidate._id || candidate.id)}
+														className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+													/>
+													<Avatar name={candidate.name} size="md" />
+													<div className="flex-1">
+														<h3 className="font-semibold text-gray-900 mb-1">
+															{candidate.name}
+														</h3>
+														{candidate.email && (
+															<p className="text-xs text-gray-500">{candidate.email}</p>
+														)}
+														<p className="text-sm text-gray-500 mt-1">
+															{candidate.jobRole || "N/A"}
+														</p>
+													</div>
 												</div>
-												<span
-													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || "New")}`}
-												>
-													{candidate.status || "New"}
-												</span>
+											</div>
+
+											<div className="mb-3">
+												<RecommendationBadge score={candidate.roleFitScore || 0} status={candidate.status} />
 											</div>
 
 											<div className="grid grid-cols-2 gap-3 mb-3">
 												<div>
-													<p className="text-xs text-gray-500 mb-1">
-														Role Fit
-													</p>
+													<p className="text-xs text-gray-500 mb-1">Role Fit</p>
 													<span
 														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${getRoleFitBadge(candidate.roleFitScore || 0)}`}
 													>
-														{candidate.roleFitScore ||
-															0}
+														{candidate.roleFitScore || 0}
 													</span>
 												</div>
 												<div>
-													<p className="text-xs text-gray-500 mb-1">
-														Experience
-													</p>
+													<p className="text-xs text-gray-500 mb-1">Experience</p>
 													<p className="text-sm font-medium text-gray-700">
-														{(candidate.experienceYears || 0).toFixed(2)}{" "}
-														yrs
+														{(candidate.experienceYears || 0).toFixed(2)} yrs
 													</p>
+												</div>
+											</div>
+
+											<div className="flex items-center justify-between pt-3 border-t border-gray-200 mb-3">
+												<div>
+													<p className="text-xs text-gray-500 mb-1">AI Status</p>
+													<span
+														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusBadge(candidate.status || "New")}`}
+													>
+														{candidate.status || "New"}
+													</span>
+												</div>
+												<div>
+													<p className="text-xs text-gray-500 mb-1">Hiring Status</p>
+													<span
+														className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-bold border ${getHiringStatusBadge(candidate.hiringStatus || 'to_review')}`}
+													>
+														{getHiringStatusLabel(candidate.hiringStatus || 'to_review')}
+													</span>
 												</div>
 											</div>
 
 											<div className="flex items-center justify-between pt-3 border-t border-gray-200">
 												<span className="text-sm text-gray-600">
-													Confidence:{" "}
-													{candidate.confidenceScore ||
-														0}
-													%
+													Confidence: {candidate.confidenceScore || 0}%
 												</span>
 												<div className="flex items-center gap-2">
-													<button
-														onClick={() =>
-															(window.location.href = `/candidates/${candidate._id || candidate.id}`)
-														}
-														className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
-													>
-														<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
-													</button>
-													<button
-														onClick={() =>
-															handleDeleteClick(
-																candidate._id ||
-																	candidate.id,
-																candidate.name,
-															)
-														}
-														className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
-													>
-														<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
-													</button>
+												<button
+													onClick={() =>
+														(window.location.href = `/candidates/${candidate._id || candidate.id}`)
+													}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
+													<Eye className="w-5 h-5 text-gray-400 group-hover:text-blue-600" />
+												</button>
+												<button
+													onClick={() =>
+														handleDeleteClick(
+															candidate._id || candidate.id,
+															candidate.name,
+														)
+													}
+													className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+												>
+													<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
+												</button>
 												</div>
 											</div>
 										</div>
@@ -810,6 +1006,14 @@ function CandidatesContent() {
 										<table className="w-full">
 											<thead>
 												<tr className="border-b border-gray-200 bg-gray-50">
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6">
+														<input
+															type="checkbox"
+															checked={selectAll}
+															onChange={handleSelectAll}
+															className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+														/>
+													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Candidate Name
 													</th>
@@ -826,10 +1030,16 @@ function CandidatesContent() {
 														Role Fit
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
+														Recommendation
+													</th>
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Confidence
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
-														Status
+														AI Status
+													</th>
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
+														Hiring Status
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Actions
@@ -846,16 +1056,26 @@ function CandidatesContent() {
 														className="hover:bg-gray-50 transition-colors"
 													>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
-															<div>
-																<p className="text-sm xl:text-base text-gray-900 font-medium">
-																	{
-																		candidate.name
-																	}
-																</p>
-																<p className="text-xs xl:text-sm text-gray-500">
-																	{candidate.jobRole ||
-																		"N/A"}
-																</p>
+															<input
+																type="checkbox"
+																checked={selectedCandidates.includes(candidate._id || candidate.id)}
+																onChange={() => handleSelectCandidate(candidate._id || candidate.id)}
+																className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+															/>
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<div className="flex items-center gap-3">
+																<Avatar name={candidate.name} size="md" />
+																<div>
+																	<p className="text-sm xl:text-base text-gray-900 font-medium">
+																		{candidate.name}
+																	</p>
+																	{candidate.email && (
+																		<p className="text-xs xl:text-sm text-gray-500">
+																			{candidate.email}
+																		</p>
+																	)}
+																</div>
 															</div>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
@@ -905,6 +1125,9 @@ function CandidatesContent() {
 															</span>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<RecommendationBadge score={candidate.roleFitScore || 0} status={candidate.status} />
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
 															<span className="text-sm xl:text-base text-gray-700">
 																{candidate.confidenceScore ||
 																	0}
@@ -917,6 +1140,13 @@ function CandidatesContent() {
 															>
 																{candidate.status ||
 																	"New"}
+															</span>
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<span
+																className={`inline-flex items-center px-2 xl:px-3 py-1 rounded-full text-xs font-bold border ${getHiringStatusBadge(candidate.hiringStatus || 'to_review')}`}
+															>
+																{getHiringStatusLabel(candidate.hiringStatus || 'to_review')}
 															</span>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
@@ -1053,12 +1283,25 @@ function CandidatesContent() {
 								)}
 							</>
 						)}
+						</div>
 
 						<DeleteCandidateModal
 							isOpen={isModalOpen}
 							onClose={() => setIsModalOpen(false)}
 							onConfirm={handleDeleteConfirm}
 							candidateName={selectedCandidate?.name || ""}
+						/>
+						<BulkActionBar
+							selectedCount={selectedCandidates.length}
+							onShortlist={handleBulkShortlist}
+							onReject={handleBulkReject}
+							onToReview={handleBulkToReview}
+							onHired={handleBulkHired}
+							onExport={handleBulkExport}
+							onClear={() => {
+								setSelectedCandidates([]);
+								setSelectAll(false);
+							}}
 						/>
 					</div>
 				</div>
