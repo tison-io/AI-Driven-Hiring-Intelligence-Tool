@@ -554,6 +554,13 @@ function CandidatesContent() {
 											</div>
 										)}
 									</div>
+									<Link
+										href="/evaluations/new"
+										className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 transition-opacity"
+									>
+										<UserPlus className="w-4 h-4" />
+										<span className="text-sm">Add Candidate Manually</span>
+									</Link>
 								</div>
 							</div>
 
