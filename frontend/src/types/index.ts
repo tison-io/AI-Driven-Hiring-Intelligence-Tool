@@ -19,6 +19,7 @@ export interface User {
 export interface Candidate {
   id: string;
   name: string;
+  email?: string;
   linkedinUrl?: string;
   rawText: string;
   skills: string[];
@@ -41,6 +42,8 @@ export interface Candidate {
   biasCheck?: string;
   jobRole: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
+  hiringStatus?: 'to_review' | 'shortlisted' | 'rejected' | 'hired';
+  recommendation?: 'highly_recommended' | 'potential_match' | 'not_recommended';
   fileUrl?: string;
   createdAt: string;
   updatedAt: string;
