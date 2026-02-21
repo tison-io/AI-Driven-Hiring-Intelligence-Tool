@@ -20,6 +20,7 @@ import {
 import { CandidatesService } from "./candidates.service";
 import { CandidateFilterDto } from "./dto/candidate-filter.dto";
 import { UpdateHiringStatusDto } from './dto/update-hiring-status.dto';
+import { BulkUpdateHiringStatusDto } from './dto/bulk-update-hiring-status.dto';
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 @ApiTags("Candidates")
@@ -152,6 +153,20 @@ export class CandidatesController {
 		return this.candidatesService.toggleShortlist(id);
 	}
 
+	@Patch('bulk/hiring-status')
+	@ApiOperation({ summary: 'Bulk update hiring status' })
+	@ApiResponse({
+		status: 200,
+		description: 'Bulk hiring status updated successfully',
+	})
+	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	async bulkUpdateHiringStatus(
+		@Body() dto: BulkUpdateHiringStatusDto,
+		@Request() req: any,
+	) {
+		return this.candidatesService.bulkUpdateHiringStatus(dto.candidateIds, dto.hiringStatus);
+	}
+
 	@Patch(':id/hiring-status')
 	@ApiOperation({ summary: 'Update candidate hiring status' })
 	@ApiParam({ name: 'id', description: 'Candidate ID' })
@@ -171,28 +186,5 @@ export class CandidatesController {
 			dto.hiringStatus,
 			dto.notes,
 		);
-	}
-
-	@Patch('bulk/hiring-status')
-	@ApiOperation({ summary: 'Bulk update hiring status' })
-	@ApiResponse({
-		status: 200,
-		description: 'Bulk hiring status updated successfully',
-	})
-	@ApiResponse({ status: 401, description: 'Unauthorized' })
-	async bulkUpdateHiringStatus(
-		@Body() dto: { candidateIds: string[]; hiringStatus: string },
-		@Request() req: any,
-	) {
-		const results = await Promise.all(
-			dto.candidateIds.map(id =>
-				this.candidatesService.updateHiringStatus(id, dto.hiringStatus),
-			),
-		);
-		return {
-			success: true,
-			updated: results.length,
-			message: `${results.length} candidates updated`,
-		};
 	}
 }

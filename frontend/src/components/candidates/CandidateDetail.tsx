@@ -12,6 +12,7 @@ import AIAnalysisSection from './AIAnalysisSection'
 import InterviewQuestions from './InterviewQuestions'
 import CandidateActions from './CandidateActions'
 import DeleteCandidateModal from '../modals/DeleteCandidateModal'
+import HiringStatusDropdown from './HiringStatusDropdown'
 
 
 
@@ -20,6 +21,7 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDownloadingReport, setIsDownloadingReport] = useState(false)
   const [isShortlisted, setIsShortlisted] = useState(candidate.isShortlisted || false)
+  const [hiringStatus, setHiringStatus] = useState(candidate.hiringStatus || 'to_review')
 
   const handleDeleteConfirm = async () => {
     try {
@@ -70,6 +72,25 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
     }
   }
 
+  const handleHiringStatusChange = async (newStatus: string) => {
+    try {
+      await candidatesApi.updateHiringStatus(candidateId, newStatus)
+      setHiringStatus(newStatus)
+      
+      const statusLabels: Record<string, string> = {
+        to_review: 'To Review',
+        shortlisted: 'Shortlisted',
+        rejected: 'Rejected',
+        hired: 'Hired'
+      }
+      
+      toast.success(`Candidate status updated to ${statusLabels[newStatus]}`)
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update hiring status')
+      throw error
+    }
+  }
+
 
 
   return (
@@ -87,6 +108,19 @@ export default function CandidateDetail({ candidate, candidateId }: CandidateDet
           confidenceScore={candidate.confidenceScore}
           biasCheck={candidate.biasCheck}
         />
+
+        <div className="mb-6 bg-white rounded-lg shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Hiring Status</h3>
+              <p className="text-sm text-gray-600">Update the candidate's position in the hiring pipeline</p>
+            </div>
+            <HiringStatusDropdown
+              currentStatus={hiringStatus}
+              onStatusChange={handleHiringStatusChange}
+            />
+          </div>
+        </div>
 
         <ExperienceSection
           experience={candidate.experience || candidate.workExperience || []}

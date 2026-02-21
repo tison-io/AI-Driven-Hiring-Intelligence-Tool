@@ -431,6 +431,7 @@ export class CandidatesService {
 		id: string,
 		hiringStatus: string,
 		notes?: string,
+		skipValidation: boolean = false,
 	): Promise<CandidateDocument> {
 		const candidate = await this.candidateModel.findById(id).exec();
 		
@@ -438,8 +439,46 @@ export class CandidatesService {
 			throw new NotFoundException('Candidate not found');
 		}
 
+		if (!skipValidation) {
+			const currentStatus = candidate.hiringStatus || 'to_review';
+			const allowedTransitions: Record<string, string[]> = {
+				to_review: ['shortlisted', 'rejected'],
+				shortlisted: ['rejected'],
+				rejected: ['shortlisted'],
+				hired: [],
+			};
+
+			if (!allowedTransitions[currentStatus]?.includes(hiringStatus)) {
+				throw new BadRequestException(
+					`Cannot transition from ${currentStatus} to ${hiringStatus}. Allowed transitions: ${allowedTransitions[currentStatus]?.join(', ') || 'none'}`
+				);
+			}
+		}
+
+		if (candidate.hiringStatus === hiringStatus) {
+			return candidate;
+		}
+
 		candidate.hiringStatus = hiringStatus;
 		return await candidate.save();
+	}
+
+	async bulkUpdateHiringStatus(candidateIds: string[], hiringStatus: string) {
+		let updated = 0;
+		await Promise.allSettled(
+			candidateIds.map(async (id) => {
+				const candidate = await this.candidateModel.findById(id).exec();
+				if (candidate && candidate.hiringStatus !== hiringStatus) {
+					await this.updateHiringStatus(id, hiringStatus, undefined, true);
+					updated++;
+				}
+			}),
+		);
+		return {
+			success: true,
+			updated,
+			message: `${updated} candidate${updated !== 1 ? 's' : ''} updated`,
+		};
 	}
 
 	getRecommendation(roleFitScore: number): string {

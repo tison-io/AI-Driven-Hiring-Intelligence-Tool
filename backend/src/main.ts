@@ -36,7 +36,11 @@ async function bootstrap() {
 
   // CORS with cookie support
   app.enableCors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3001'],
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3001',
+      'https://ubiquitous-winner-jpggjw49wgg3ppxv-3001.app.github.dev',
+      'https://ubiquitous-winner-jpggjw49wgg3ppxv-3000.app.github.dev'
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],

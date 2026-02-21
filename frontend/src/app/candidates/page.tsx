@@ -275,8 +275,14 @@ function CandidatesContent() {
 
 	const handleBulkShortlist = async () => {
 		try {
-			await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'shortlisted');
-			toast.success(`${selectedCandidates.length} candidates shortlisted`);
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'shortlisted');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already shortlisted');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} shortlisted (${selectedCandidates.length - updated.updated} already shortlisted)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} shortlisted`);
+			}
 			setSelectedCandidates([]);
 			setSelectAll(false);
 			refetch();
@@ -287,13 +293,55 @@ function CandidatesContent() {
 
 	const handleBulkReject = async () => {
 		try {
-			await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'rejected');
-			toast.success(`${selectedCandidates.length} candidates rejected`);
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'rejected');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already rejected');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} rejected (${selectedCandidates.length - updated.updated} already rejected)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} rejected`);
+			}
 			setSelectedCandidates([]);
 			setSelectAll(false);
 			refetch();
 		} catch (error: any) {
 			toast.error('Failed to reject candidates');
+		}
+	};
+
+	const handleBulkToReview = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'to_review');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already in review');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} moved to review (${selectedCandidates.length - updated.updated} already in review)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} moved to review`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to move candidates to review');
+		}
+	};
+
+	const handleBulkHired = async () => {
+		try {
+			const updated = await candidatesApi.bulkUpdateHiringStatus(selectedCandidates, 'hired');
+			if (updated.updated === 0) {
+				toast.error('All selected candidates are already hired');
+			} else if (updated.updated < selectedCandidates.length) {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} marked as hired (${selectedCandidates.length - updated.updated} already hired)`);
+			} else {
+				toast.success(`${updated.updated} candidate${updated.updated > 1 ? 's' : ''} marked as hired`);
+			}
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to mark candidates as hired');
 		}
 	};
 
@@ -400,17 +448,35 @@ function CandidatesContent() {
 				<div className="p-4 md:p-6 lg:p-8 w-full overflow-x-hidden">
 					<div className="max-w-7xl mx-auto w-full">
 						{/* Header */}
-						<div className="mb-6 md:mb-8 flex items-start justify-between">
-							<div>
-								<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
-									Candidate Pipeline
-								</h1>
-								<p className="text-gray-400 text-sm md:text-base">
-									Filter and manage your candidate pool
-								</p>
+						<div className="mb-6 md:mb-8">
+							<div className="flex items-start justify-between mb-4 md:mb-0">
+								<div>
+									<h1 className="text-2xl md:text-3xl font-bold text-black mb-2">
+										Candidate Pipeline
+									</h1>
+									<p className="text-gray-400 text-sm md:text-base">
+										Filter and manage your candidate pool
+									</p>
+								</div>
+								<div className="hidden md:flex items-center gap-3">
+									<Link
+										href="/evaluations/new"
+										className="flex items-center justify-center gap-3 px-12 py-2.5 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-semibold rounded-lg hover:opacity-90 transition-opacity text-base min-w-[250px]"
+									>
+										<UserPlus className="w-5 h-5" />
+										<span>Add Candidate</span>
+									</Link>
+									<NotificationDropdown />
+								</div>
 							</div>
-							<div className="hidden md:block">
-								<NotificationDropdown />
+							<div className="md:hidden mt-4">
+								<Link
+									href="/evaluations/new"
+									className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 transition-opacity w-full"
+								>
+									<UserPlus className="w-4 h-4" />
+									<span className="text-sm">Add Candidate Manually</span>
+								</Link>
 							</div>
 						</div>
 
@@ -554,13 +620,6 @@ function CandidatesContent() {
 											</div>
 										)}
 									</div>
-									<Link
-										href="/evaluations/new"
-										className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#29B1B4] via-[#6A80D9] to-[#AA50FF] text-white font-medium rounded-lg hover:opacity-90 transition-opacity"
-									>
-										<UserPlus className="w-4 h-4" />
-										<span className="text-sm">Add Candidate Manually</span>
-									</Link>
 								</div>
 							</div>
 
@@ -778,6 +837,7 @@ function CandidatesContent() {
 						)}
 
 						{/* Candidates Table */}
+						<div className={selectedCandidates.length > 0 ? 'mb-32' : ''}>
 						{isLoading ? (
 							<CandidatesTableSkeleton />
 						) : error ? (
@@ -793,6 +853,21 @@ function CandidatesContent() {
 							<>
 								{/* Mobile & Tablet Card View */}
 								<div className="lg:hidden space-y-4">
+									{/* Select All Checkbox for Mobile */}
+									<div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+										<label className="flex items-center gap-3 cursor-pointer">
+											<input
+												type="checkbox"
+												checked={selectAll}
+												onChange={handleSelectAll}
+												className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+											/>
+											<span className="font-medium text-gray-900">
+												Select All ({candidates.length} candidates)
+											</span>
+										</label>
+									</div>
+
 									{candidates.map((candidate) => (
 										<div
 											key={candidate._id || candidate.id}
@@ -822,7 +897,7 @@ function CandidatesContent() {
 											</div>
 
 											<div className="mb-3">
-												<RecommendationBadge score={candidate.roleFitScore || 0} />
+												<RecommendationBadge score={candidate.roleFitScore || 0} status={candidate.status} />
 											</div>
 
 											<div className="grid grid-cols-2 gap-3 mb-3">
@@ -861,7 +936,11 @@ function CandidatesContent() {
 												</div>
 											</div>
 
-											<div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-200">
+											<div className="flex items-center justify-between pt-3 border-t border-gray-200">
+												<span className="text-sm text-gray-600">
+													Confidence: {candidate.confidenceScore || 0}%
+												</span>
+												<div className="flex items-center gap-2">
 												<button
 													onClick={() =>
 														(window.location.href = `/candidates/${candidate._id || candidate.id}`)
@@ -881,6 +960,7 @@ function CandidatesContent() {
 												>
 													<Trash2 className="w-5 h-5 text-gray-400 group-hover:text-red-600" />
 												</button>
+												</div>
 											</div>
 										</div>
 									))}
@@ -1011,7 +1091,7 @@ function CandidatesContent() {
 															</span>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
-															<RecommendationBadge score={candidate.roleFitScore || 0} />
+															<RecommendationBadge score={candidate.roleFitScore || 0} status={candidate.status} />
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
 															<span className="text-sm xl:text-base text-gray-700">
@@ -1169,6 +1249,7 @@ function CandidatesContent() {
 								)}
 							</>
 						)}
+						</div>
 
 						<DeleteCandidateModal
 							isOpen={isModalOpen}
@@ -1180,6 +1261,8 @@ function CandidatesContent() {
 							selectedCount={selectedCandidates.length}
 							onShortlist={handleBulkShortlist}
 							onReject={handleBulkReject}
+							onToReview={handleBulkToReview}
+							onHired={handleBulkHired}
 							onExport={handleBulkExport}
 							onClear={() => {
 								setSelectedCandidates([]);
