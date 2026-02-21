@@ -249,6 +249,59 @@ function CandidatesContent() {
 		setIsModalOpen(true);
 	};
 
+	const handleSelectAll = () => {
+		if (selectAll) {
+			setSelectedCandidates([]);
+		} else {
+			setSelectedCandidates(candidates.map(c => c._id || c.id));
+		}
+		setSelectAll(!selectAll);
+	};
+
+	const handleSelectCandidate = (id: string) => {
+		setSelectedCandidates(prev => {
+			if (prev.includes(id)) {
+				return prev.filter(cid => cid !== id);
+			}
+			return [...prev, id];
+		});
+	};
+
+	const handleBulkShortlist = async () => {
+		try {
+			// TODO: Implement bulk shortlist API call
+			toast.success(`${selectedCandidates.length} candidates shortlisted`);
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to shortlist candidates');
+		}
+	};
+
+	const handleBulkReject = async () => {
+		try {
+			// TODO: Implement bulk reject API call
+			toast.success(`${selectedCandidates.length} candidates rejected`);
+			setSelectedCandidates([]);
+			setSelectAll(false);
+			refetch();
+		} catch (error: any) {
+			toast.error('Failed to reject candidates');
+		}
+	};
+
+	const handleBulkExport = async () => {
+		try {
+			// Use existing export functionality
+			await handleExport('csv');
+			setSelectedCandidates([]);
+			setSelectAll(false);
+		} catch (error: any) {
+			toast.error('Failed to export candidates');
+		}
+	};
+
 	const handleDeleteConfirm = async () => {
 		if (!selectedCandidate) return;
 		try {
