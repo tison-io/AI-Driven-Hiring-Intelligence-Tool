@@ -15,6 +15,7 @@ import {
 	ArrowUp,
 	ArrowDown,
 	X,
+	UserPlus,
 } from "lucide-react";
 import toast from "@/lib/toast";
 import Layout from "@/components/layout/Layout";
@@ -25,6 +26,11 @@ import EmptyState from "@/components/candidates/EmptyState";
 import DeleteCandidateModal from "@/components/modals/DeleteCandidateModal";
 import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
 import NotificationDropdown from "@/components/notifications/NotificationDropdown";
+import Avatar from '@/components/ui/Avatar';
+import RecommendationBadge from '@/components/ui/RecommendationBadge';
+import BulkActionBar from '@/components/candidates/BulkActionBar';
+import { getHiringStatusBadge, getHiringStatusLabel } from '@/utils/candidateUtils';
+import Link from 'next/link';
 import api, { candidatesApi } from "@/lib/api";
 
 function CandidatesContent() {
