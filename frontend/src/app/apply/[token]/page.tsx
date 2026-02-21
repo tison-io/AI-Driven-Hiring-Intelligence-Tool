@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { jobPostingsApi } from "@/lib/api";
 import { ApplyHeader } from "@/components/apply/ApplyHeader";
+import { ApplyFooter } from "@/components/apply/ApplyFooter";
 import { JobLayout } from "@/components/job/JobLayout";
 import { JobHeader } from "@/components/job/JobHeader";
 import { JobRole } from "@/components/job/JobRole";
@@ -78,36 +79,42 @@ export default function JobPage() {
   }
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <ApplyHeader 
         companyName={job.companyName || "Company"}
         companyLogo={job.companyLogo}
       />
-      <JobLayout
-      left={
-          <>
-            <JobHeader 
-              title={job.title}
-              companyName={job.companyName || "TechStar Recruiters"}
-              location={job.location}
-              employmentType={job.employmentType || "Full-time"}
-              closingDate={job.closingDate}
-              salary={job.salary}
-            />
-            <JobRole description={job.description} />
-            {job.responsibilities && job.responsibilities.length > 0 && (
-              <Responsibilities responsibilities={job.responsibilities} />
-            )}
-            {job.requirements && job.requirements.length > 0 && (
-              <Requirements requirements={job.requirements} />
-            )}
-            {job.requiredSkills && job.requiredSkills.length > 0 && (
-              <SkillsPills skills={job.requiredSkills} />
-            )}
-          </>
-        }
-      right={<ApplyCard token={token} jobTitle={job.title} />}
-    />
-    </>
+      <main className="flex-1 bg-secondary-50">
+        <JobLayout
+        left={
+            <>
+              <JobHeader 
+                title={job.title}
+                companyName={job.companyName || "TechStar Recruiters"}
+                location={job.location}
+                employmentType={job.employmentType || "Full-time"}
+                closingDate={job.closingDate}
+                salary={job.salary}
+              />
+              <JobRole description={job.description} />
+              {job.responsibilities && job.responsibilities.length > 0 && (
+                <Responsibilities responsibilities={job.responsibilities} />
+              )}
+              {job.requirements && job.requirements.length > 0 && (
+                <Requirements requirements={job.requirements} />
+              )}
+              {job.requiredSkills && job.requiredSkills.length > 0 && (
+                <SkillsPills skills={job.requiredSkills} />
+              )}
+            </>
+          }
+        right={<ApplyCard token={token} jobTitle={job.title} />}
+      />
+      </main>
+      <ApplyFooter 
+        companyName={job.companyName || "Company"}
+        companyLogo={job.companyLogo}
+      />
+    </div>
   );
 }
