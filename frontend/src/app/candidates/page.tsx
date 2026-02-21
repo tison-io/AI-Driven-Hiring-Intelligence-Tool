@@ -878,6 +878,14 @@ function CandidatesContent() {
 										<table className="w-full">
 											<thead>
 												<tr className="border-b border-gray-200 bg-gray-50">
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6">
+														<input
+															type="checkbox"
+															checked={selectAll}
+															onChange={handleSelectAll}
+															className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+														/>
+													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Candidate Name
 													</th>
@@ -894,10 +902,16 @@ function CandidatesContent() {
 														Role Fit
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
+														Recommendation
+													</th>
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Confidence
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
-														Status
+														AI Status
+													</th>
+													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
+														Hiring Status
 													</th>
 													<th className="text-left py-3 px-3 lg:px-4 xl:px-6 text-xs xl:text-sm font-bold text-gray-600 uppercase tracking-wider">
 														Actions
@@ -914,16 +928,26 @@ function CandidatesContent() {
 														className="hover:bg-gray-50 transition-colors"
 													>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
-															<div>
-																<p className="text-sm xl:text-base text-gray-900 font-medium">
-																	{
-																		candidate.name
-																	}
-																</p>
-																<p className="text-xs xl:text-sm text-gray-500">
-																	{candidate.jobRole ||
-																		"N/A"}
-																</p>
+															<input
+																type="checkbox"
+																checked={selectedCandidates.includes(candidate._id || candidate.id)}
+																onChange={() => handleSelectCandidate(candidate._id || candidate.id)}
+																className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+															/>
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<div className="flex items-center gap-3">
+																<Avatar name={candidate.name} size="md" />
+																<div>
+																	<p className="text-sm xl:text-base text-gray-900 font-medium">
+																		{candidate.name}
+																	</p>
+																	{candidate.email && (
+																		<p className="text-xs xl:text-sm text-gray-500">
+																			{candidate.email}
+																		</p>
+																	)}
+																</div>
 															</div>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
@@ -973,6 +997,9 @@ function CandidatesContent() {
 															</span>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<RecommendationBadge score={candidate.roleFitScore || 0} />
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
 															<span className="text-sm xl:text-base text-gray-700">
 																{candidate.confidenceScore ||
 																	0}
@@ -985,6 +1012,13 @@ function CandidatesContent() {
 															>
 																{candidate.status ||
 																	"New"}
+															</span>
+														</td>
+														<td className="py-3 px-3 lg:px-4 xl:px-6">
+															<span
+																className={`inline-flex items-center px-2 xl:px-3 py-1 rounded-full text-xs font-bold border ${getHiringStatusBadge(candidate.hiringStatus || 'to_review')}`}
+															>
+																{getHiringStatusLabel(candidate.hiringStatus || 'to_review')}
 															</span>
 														</td>
 														<td className="py-3 px-3 lg:px-4 xl:px-6">
