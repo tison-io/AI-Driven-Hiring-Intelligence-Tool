@@ -7,6 +7,7 @@ import {
 	Query,
 	UseGuards,
 	Request,
+	Body,
 } from "@nestjs/common";
 import {
 	ApiTags,
@@ -14,9 +15,11 @@ import {
 	ApiResponse,
 	ApiBearerAuth,
 	ApiQuery,
+	ApiParam,
 } from "@nestjs/swagger";
 import { CandidatesService } from "./candidates.service";
 import { CandidateFilterDto } from "./dto/candidate-filter.dto";
+import { UpdateHiringStatusDto } from './dto/update-hiring-status.dto';
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 
 @ApiTags("Candidates")
@@ -147,5 +150,26 @@ export class CandidatesController {
 	@ApiResponse({ status: 401, description: "Unauthorized" })
 	async toggleShortlist(@Param("id") id: string) {
 		return this.candidatesService.toggleShortlist(id);
+	}
+
+	@Patch(':id/hiring-status')
+	@ApiOperation({ summary: 'Update candidate hiring status' })
+	@ApiParam({ name: 'id', description: 'Candidate ID' })
+	@ApiResponse({
+		status: 200,
+		description: 'Hiring status updated successfully',
+	})
+	@ApiResponse({ status: 404, description: 'Candidate not found' })
+	@ApiResponse({ status: 401, description: 'Unauthorized' })
+	async updateHiringStatus(
+		@Param('id') id: string,
+		@Body() dto: UpdateHiringStatusDto,
+		@Request() req: any,
+	) {
+		return this.candidatesService.updateHiringStatus(
+			id,
+			dto.hiringStatus,
+			dto.notes,
+		);
 	}
 }
