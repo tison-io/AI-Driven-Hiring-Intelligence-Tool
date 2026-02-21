@@ -144,12 +144,20 @@ export class CandidatesService {
 		sortOptions._id = 1;
 
 		// Select only fields needed for list view to improve performance
-		return this.candidateModel
+		const candidates = await this.candidateModel
 			.find(query)
-			.select('name jobRole experienceYears skills roleFitScore confidenceScore status isShortlisted createdAt certifications workExperience.company')
+			.select('name email jobRole experienceYears skills roleFitScore confidenceScore status isShortlisted hiringStatus createdAt certifications workExperience.company')
 			.sort(sortOptions)
 			.lean()
 			.exec();
+
+		// Add recommendation to each candidate
+		const candidatesWithRecommendation = candidates.map(candidate => ({
+			...candidate,
+			recommendation: this.getRecommendation(candidate.roleFitScore || 0),
+		}));
+
+		return candidatesWithRecommendation;
 	}
 
 	async findById(id: string): Promise<CandidateDocument | null> {
