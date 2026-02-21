@@ -51,6 +51,14 @@ export const candidatesApi = {
 		const response = await api.get('/api/candidates/filter-options');
 		return response.data;
 	},
+
+	bulkUpdateHiringStatus: async (candidateIds: string[], hiringStatus: string) => {
+		const response = await api.patch('/api/candidates/bulk/hiring-status', {
+			candidateIds,
+			hiringStatus,
+		});
+		return response.data;
+	},
 };
 
 // Auth API functions
