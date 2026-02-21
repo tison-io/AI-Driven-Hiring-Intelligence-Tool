@@ -69,6 +69,8 @@ function CandidatesContent() {
 		skills: string[];
 	}>({ certifications: [], companies: [], skills: [] });
 	const [isLoadingFilterOptions, setIsLoadingFilterOptions] = useState(true);
+	const [selectedCandidates, setSelectedCandidates] = useState<string[]>([]);
+	const [selectAll, setSelectAll] = useState(false);
 
 	// Debounce searchQuery changes
 	useEffect(() => {
