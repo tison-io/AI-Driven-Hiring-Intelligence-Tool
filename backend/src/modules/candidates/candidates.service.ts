@@ -418,4 +418,25 @@ export class CandidatesService {
 
 		return this.candidateModel.updateMany(sanitizedFilter, { $set: sanitizedUpdate }).exec();
 	}
+
+	async updateHiringStatus(
+		id: string,
+		hiringStatus: string,
+		notes?: string,
+	): Promise<CandidateDocument> {
+		const candidate = await this.candidateModel.findById(id).exec();
+		
+		if (!candidate) {
+			throw new NotFoundException('Candidate not found');
+		}
+
+		candidate.hiringStatus = hiringStatus;
+		return await candidate.save();
+	}
+
+	getRecommendation(roleFitScore: number): string {
+		if (roleFitScore >= 85) return 'highly_recommended';
+		if (roleFitScore >= 70) return 'potential_match';
+		return 'not_recommended';
+	}
 }
