@@ -4,9 +4,9 @@
   "description": "AI-Driven Hiring Intelligence Tool Frontend",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3001",
+    "dev": "node api.js && next dev -p 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "node api.js && next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "test": "playwright test",
